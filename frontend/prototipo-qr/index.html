@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recepción QR · DEMO FICTICIA</title>
+  </head>
+  <body>
+    <div class="demo-banner">DEMO FICTICIA · Todos los datos son simulados</div>
+    <main>
+      <header class="page-header">
+        <p class="eyebrow">Recepción móvil</p>
+        <h1>Prueba del lector QR</h1>
+        <p>Abre esta página por HTTPS en tu teléfono y permite el acceso a la cámara.</p>
+      </header>
+      <div id="reader" aria-label="Vista previa de la cámara"></div>
+      <div class="actions">
+        <button type="button" id="start">Abrir cámara</button>
+        <button type="button" class="secondary" id="stop" disabled>Detener cámara</button>
+      </div>
+      <p id="status" class="status status--neutral" role="status" aria-live="polite">Cámara detenida.</p>
+      <p>Si no puedes usar la cámara, escribe la guía para probar la lectura manual:</p>
+      <form id="manual-form">
+        <label for="guide">Código de guía</label>
+        <input id="guide" name="guide" autocomplete="off" placeholder="GUIA-DEMO-005" />
+        <button type="submit" class="secondary">Verificar guía</button>
+      </form>
+      <section aria-label="QR de prueba">
+        <h2>QR de prueba</h2>
+        <p>Guía ficticia del envío <code>ENV-DEMO-005</code>: <code>GUIA-DEMO-005</code>.</p>
+        <canvas id="sample" aria-label="QR de la guía GUIA-DEMO-005"></canvas>
+        <p>Muestra este QR en otra pantalla o imprímelo para escanearlo con el teléfono.</p>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
