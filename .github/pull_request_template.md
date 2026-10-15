@@ -1,3 +1,5 @@
+Closes #<!-- número del ticket -->
+
 ## Qué cambia
 
 <!-- Una o dos líneas -->

@@ -17,6 +17,10 @@ Quién hace qué: `docs/06_PLAN_EQUIPO.md`. Tu lista de tareas: `docs/equipo/<tu
 - Solo tocas las carpetas que son tuyas (`docs/06_PLAN_EQUIPO.md §2`). Para algo ajeno: PR pequeño avisando al dueño.
 - **Secretos nunca en el repo.** `.env` está ignorado; las claves se pasan por el canal privado.
 
+## Tickets
+
+Cada tarea de `docs/equipo/<tu-nombre>.md` es un issue asignado a ti, con etiqueta de persona y hito de fase: [mis tickets](https://github.com/forecalde-eng/abasteceai-demo-growthlab/issues?q=is%3Aopen+assignee%3A%40me) · [hitos](https://github.com/forecalde-eng/abasteceai-demo-growthlab/milestones). Trabaja en orden de fase y pon `Closes #N` en tu PR: el ticket se cierra solo al mergear.
+
 ## Flujo
 
 ```bash
