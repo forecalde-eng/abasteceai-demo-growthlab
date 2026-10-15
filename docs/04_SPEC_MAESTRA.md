@@ -256,7 +256,7 @@ Deploy público · integración ERP · API de courier · predicción estadístic
 |---|---|---|
 | Q1 | Paquete `db/` | ✅ Resuelto 14-oct: en `db/`, 61/61 pruebas OK |
 | Q2 | ¿Código antes del 16? | ✅ Sí. La demo llega construida |
-| Q3 | Usuarios GitHub de David, Jorge, Bruno | Abierta — Omar |
+| Q3 | Usuarios GitHub | ✅ Resuelto 14-oct: en `.github/CODEOWNERS` |
 | Q4 | Idempotencia y `cancelled` en el esquema | ✅ `cancelled` existe; `orders.idempotency_key` existe; el resto es por estado |
 | Q5 | Escrituras | ✅ psycopg directo |
 | Q6 | ¿Quién toma F5 (simulador)? | Abierta — solo si sobra tiempo |

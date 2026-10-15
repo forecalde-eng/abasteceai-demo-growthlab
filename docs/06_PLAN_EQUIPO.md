@@ -8,12 +8,12 @@
 
 ## 1. El equipo
 
-| Persona | Rol | IA / IDE | Es dueño de |
+| Persona (GitHub) | Rol | IA / IDE | Es dueño de |
 |---|---|---|---|
-| **Omar** | Líder · APIs externas · auth · IA/RAG · rutas | Claude Code · [IDE a elección] | Contrato API, verificación de JWT y permisos, Jev, asistente + RAG (texto y pgvector), OR-Tools/ORS, integración y merges a `main` |
-| **David** | Backend y base de datos | [IA a elección] · VS Code/Antigravity | Supabase (proyecto, cuentas, migraciones), FastAPI (esqueleto y endpoints de escritura), transacciones, capa de datos del frontend (`frontend/src/data/`) |
-| **Jorge** | Frontend: shell y flujo de pedidos | Claude Code · VS Code/Antigravity | Esqueleto web, login, layout por rol, sistema visual, pedidos, bandeja admin, supervisor, tablero, incidencias, chat |
-| **Bruno** | Frontend: operación y logística | OpenCode Go · VS Code/Antigravity | Bodega, inventario, despacho, recepción móvil QR, trazabilidad, mapa y rutas, courier |
+| **Omar** `@forecalde-eng` | Líder · APIs externas · auth · IA/RAG · rutas | Claude Code · [IDE a elección] | Contrato API, verificación de JWT y permisos, Jev, asistente + RAG (texto y pgvector), OR-Tools/ORS, integración y merges a `main` |
+| **David** `@Dawid878` | Backend y base de datos | [IA a elección] · VS Code/Antigravity | Supabase (proyecto, cuentas, migraciones), FastAPI (esqueleto y endpoints de escritura), transacciones, capa de datos del frontend (`frontend/src/data/`) |
+| **Jorge** `@JorgeRevelo23` | Frontend: shell y flujo de pedidos | Claude Code · VS Code/Antigravity | Esqueleto web, login, layout por rol, sistema visual, pedidos, bandeja admin, supervisor, tablero, incidencias, chat |
+| **Bruno** `@bruno7890` | Frontend: operación y logística | OpenCode Go · VS Code/Antigravity | Bodega, inventario, despacho, recepción móvil QR, trazabilidad, mapa y rutas, courier |
 
 **Por qué este corte:** cada uno toca carpetas distintas, así casi no hay conflictos de merge. Las fronteras entre personas son **tres contratos** (§3) que se fijan en la Fase 0 y no cambian sin avisar.
 
@@ -44,7 +44,7 @@ frontend/
     trazabilidad/, logistica/                        → Bruno
 ```
 
-Tocar una carpeta ajena = PR pequeño mencionando al dueño. Se refleja en `.github/CODEOWNERS` cuando tengamos los usuarios de GitHub.
+Tocar una carpeta ajena = PR pequeño mencionando al dueño. Está en `.github/CODEOWNERS`: GitHub pide revisión al dueño automáticamente.
 
 ## 3. Los tres contratos (la frontera entre personas)
 
@@ -201,7 +201,7 @@ Horario Ecuador. Cada fase termina en una **integración**: todos mergean, `rese
 
 | # | Qué | Quién |
 |---|---|---|
-| E1 | Usuarios de GitHub de David, Jorge y Bruno (para CODEOWNERS) | Omar |
+| E1 | ~~Usuarios de GitHub~~ ✅ en CODEOWNERS (14-oct) | — |
 | E2 | ¿David trabaja cómodo en **Python/FastAPI**? Si no, conviene decidirlo hoy | David |
 | E3 | IA de David y de Omar si no es Claude | David, Omar |
 | E4 | ¿Quién presenta el pitch y quién opera el teléfono? | Equipo |

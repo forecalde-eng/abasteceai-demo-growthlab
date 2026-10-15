@@ -1,0 +1,29 @@
+# Dueños por carpeta (docs/06_PLAN_EQUIPO.md §2). La última regla que coincide gana.
+# Omar: forecalde-eng · David: Dawid878 · Jorge: JorgeRevelo23 · Bruno: bruno7890
+
+*                                   @forecalde-eng
+
+# Contrato, reglas para IAs y docs
+/AGENTS.md                          @forecalde-eng
+/CLAUDE.md                          @forecalde-eng
+/docs/                              @forecalde-eng
+/specs/000-contratos/               @forecalde-eng @Dawid878
+/db/                                @Dawid878 @forecalde-eng
+
+# Backend
+/backend/                           @Dawid878
+/backend/app/auth.py                @forecalde-eng
+/backend/app/ai/                    @forecalde-eng
+/backend/app/routing/               @forecalde-eng
+/backend/app/routers/ai.py          @forecalde-eng
+/backend/app/routers/routes.py      @forecalde-eng
+
+# Frontend
+/frontend/                          @JorgeRevelo23
+/frontend/src/data/                 @Dawid878
+/frontend/src/mocks/                @bruno7890
+/frontend/src/features/bodega/      @bruno7890
+/frontend/src/features/despacho/    @bruno7890
+/frontend/src/features/recepcion/   @bruno7890
+/frontend/src/features/trazabilidad/ @bruno7890
+/frontend/src/features/logistica/   @bruno7890

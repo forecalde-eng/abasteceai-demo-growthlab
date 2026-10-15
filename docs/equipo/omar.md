@@ -25,7 +25,7 @@
 |---|---|---|
 | O-0.1 | `gh auth login`; proteger `main` (PR obligatorio, sin push directo) | Push directo a `main` rechazado |
 | O-0.2 | `specs/000-contratos/openapi.yaml` (13 endpoints + `/me`, `dry_run`, `reset-demo`), `estados.md`, `roles.md` — con David | PR mergeado = contrato congelado |
-| O-0.3 | Revisar y mergear `AGENTS.md`; pasar los usuarios de GitHub → `CODEOWNERS` | Los 4 lo leen |
+| O-0.3 | ✅ `AGENTS.md` y `CODEOWNERS` en `main` | Los 4 lo leen |
 | O-0.4 | Cuentas OpenAI, TypeSafe, HeiGIT con límite de gasto; claves solo en tu `.env` | Saldos verificados |
 
 ### Fase 1 — Jue 08:00–13:00
