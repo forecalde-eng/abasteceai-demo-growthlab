@@ -123,9 +123,9 @@ En lugar de un color distinto por cada estado (hoy hay sky, indigo, blue, teal, 
 | Incidencia | `severity = low` | Baja | Neutro |
 | Incidencia | `status = open` / `under_review` / `resolved` | Abierta / En revisión / Resuelta | Atención / En curso / OK |
 | Envío courier retrasado | (calculado en SQL) | Retrasado | Problema |
-| Origen IA | `SIMULADO` | SIMULADO | Neutro, `font-mono` |
-| Origen IA | `API_REAL` | API_REAL | **IA** |
-| Origen | `REGLAS` | REGLAS | En curso, `font-mono` |
+| Origen IA (`decision_logs.provider`) | `mock` | SIMULADO | Neutro, `font-mono` |
+| Origen IA (`decision_logs.provider`) | `typesafe` (y `openai` en el asistente) | API_REAL | **IA** |
+| Origen (`decision_logs.provider`) | `rules` | REGLAS | En curso, `font-mono` |
 | Jev | `confidence < 0.80` | Revisión humana | Atención |
 
 ### 3.2 Cómo aplicarlo en código (Jorge, en `src/ui/`)
@@ -144,6 +144,8 @@ export const TONO = {
 } as const;
 export type Tono = keyof typeof TONO;
 ```
+
+Origen de IA: la base guarda `provider` (`mock` / `typesafe` / `rules`), no la etiqueta. Convierte siempre con `fuenteDesdeProvider(provider)` (ya existe en `AiSourceBadge.tsx`) y pasa el resultado a `<AiSourceBadge source={…} />`. Nunca uses el valor crudo de la base como `source`.
 
 Bruno: si necesitas un badge nuevo (p. ej. "Retrasado", "Lote vencido"), usa `<Badge className={TONO.problema}>` o pide a Jorge que lo agregue a `StatusBadge`. No inventes colores.
 
