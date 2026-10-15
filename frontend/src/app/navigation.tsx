@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import type { Role } from "@/app/dev/session";
+import { CrearPedido } from "@/app/pages/CrearPedido";
 import { Inicio } from "@/app/pages/Inicio";
 import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
@@ -98,14 +99,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-1.1",
     desc: "Formulario de pedido del mes para un punto asignado: insumos, cantidades y observaciones.",
-    element: (
-      <Placeholder
-        title="Crear pedido"
-        task="J-1.1"
-        owner="Jorge"
-        desc="Formulario de pedido del mes para un punto asignado: insumos, cantidades y observaciones."
-      />
-    ),
+    element: <CrearPedido />,
   },
   {
     path: "/pedidos",

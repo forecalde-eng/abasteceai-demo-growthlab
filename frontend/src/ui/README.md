@@ -22,6 +22,7 @@ En local puedes verlo todo en la página **`/ui`** (`npm run dev` → `http://lo
 | `Card` + `CardHeader/CardTitle/CardDescription/CardContent/CardFooter` | Tarjeta contenedora. | `<Card><CardHeader><CardTitle>Resumen</CardTitle></CardHeader><CardContent>…</CardContent></Card>` |
 | `Table` + `TableHeader/TableBody/TableRow/TableHead/TableCell` | Tabla de datos. | `<Table>…</Table>` |
 | `Badge` | Etiqueta base (sin lógica de negocio). | `<Badge variant="secondary">30 productos</Badge>` |
+| `Input` / `Label` / `Textarea` / `Select` | Campos de formulario (nativos, sin dependencias nuevas). | `<Label htmlFor="obs">Observaciones</Label><Textarea id="obs" />` |
 | `StatusBadge` | Estado con color. `kind`: `pedido` \| `envio` \| `cobertura`. | `<StatusBadge kind="pedido" value="submitted" />` |
 | `AiSourceBadge` | Etiqueta de origen de IA. | `<AiSourceBadge source="SIMULADO" />` |
 | `Modal` | Diálogo controlado (`open` + `onOpenChange`). | `<Modal open={open} onOpenChange={setOpen} title="Confirmar" footer={<Button>Guardar</Button>}>…</Modal>` |
