@@ -1,16 +1,32 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, type RouteObject } from "react-router-dom";
 
 import { AppLayout } from "@/app/AppLayout";
-import { Inicio } from "@/app/pages/Inicio";
+import { RequireRole } from "@/app/RequireRole";
+import { NAV } from "@/app/navigation";
+import { NoEncontrada } from "@/app/pages/SinAcceso";
 
 /**
- * Rutas del esqueleto (J-0.1).
- * Login real (J-0.3) y las pantallas por rol (J-0.4) se montan aquí en sus tickets.
+ * Las rutas se generan desde `navigation.tsx`, para que el menú y los guards
+ * compartan una única definición de "quién ve qué" (J-0.4).
  */
+const hijos: RouteObject[] = NAV.map((item) =>
+  item.path === "/"
+    ? {
+        index: true,
+        element: <RequireRole roles={item.roles}>{item.element}</RequireRole>,
+      }
+    : {
+        path: item.path.replace(/^\//, ""),
+        element: <RequireRole roles={item.roles}>{item.element}</RequireRole>,
+      },
+);
+
+hijos.push({ path: "*", element: <NoEncontrada /> });
+
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <AppLayout />,
-    children: [{ index: true, element: <Inicio /> }],
+    children: hijos,
   },
 ]);
