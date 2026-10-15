@@ -1,62 +1,61 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
-import { Toaster, cn } from "@/ui";
+import { DevRoleSwitcher } from "@/app/DevRoleSwitcher";
+import { RoleMenu } from "@/app/RoleMenu";
+import { ROLES, useSession } from "@/app/dev/session";
+import { Toaster } from "@/ui/sonner";
 
-function NavItem({ to, children }: { to: string; children: string }) {
-  return (
-    <NavLink
-      to={to}
-      end={to === "/"}
-      className={({ isActive }) =>
-        cn(
-          "rounded-md px-3 py-1.5 transition-colors",
-          isActive
-            ? "bg-muted font-medium text-foreground"
-            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-        )
-      }
-    >
-      {children}
-    </NavLink>
-  );
-}
-
-/**
- * Shell raíz de la app.
- *
- * El banner DEMO FICTICIA va **fijo** en la parte superior (sticky) y se
- * renderiza en todas las rutas, así que siempre está en pantalla
- * (AGENTS.md §10 · invariante I10).
- *
- * Los colores salen de los tokens del tema (`--background`, `--muted`, …) y no
- * de colores fijos: cuando se cierre el spec de marca, se cambian en `src/index.css`.
- */
 export function AppLayout() {
+  const { data } = useSession();
+  const rol = data ? ROLES[data.role] : null;
+
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div
-          role="status"
-          className="bg-amber-400 px-3 py-1 text-center text-[0.7rem] font-bold tracking-[0.18em] text-amber-950 uppercase"
-        >
-          Demo ficticia · datos inventados
+    <div className="min-h-svh bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-background">
+        {/* Banner obligatorio: siempre visible (invariante I10 / HU-0.2). */}
+        <div className="border-b border-border/60 bg-amber-100 px-4 py-1.5 text-center text-xs font-medium text-amber-950">
+          DEMO FICTICIA · DATOS INVENTADOS
         </div>
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold tracking-tight">AbasteceAI</span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              BOD-DEMO · Quito
-            </span>
+
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+          <Link to="/" className="font-semibold tracking-tight">
+            AbasteceAI
           </Link>
-          <nav className="ml-auto flex items-center gap-1 text-sm">
-            <NavItem to="/">Inicio</NavItem>
-            <NavItem to="/ui">Kit de interfaz</NavItem>
-          </nav>
+
+          {rol ? (
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="rounded-md border border-border px-2 py-0.5 text-foreground">
+                {rol.label}
+              </span>
+              <span className="hidden md:inline">{rol.name}</span>
+              <span className="hidden lg:inline">· {rol.pointsLabel}</span>
+            </span>
+          ) : null}
+
+          <div className="ml-auto">
+            <DevRoleSwitcher />
+          </div>
+        </div>
+
+        {/* Menú en pantallas pequeñas: una sola fila desplazable. */}
+        <div className="border-t border-border/60 px-4 py-2 lg:hidden">
+          <RoleMenu variant="bar" />
         </div>
       </header>
-      <main className="flex-1">
-        <Outlet />
-      </main>
+
+      <div className="mx-auto flex w-full max-w-6xl items-start gap-8">
+        {/* Menú lateral en pantallas grandes. */}
+        <aside className="hidden w-56 shrink-0 py-8 pl-4 lg:block">
+          <div className="sticky top-24">
+            <RoleMenu variant="sidebar" />
+          </div>
+        </aside>
+
+        <main className="min-w-0 flex-1">
+          <Outlet />
+        </main>
+      </div>
+
       <Toaster />
     </div>
   );

@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 
+import { gruposDeRol } from "@/app/navigation";
+import { ROLES, USAR_SESION_TEMPORAL, useSession } from "@/app/dev/session";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui";
 
 const LISTO = [
@@ -10,6 +12,10 @@ const LISTO = [
   {
     title: "Kit de interfaz",
     desc: "Botones, tarjetas, tabla, badges de estado, modal, toast y estados de pantalla (J-0.2).",
+  },
+  {
+    title: "Layout por rol",
+    desc: "Menú y rutas según el rol, con guarda por pantalla (J-0.4).",
   },
   {
     title: "Siempre visible",
@@ -24,6 +30,10 @@ const REGLAS = [
 ];
 
 export function Inicio() {
+  const { data } = useSession();
+  const rol = data ? ROLES[data.role] : null;
+  const grupos = data ? gruposDeRol(data.role) : [];
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <header className="max-w-2xl">
@@ -42,7 +52,7 @@ export function Inicio() {
         </div>
       </header>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-3">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {LISTO.map((c) => (
           <Card key={c.title}>
             <CardHeader>
@@ -52,6 +62,37 @@ export function Inicio() {
           </Card>
         ))}
       </div>
+
+      {rol ? (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Pantallas de tu rol</CardTitle>
+            <CardDescription>
+              Estás como <strong>{rol.label}</strong> ({rol.name} · {rol.pointsLabel}). El menú y las
+              rutas se arman de esta misma lista.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {grupos.map((grupo) => (
+              <div key={grupo.group}>
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {grupo.group}
+                </p>
+                <ul className="mt-1 space-y-1 text-sm">
+                  {grupo.items.map((item) => (
+                    <li key={item.path}>
+                      <Link className="text-foreground underline-offset-4 hover:underline" to={item.path}>
+                        {item.label}
+                      </Link>{" "}
+                      <span className="text-xs text-muted-foreground">({item.task})</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="mt-4">
         <CardHeader>
@@ -66,6 +107,13 @@ export function Inicio() {
           </ul>
         </CardContent>
       </Card>
+
+      {USAR_SESION_TEMPORAL ? (
+        <p className="mt-6 text-xs text-muted-foreground">
+          El rol se elige con el selector «Rol de prueba» de la cabecera. Es temporal: desaparecerá
+          cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
+        </p>
+      ) : null}
     </div>
   );
 }
