@@ -1,7 +1,7 @@
 # Jorge — Frontend: shell, pedidos, admin y tablero
 
 > IA: **Claude Code** (lee `CLAUDE.md` → `AGENTS.md` sola). IDE: VS Code o Antigravity.
-> Lee primero: `AGENTS.md`, `docs/04_SPEC_MAESTRA.md` (§2, §5 F0, F1, F4), `docs/06_PLAN_EQUIPO.md` (§2, §3 C2).
+> Lee primero: `AGENTS.md`, `docs/04_SPEC_MAESTRA.md` (§2, §5 F0, F1, F4), `docs/06_PLAN_EQUIPO.md` (§2, §3 C2), **`docs/07_GUIA_DISENO.md` (colores, layout y patrones)**.
 > Ramas: `front/jorge/<tarea>`.
 
 ## Tu misión
@@ -28,7 +28,7 @@ Vite + React + TypeScript + Tailwind + React Router + React Query. Componentes b
 | ID | Tarea | Hecho cuando |
 |---|---|---|
 | J-0.1 | Esqueleto `frontend/`: Vite + React + TS + Tailwind + Router + React Query; `.env.example` desde `db/config_frontend.env.example`; scripts `dev`, `build`, `typecheck` | `npm run build` OK |
-| J-0.2 | `src/ui/`: botón, tarjeta, tabla, badge de estado (pedido, envío, cobertura), badge SIMULADO/API_REAL, modal, toast, estados vacío/carga/error | Página `/ui` con todo a la vista para Bruno |
+| J-0.2 | `src/ui/` según `docs/07_GUIA_DISENO.md` (paleta en `index.css`, `tonos.ts`, `PageHeader`): botón, tarjeta, tabla, badge de estado (pedido, envío, cobertura), badge SIMULADO/API_REAL, modal, toast, estados vacío/carga/error | Página `/ui` con todo a la vista para Bruno |
 | J-0.3 | Login con Supabase Auth, sesión, guard de rutas | Las 7 cuentas entran |
 | J-0.4 | Layout por rol: menú según `useSession().role`, banner DEMO FICTICIA, una ruta vacía por pantalla (las de Bruno incluidas) | Cada rol ve solo sus pantallas |
 
@@ -70,7 +70,7 @@ Muestras las **escenas 1–2**: duplicado 001/025, admin cancela 025, aprueba 00
 ## Prompt de arranque para tu IA
 
 ```text
-Lee AGENTS.md, docs/04_SPEC_MAESTRA.md, docs/06_PLAN_EQUIPO.md y docs/equipo/jorge.md.
+Lee AGENTS.md, docs/04_SPEC_MAESTRA.md, docs/06_PLAN_EQUIPO.md, docs/07_GUIA_DISENO.md y docs/equipo/jorge.md.
 Vamos a hacer la tarea J-0.1. No llames a Supabase directo: todo pasa por frontend/src/data/.
 Antes de escribir código dime qué archivos vas a crear.
 Corre `npx tsc --noEmit && npm run build` antes de commitear.

@@ -6,8 +6,9 @@ Hackathon Expo Clean Ecuador 2026, Reto 1. Abastecimiento de insumos de limpieza
 
 1. Lee `docs/04_SPEC_MAESTRA.md` (qué se construye), `docs/06_PLAN_EQUIPO.md` (quién hace qué y los contratos) y la hoja de tu persona en `docs/equipo/` (omar, david, jorge, bruno).
 2. Trabaja **una tarea por sesión**, por su ID (ej. `B-2.5`). Antes de escribir código, di qué archivos vas a crear o tocar.
-3. Solo toca las carpetas de tu persona (`docs/06_PLAN_EQUIPO.md §2`). Si necesitas cambiar algo ajeno, dilo y propón un PR aparte.
-4. Si algo no está en la spec, el contrato o `db/`, **pregunta**. No inventes endpoints, columnas, datos ni métricas.
+3. **Frontend:** sigue `docs/07_GUIA_DISENO.md` (paleta, 6 familias de color de estado, layout y patrones). No inventes colores ni estilos.
+4. Solo toca las carpetas de tu persona (`docs/06_PLAN_EQUIPO.md §2`). Si necesitas cambiar algo ajeno, dilo y propón un PR aparte.
+5. Si algo no está en la spec, el contrato o `db/`, **pregunta**. No inventes endpoints, columnas, datos ni métricas.
 
 ## Stack
 
