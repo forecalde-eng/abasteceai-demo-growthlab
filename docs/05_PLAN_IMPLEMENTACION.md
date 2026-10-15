@@ -65,7 +65,7 @@
 | # | Decisión | Por qué |
 |---|---|---|
 | D1 | **Lecturas** del frontend directo a Supabase con el JWT; tablero con `v_replenishment`, bodega con `v_inventory`, trazabilidad con `v_order_trace` | El SQL ya trae RLS y los cálculos; no se duplica lógica |
-| D2 | ✅ **Escrituras** por FastAPI con **psycopg** (pooler Supabase, modo sesión), `BEGIN … COMMIT` explícito. Variable nueva `DATABASE_URL` | Transacciones multi-tabla sin tocar `db/*.sql` |
+| D2 | ✅ (rev. 14-oct) **Escrituras**: FastAPI (Omar) valida JWT, rol y punto y llama por **psycopg** a una **función SQL** `abastece.fn_*` (David, `db/08+`), que es la transacción. Variable nueva `DATABASE_URL` | Cada uno en lo que domina; la lógica queda junto a los triggers y se prueba en local con PGlite |
 | D3 | JWT con `supabase.auth.get_user(token)`; rol y puntos con `SELECT` a `staff_members`/`point_assignments` | Simple y correcto |
 | D4 | Reglas como **funciones puras** en `backend/app/rules/` | Se testean sin base |
 | D5 | `SELECT … FOR UPDATE` sobre el pedido/envío al inicio de cada escritura | Evita doble despacho; los triggers de la base ya usan advisory locks por lote |
@@ -81,7 +81,8 @@
 
 | Nivel | Qué | Dónde corre |
 |---|---|---|
-| Unitarias | `rules/`: duplicado, kit, FEFO, armado VRPTW | `pytest`, sin base, en CI |
+| Funciones SQL | Cada `fn_*` y los casos del pitch: duplicado, kit, FEFO, despacho, recepción, ciclo PED-DEMO-001 | `node db/verificar_funciones.mjs` (PGlite), en CI |
+| Unitarias | Armado VRPTW, mapeo de errores, auth | `pytest`, sin base, en CI |
 | Integración | Cada escritura contra Postgres **dentro de una transacción que se revierte** (fixture `db_tx`) | `pytest -m integration` local; en CI se salta sin `DATABASE_URL` |
 | Esquema | `node db/verificar_postgres.mjs` | CI (ya pasa 61/61) |
 | Aceptación | Guion §6 de la spec con las 7 cuentas, tras `reset_demo` | Laptop de A, en cada integración |

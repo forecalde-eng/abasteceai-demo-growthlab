@@ -62,6 +62,10 @@ Montas tus pantallas sobre el layout de Jorge (`src/app/`) y usas sus componente
 | B-4.2 | **Plan de rutas**: llamar `planRoutes`, dibujar RUTA-DEMO-2 (precargada) vs calculada, km "estimado haversine", lista de no asignados con motivo, botón confirmar (reutiliza B-2.3) | PITCH 6 |
 | B-4.3 | **Courier**: envíos courier con fecha prometida y badge "retrasado" | PITCH 9: ENV-DEMO-008 a G-001 |
 
+### Fase 5 — Sáb (pitch)
+
+Muestras las **escenas 3, 5 y 6**: bodega prepara (el lote vencido se salta solo), despacho y recepción **desde el teléfono** con faltante. 2 min.
+
 ## Prompt de arranque para tu IA
 
 ```text

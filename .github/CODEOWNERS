@@ -8,15 +8,10 @@
 /CLAUDE.md                          @forecalde-eng
 /docs/                              @forecalde-eng
 /specs/000-contratos/               @forecalde-eng @Dawid878
-/db/                                @Dawid878 @forecalde-eng
+/db/                                @Dawid878
 
-# Backend
-/backend/                           @Dawid878
-/backend/app/auth.py                @forecalde-eng
-/backend/app/ai/                    @forecalde-eng
-/backend/app/routing/               @forecalde-eng
-/backend/app/routers/ai.py          @forecalde-eng
-/backend/app/routers/routes.py      @forecalde-eng
+# Backend (FastAPI)
+/backend/                           @forecalde-eng
 
 # Frontend
 /frontend/                          @JorgeRevelo23

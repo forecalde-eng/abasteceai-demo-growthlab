@@ -166,7 +166,7 @@ Formato: *Dado / Cuando / Entonces*. Cada **[PITCH-n]** reproduce un paso del gu
 | 10 | Asistente cita DEMO-1.1 | **En vivo** | HU-4.2 | F4 |
 | 11 | CONTINGENCIA | En vivo | F5 | COULD |
 
-### 6.2 Ciclo en vivo [Supuesto: a confirmar por Omar]
+### 6.2 Ciclo en vivo (confirmado)
 
 Pedido **PED-DEMO-001** (Q-001, punto del auxiliar → la recepción se puede hacer desde el teléfono):
 
@@ -233,7 +233,11 @@ Reglas comunes:
 
 El detalle (`openapi.yaml`) vive en `specs/000-contratos/` y queda **congelado** tras su merge.
 
-### Única migración prevista: `db/07_proveedor_openai.sql`
+### Migraciones nuevas
+
+- `db/08…11`: funciones SQL `abastece.fn_*` con la lógica de cada escritura (ver `06_PLAN_EQUIPO.md §3 C3`). FastAPI valida y las llama.
+
+#### `db/07_proveedor_openai.sql`
 
 `decision_logs.provider` solo admite `mock | typesafe | rules`. Para registrar el asistente (I6) se agrega `openai` al CHECK. Va por PR a `specs/000-contratos`.
 
@@ -260,5 +264,5 @@ Deploy público · integración ERP · API de courier · predicción estadístic
 | Q4 | Idempotencia y `cancelled` en el esquema | ✅ `cancelled` existe; `orders.idempotency_key` existe; el resto es por estado |
 | Q5 | Escrituras | ✅ psycopg directo |
 | Q6 | ¿Quién toma F5 (simulador)? | Abierta — solo si sobra tiempo |
-| Q7 | ¿Ciclo en vivo con PED-DEMO-001 (§6.2)? | Abierta — Omar confirma |
-| Q8 | ¿Se acepta la migración 07 (`openai` en `decision_logs.provider`)? | Abierta — Omar confirma |
+| Q7 | ¿Ciclo en vivo con PED-DEMO-001 (§6.2)? | ✅ Confirmado 14-oct |
+| Q8 | ¿Se acepta la migración 07 (`openai` en `decision_logs.provider`)? | ✅ Confirmado 14-oct |

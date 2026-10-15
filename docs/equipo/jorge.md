@@ -63,6 +63,10 @@ Vite + React + TypeScript + Tailwind + React Router + React Query. Componentes b
 | J-4.1 | **Asistente**: chat, respuestas con fuentes (título + versión), badge SIMULADO/API_REAL, sugerencias de preguntas | PITCH 10 |
 | J-4.2 | Pulido visual: consistencia, textos del guion, responsive | Revisión del equipo |
 
+### Fase 5 — Sáb (pitch)
+
+Muestras las **escenas 1–2**: duplicado 001/025, admin cancela 025, aprueba 001 con INS-005 = 1 y se ve la propuesta de Jev. 1–2 min.
+
 ## Prompt de arranque para tu IA
 
 ```text

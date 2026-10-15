@@ -11,7 +11,8 @@ Hackathon Expo Clean Ecuador 2026, Reto 1. Abastecimiento de insumos de limpieza
 
 ## Stack
 
-- Backend: Python 3.11+ · FastAPI · `uv` · psycopg (escrituras en transacción) · pytest · ruff. Carpeta `backend/`.
+- Backend: Python 3.11+ · FastAPI **delgado** (valida JWT, rol y punto; llama a una función SQL) · `uv` · psycopg · pytest · ruff. Carpeta `backend/`.
+- Lógica de escritura: **funciones SQL** `abastece.fn_*` en `db/08+` (contrato en `docs/06_PLAN_EQUIPO.md §3 C3`), probadas con `node db/verificar_funciones.mjs`.
 - Frontend: React + TypeScript + Vite + Tailwind + React Router + React Query · Leaflet. Carpeta `frontend/`.
 - Datos: Supabase (Postgres + Auth + RLS), esquema `abastece`. `db/*.sql` es la fuente de verdad.
 - Contrato API: `specs/000-contratos/openapi.yaml` (congelado).
@@ -25,7 +26,7 @@ Hackathon Expo Clean Ecuador 2026, Reto 1. Abastecimiento de insumos de limpieza
 4. `stock_movements` es inmutable. Corregir = movimiento compensatorio.
 5. Despacho y recepción: una transacción, idempotentes. Si algo falla, rollback total.
 6. Toda salida de IA lleva `source: SIMULADO | API_REAL` y se guarda en `decision_logs`.
-7. No modificar `db/01…06`. Un cambio de esquema = migración nueva `db/07+` + PR a `specs/000-contratos`.
+7. No modificar `db/01…06`. Un cambio de esquema = migración nueva `db/07+` + PR a `specs/000-contratos`. Toda función nueva termina con `REVOKE EXECUTE … FROM PUBLIC, anon, authenticated`.
 8. Rol y puntos del usuario se leen de la base con su JWT. Nunca confiar en lo que mande el cliente.
 9. Reservar reduce el disponible, no el físico. `delivered_unchecked` no aumenta stock. Registrar una compra no crea stock. Lotes vencidos no se reservan.
 10. Mostrar siempre **DEMO FICTICIA**. No inventar métricas de ahorro reales.
@@ -35,6 +36,7 @@ Hackathon Expo Clean Ecuador 2026, Reto 1. Abastecimiento de insumos de limpieza
 ## Comandos
 
 - Backend: `cd backend && uv run pytest && uv run ruff check .`
+- Funciones SQL: `node db/verificar_funciones.mjs` (PGlite local, sin Supabase)
 - Frontend: `cd frontend && npx tsc --noEmit && npm run build`
 - Base (local, sin Supabase): ver `README.md` → 61/61 pruebas.
 
