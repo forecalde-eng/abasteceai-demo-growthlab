@@ -19,7 +19,7 @@ function Logo({ onClick }: { onClick?: () => void }) {
     <Link to="/" onClick={onClick} className="flex items-center gap-2">
       <PackageCheckIcon className="size-5 text-sidebar-primary" aria-hidden="true" />
       <span className="text-base font-semibold text-white">
-        Abastece<span className="text-sidebar-primary">AI</span>
+        Abastece<span className="text-teal-400">AI</span>
       </span>
     </Link>
   );

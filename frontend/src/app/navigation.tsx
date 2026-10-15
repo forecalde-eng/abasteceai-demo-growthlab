@@ -375,7 +375,7 @@ export const NAV: NavItem[] = [
     label: "Asistente",
     group: "Análisis",
     roles: ["administrador", "gerencia"],
-    icon: <SparklesIcon />,
+    icon: <SparklesIcon className="text-violet-400" />,
     owner: "Jorge",
     task: "J-4.1",
     desc: "Preguntas en lenguaje natural sobre los documentos que tu rol puede ver.",
