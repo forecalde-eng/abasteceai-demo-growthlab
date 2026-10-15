@@ -1,60 +1,133 @@
+import { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
+import { MenuIcon, PackageCheckIcon, XIcon } from "lucide-react";
 
 import { DevRoleSwitcher } from "@/app/DevRoleSwitcher";
 import { RoleMenu } from "@/app/RoleMenu";
 import { ROLES, useSession } from "@/app/dev/session";
+import { Badge, TONO, cn } from "@/ui";
 import { Toaster } from "@/ui/sonner";
 
+/**
+ * Armazón de la aplicación — docs/07_GUIA_DISENO.md §4 y §7.
+ *
+ * Banner DEMO FICTICIA fijo arriba (invariante I10), barra lateral oscura según el rol
+ * en escritorio y botón de menú en móvil. El contenido lo pone cada pantalla.
+ */
+function Logo({ onClick }: { onClick?: () => void }) {
+  return (
+    <Link to="/" onClick={onClick} className="flex items-center gap-2">
+      <PackageCheckIcon className="size-5 text-sidebar-primary" aria-hidden="true" />
+      <span className="text-base font-semibold text-white">
+        Abastece<span className="text-sidebar-primary">AI</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Usuario y rol: badge neutro con el rol en español (guía de diseño §4). */
+function UsuarioYrol() {
+  const { data } = useSession();
+
+  if (!data) return null;
+
+  const rol = ROLES[data.role];
+
+  return (
+    <div className="min-w-0">
+      <p className="truncate text-sm font-medium text-sidebar-accent-foreground">{data.name}</p>
+      <div className="mt-1.5 flex items-center gap-2">
+        <Badge variant="outline" className={cn("border font-medium", TONO.neutro)}>
+          {rol.label}
+        </Badge>
+      </div>
+      <p className="mt-1 truncate text-xs text-sidebar-foreground/70">{rol.pointsLabel}</p>
+    </div>
+  );
+}
+
 export function AppLayout() {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const { data } = useSession();
   const rol = data ? ROLES[data.role] : null;
 
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b border-border bg-background">
-        {/* Banner obligatorio: siempre visible (invariante I10 / HU-0.2). */}
-        <div className="border-b border-border/60 bg-amber-100 px-4 py-1.5 text-center text-xs font-medium text-amber-950">
-          DEMO FICTICIA · DATOS INVENTADOS
-        </div>
+      {/* Banner obligatorio: 32 px, siempre visible (invariante I10 / HU-0.2). */}
+      <div className="sticky top-0 z-50 flex h-8 items-center justify-center border-b border-amber-300 bg-amber-100 px-4 text-xs font-semibold tracking-wide text-amber-900">
+        DEMO FICTICIA · Todos los datos son simulados
+      </div>
 
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <Link to="/" className="font-semibold tracking-tight">
-            AbasteceAI
-          </Link>
-
-          {rol ? (
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="rounded-md border border-border px-2 py-0.5 text-foreground">
-                {rol.label}
-              </span>
-              <span className="hidden md:inline">{rol.name}</span>
-              <span className="hidden lg:inline">· {rol.pointsLabel}</span>
-            </span>
-          ) : null}
-
-          <div className="ml-auto">
-            <DevRoleSwitcher />
+      <div className="flex">
+        {/* Barra lateral oscura en escritorio. */}
+        <aside className="sticky top-8 hidden h-[calc(100svh-2rem)] w-60 shrink-0 flex-col bg-sidebar lg:flex">
+          <div className="flex items-center px-4 py-4">
+            <Logo />
           </div>
-        </div>
-
-        {/* Menú en pantallas pequeñas: una sola fila desplazable. */}
-        <div className="border-t border-border/60 px-4 py-2 lg:hidden">
-          <RoleMenu variant="bar" />
-        </div>
-      </header>
-
-      <div className="mx-auto flex w-full max-w-6xl items-start gap-8">
-        {/* Menú lateral en pantallas grandes. */}
-        <aside className="hidden w-56 shrink-0 py-8 pl-4 lg:block">
-          <div className="sticky top-24">
-            <RoleMenu variant="sidebar" />
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
+            <RoleMenu />
+          </div>
+          <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
+            <UsuarioYrol />
+            <DevRoleSwitcher />
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">
-          <Outlet />
-        </main>
+        <div className="min-w-0 flex-1">
+          {/* Barra superior en móvil, con botón de menú (guía §7). */}
+          <div className="sticky top-8 z-40 flex items-center gap-3 border-b border-border bg-background px-4 py-2.5 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMenuAbierto(true)}
+              aria-label="Abrir menú"
+              className="rounded-md border border-border p-1.5 text-foreground hover:bg-accent"
+            >
+              <MenuIcon className="size-5" />
+            </button>
+            <span className="font-semibold tracking-tight">AbasteceAI</span>
+            {rol ? (
+              <Badge variant="outline" className={cn("ml-auto border font-medium", TONO.neutro)}>
+                {rol.label}
+              </Badge>
+            ) : null}
+          </div>
+
+          <main className="min-w-0">
+            <Outlet />
+          </main>
+        </div>
       </div>
+
+      {/* Menú desplegable en móvil. */}
+      {menuAbierto ? (
+        <div className="fixed inset-0 z-[60] lg:hidden">
+          <div
+            className="absolute inset-0 bg-foreground/40"
+            onClick={() => setMenuAbierto(false)}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-sidebar">
+            <div className="flex items-center justify-between px-4 py-4">
+              <Logo onClick={() => setMenuAbierto(false)} />
+              <button
+                type="button"
+                onClick={() => setMenuAbierto(false)}
+                aria-label="Cerrar menú"
+                className="rounded-md p-1.5 text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <XIcon className="size-5" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
+              <RoleMenu onNavigate={() => setMenuAbierto(false)} />
+            </div>
+            <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
+              <UsuarioYrol />
+              <DevRoleSwitcher />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <Toaster />
     </div>

@@ -48,9 +48,19 @@ export { toast } from "sonner";
 export { Modal } from "@/ui/Modal";
 export type { ModalProps } from "@/ui/Modal";
 export { StatusBadge } from "@/ui/StatusBadge";
-export type { EstadoPedido, EstadoEnvio, EstadoCobertura, StatusBadgeProps } from "@/ui/StatusBadge";
+export type {
+  EstadoPedido,
+  EstadoEnvio,
+  EstadoCobertura,
+  SeveridadIncidencia,
+  EstadoIncidencia,
+  StatusBadgeProps,
+} from "@/ui/StatusBadge";
 export { AiSourceBadge, fuenteDesdeProvider } from "@/ui/AiSourceBadge";
 export type { FuenteIA } from "@/ui/AiSourceBadge";
+export { TONO } from "@/ui/tonos";
+export type { Tono } from "@/ui/tonos";
+export { PageHeader } from "@/ui/PageHeader";
 export { EmptyState } from "@/ui/EmptyState";
 export { LoadingState } from "@/ui/LoadingState";
 export { ErrorState } from "@/ui/ErrorState";

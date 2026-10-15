@@ -4,61 +4,44 @@ import { RUTAS_PREFIJO, gruposDeRol } from "@/app/navigation";
 import { useSession } from "@/app/dev/session";
 import { cn } from "@/ui";
 
-const BASE = "rounded-md px-3 py-1.5 text-sm transition-colors";
-
-function claseEnlace(isActive: boolean, extra?: string) {
-  return cn(
-    BASE,
-    extra,
-    isActive
-      ? "bg-foreground text-background"
-      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-  );
-}
-
 /**
  * Menú de la aplicación según el rol de la sesión (J-0.4).
- * `sidebar` en pantallas grandes, `bar` desplazable en el móvil.
+ * Va sobre la barra lateral oscura (`--sidebar`, guía de diseño §2 y §7).
  */
-export function RoleMenu({ variant = "sidebar" }: { variant?: "sidebar" | "bar" }) {
+export function RoleMenu({ onNavigate }: { onNavigate?: () => void }) {
   const { data } = useSession();
 
   if (!data) return null;
 
   const grupos = gruposDeRol(data.role);
 
-  if (variant === "bar") {
-    return (
-      <nav aria-label="Pantallas de tu rol" className="flex gap-1 overflow-x-auto pb-1">
-        {grupos.flatMap((grupo) => grupo.items).map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === "/" || RUTAS_PREFIJO.has(item.path)}
-            className={({ isActive }) => claseEnlace(isActive, "whitespace-nowrap")}
-          >
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
-    );
-  }
-
   return (
     <nav aria-label="Pantallas de tu rol" className="space-y-5">
       {grupos.map((grupo) => (
         <div key={grupo.group}>
-          <p className="px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="px-3 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60">
             {grupo.group}
           </p>
-          <ul className="mt-1 space-y-0.5">
+          <ul className="mt-1.5 space-y-0.5">
             {grupo.items.map((item) => (
               <li key={item.path}>
                 <NavLink
                   to={item.path}
                   end={item.path === "/" || RUTAS_PREFIJO.has(item.path)}
-                  className={({ isActive }) => claseEnlace(isActive, "block")}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                      "[&[aria-current=page]_svg]:text-sidebar-primary",
+                      isActive
+                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                    )
+                  }
                 >
+                  <span className="shrink-0 [&_svg]:size-5" aria-hidden="true">
+                    {item.icon}
+                  </span>
                   {item.label}
                 </NavLink>
               </li>

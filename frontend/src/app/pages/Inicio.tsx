@@ -1,8 +1,18 @@
+import { HomeIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { gruposDeRol } from "@/app/navigation";
 import { ROLES, USAR_SESION_TEMPORAL, useSession } from "@/app/dev/session";
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  PageHeader,
+} from "@/ui";
 
 const LISTO = [
   {
@@ -18,14 +28,15 @@ const LISTO = [
     desc: "Menú y rutas según el rol, con guarda por pantalla (J-0.4).",
   },
   {
-    title: "Siempre visible",
-    desc: "El banner de demo ficticia queda fijo arriba en todas las pantallas (invariante I10).",
+    title: "Guía de diseño",
+    desc: "Paleta, colores de estado y patrones aplicados en todo el kit (docs/07_GUIA_DISENO.md).",
   },
 ];
 
 const REGLAS = [
   "Los componentes no llaman a Supabase ni a fetch: usan los hooks de src/data/.",
   "Los códigos se muestran como Q-001, PED-DEMO-001 o INS-016, nunca UUID.",
+  "Los colores de estado salen de src/ui/tonos.ts; el violeta es solo para IA.",
   "Mientras no exista la capa de datos: VITE_USE_MOCKS=true con fixtures.",
 ];
 
@@ -35,24 +46,22 @@ export function Inicio() {
   const grupos = data ? gruposDeRol(data.role) : [];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <header className="max-w-2xl">
-        <Badge variant="secondary">Fase 0 · cimientos</Badge>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-          AbasteceAI — demo de abastecimiento
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          De la bodega central BOD-DEMO (Quito) a los puntos de servicio. Todos los datos son
-          ficticios y se muestran tal cual los entrega el backend.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button asChild>
-            <Link to="/ui">Ver el kit de interfaz</Link>
-          </Button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-7xl space-y-6 p-6">
+      <PageHeader
+        icon={<HomeIcon />}
+        title="AbasteceAI — demo de abastecimiento"
+        description="De la bodega central BOD-DEMO (Quito) a los puntos de servicio. Todos los datos son ficticios y se muestran tal cual los entrega el backend."
+        actions={
+          <>
+            <Badge variant="secondary">Fase 0 · cimientos</Badge>
+            <Button asChild>
+              <Link to="/ui">Ver el kit de interfaz</Link>
+            </Button>
+          </>
+        }
+      />
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {LISTO.map((c) => (
           <Card key={c.title}>
             <CardHeader>
@@ -64,7 +73,7 @@ export function Inicio() {
       </div>
 
       {rol ? (
-        <Card className="mt-4">
+        <Card>
           <CardHeader>
             <CardTitle>Pantallas de tu rol</CardTitle>
             <CardDescription>
@@ -81,7 +90,10 @@ export function Inicio() {
                 <ul className="mt-1 space-y-1 text-sm">
                   {grupo.items.map((item) => (
                     <li key={item.path}>
-                      <Link className="text-foreground underline-offset-4 hover:underline" to={item.path}>
+                      <Link
+                        className="text-foreground underline-offset-4 hover:underline"
+                        to={item.path}
+                      >
                         {item.label}
                       </Link>{" "}
                       <span className="text-xs text-muted-foreground">({item.task})</span>
@@ -94,10 +106,10 @@ export function Inicio() {
         </Card>
       ) : null}
 
-      <Card className="mt-4">
+      <Card>
         <CardHeader>
           <CardTitle>Reglas del frontend</CardTitle>
-          <CardDescription>Resumen de AGENTS.md §12 y controles de la demo</CardDescription>
+          <CardDescription>Resumen de AGENTS.md §12 y la guía de diseño</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
@@ -109,9 +121,9 @@ export function Inicio() {
       </Card>
 
       {USAR_SESION_TEMPORAL ? (
-        <p className="mt-6 text-xs text-muted-foreground">
-          El rol se elige con el selector «Rol de prueba» de la cabecera. Es temporal: desaparecerá
-          cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
+        <p className="text-xs text-muted-foreground">
+          El rol se elige con el selector «Rol de prueba» de la barra lateral. Es temporal:
+          desaparecerá cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
         </p>
       ) : null}
     </div>

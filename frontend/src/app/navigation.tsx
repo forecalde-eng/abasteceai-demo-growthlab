@@ -1,4 +1,21 @@
 import type { ReactNode } from "react";
+import {
+  ClipboardCheckIcon,
+  ClipboardListIcon,
+  HomeIcon,
+  LayoutDashboardIcon,
+  MapPinnedIcon,
+  PackageSearchIcon,
+  PaletteIcon,
+  PlaneIcon,
+  QrCodeIcon,
+  RouteIcon,
+  ShoppingCartIcon,
+  SparklesIcon,
+  TriangleAlertIcon,
+  TruckIcon,
+  WarehouseIcon,
+} from "lucide-react";
 
 import type { Role } from "@/app/dev/session";
 import { Inicio } from "@/app/pages/Inicio";
@@ -6,7 +23,8 @@ import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
 
 /**
- * Fuente única de verdad de la navegación (J-0.4): ruta, etiqueta, grupo, roles y quién la hace.
+ * Fuente única de verdad de la navegación (J-0.4): ruta, etiqueta, grupo, roles, icono
+ * y quién la hace.
  *
  * El menú y los guards se generan de aquí, así que no se pueden desincronizar:
  * si cambias `roles`, cambia a la vez lo que se ve en el menú y lo que permite el guard.
@@ -15,6 +33,7 @@ import { UiKit } from "@/app/pages/UiKit";
  *   - Pantallas principales: `docs/04_SPEC_MAESTRA.md §2`.
  *   - Quién puede hacer cada cosa: las HU de la spec (HU-1.1 … HU-4.3).
  *   - Quién implementa cada pantalla: `docs/06_PLAN_EQUIPO.md §2` y `docs/equipo/*.md`.
+ *   - Iconos y colores: `docs/07_GUIA_DISENO.md` §6 (un icono fijo por módulo).
  *
  * [Supuesto] Estos tres repartos no están fijados en la spec y los propuse yo; si Omar o
  * Bruno los corrige, se cambian aquí y listo:
@@ -34,6 +53,8 @@ export type NavItem = {
   /** Agrupación en el menú. El orden de los grupos es el de primera aparición aquí. */
   group: string;
   roles: readonly Role[];
+  /** Icono del módulo (lucide), según la guía de diseño §6. */
+  icon: ReactNode;
   owner: Owner;
   /** Ticket de la hoja de tareas (`docs/equipo/*.md`). */
   task: string;
@@ -60,6 +81,7 @@ export const NAV: NavItem[] = [
     label: "Inicio",
     group: "General",
     roles: TODOS,
+    icon: <HomeIcon />,
     owner: "Jorge",
     task: "J-0.1",
     desc: "Portada de la demo y estado de los cimientos.",
@@ -72,6 +94,7 @@ export const NAV: NavItem[] = [
     label: "Crear pedido",
     group: "Pedidos",
     roles: ["auxiliar", "supervisor"],
+    icon: <ClipboardListIcon />,
     owner: "Jorge",
     task: "J-1.1",
     desc: "Formulario de pedido del mes para un punto asignado: insumos, cantidades y observaciones.",
@@ -89,6 +112,7 @@ export const NAV: NavItem[] = [
     label: "Mis pedidos",
     group: "Pedidos",
     roles: ["auxiliar", "supervisor"],
+    icon: <ClipboardListIcon />,
     owner: "Jorge",
     task: "J-1.2",
     desc: "Pedidos del usuario con su estado actual y acceso al detalle.",
@@ -106,6 +130,7 @@ export const NAV: NavItem[] = [
     label: "Envíos de mis puntos",
     group: "Pedidos",
     roles: ["supervisor"],
+    icon: <TruckIcon />,
     owner: "Jorge",
     task: "J-2.1",
     desc: "Envíos de los puntos del supervisor y marcado de entrega.",
@@ -125,6 +150,7 @@ export const NAV: NavItem[] = [
     label: "Bandeja de aprobación",
     group: "Revisión",
     roles: ["administrador"],
+    icon: <ClipboardCheckIcon />,
     owner: "Jorge",
     task: "J-1.3",
     desc: "Bandeja de revisión y aprobación de pedidos enviados.",
@@ -142,6 +168,7 @@ export const NAV: NavItem[] = [
     label: "Detalle de pedido",
     group: "Revisión",
     roles: ["administrador"],
+    icon: <ClipboardCheckIcon />,
     owner: "Jorge",
     task: "J-1.4",
     desc: "Detalle del pedido con la propuesta de la IA, la evidencia y quién decidió.",
@@ -162,6 +189,7 @@ export const NAV: NavItem[] = [
     label: "Inventario de bodega",
     group: "Bodega",
     roles: ["bodega", "administrador", "gerencia"],
+    icon: <WarehouseIcon />,
     owner: "Bruno",
     task: "B-1.2",
     desc: "Por producto: físico, reservado, disponible y vencido, con las compras pendientes al lado.",
@@ -179,6 +207,7 @@ export const NAV: NavItem[] = [
     label: "Preparación por lote",
     group: "Bodega",
     roles: ["bodega"],
+    icon: <PackageSearchIcon />,
     owner: "Bruno",
     task: "B-2.2",
     desc: "Cola de pedidos aprobados y preparación por producto y lote con sugerencia FEFO.",
@@ -196,6 +225,7 @@ export const NAV: NavItem[] = [
     label: "Despacho de envíos",
     group: "Bodega",
     roles: ["bodega", "logistica"],
+    icon: <TruckIcon />,
     owner: "Bruno",
     task: "B-2.4",
     desc: "Envíos creados, etiqueta con QR imprimible y confirmación de despacho.",
@@ -215,6 +245,7 @@ export const NAV: NavItem[] = [
     label: "Mapa de puntos",
     group: "Logística",
     roles: ["logistica"],
+    icon: <MapPinnedIcon />,
     owner: "Bruno",
     task: "B-4.1",
     desc: "Mapa con los puntos como catálogo, los detallados resaltados y BOD-DEMO.",
@@ -232,6 +263,7 @@ export const NAV: NavItem[] = [
     label: "Plan de rutas",
     group: "Logística",
     roles: ["logistica"],
+    icon: <RouteIcon />,
     owner: "Bruno",
     task: "B-4.2",
     desc: "Propuesta de rutas calculada frente a la precargada, con kilómetros y no asignados.",
@@ -249,6 +281,7 @@ export const NAV: NavItem[] = [
     label: "Courier",
     group: "Logística",
     roles: ["logistica"],
+    icon: <PlaneIcon />,
     owner: "Bruno",
     task: "B-4.3",
     desc: "Envíos por courier con fecha prometida y aviso de retraso.",
@@ -268,6 +301,7 @@ export const NAV: NavItem[] = [
     label: "Recepción con QR",
     group: "Campo",
     roles: ["auxiliar"],
+    icon: <QrCodeIcon />,
     owner: "Bruno",
     task: "B-2.5",
     desc: "Escanear el QR o tipear la guía, contar y aceptar por ítem.",
@@ -285,6 +319,7 @@ export const NAV: NavItem[] = [
     label: "Trazabilidad",
     group: "Campo",
     roles: ["auxiliar", "supervisor", "administrador", "bodega", "logistica", "gerencia"],
+    icon: <RouteIcon />,
     owner: "Bruno",
     task: "B-1.1",
     desc: "Por ítem: solicitado, aprobado, preparado, enviado, contado y aceptado, con faltantes resaltados.",
@@ -304,6 +339,7 @@ export const NAV: NavItem[] = [
     label: "Tablero de cobertura",
     group: "Análisis",
     roles: ["administrador", "gerencia"],
+    icon: <LayoutDashboardIcon />,
     owner: "Jorge",
     task: "J-2.2",
     desc: "Cobertura por punto e insumo, tal como la calcula la vista de reposición.",
@@ -321,6 +357,7 @@ export const NAV: NavItem[] = [
     label: "Incidencias",
     group: "Análisis",
     roles: ["administrador", "gerencia", "bodega", "logistica"],
+    icon: <TriangleAlertIcon />,
     owner: "Jorge",
     task: "J-2.3",
     desc: "Incidencias con tipo, severidad y el pedido o envío al que pertenecen.",
@@ -338,6 +375,7 @@ export const NAV: NavItem[] = [
     label: "Asistente",
     group: "Análisis",
     roles: ["administrador", "gerencia"],
+    icon: <SparklesIcon />,
     owner: "Jorge",
     task: "J-4.1",
     desc: "Preguntas en lenguaje natural sobre los documentos que tu rol puede ver.",
@@ -357,6 +395,7 @@ export const NAV: NavItem[] = [
     label: "Compras pendientes",
     group: "Compras",
     roles: ["compras"],
+    icon: <ShoppingCartIcon />,
     owner: "sin asignar",
     task: "COULD",
     desc: "Compras pendientes de recibir. Fuera de alcance hasta cerrar los objetivos obligatorios.",
@@ -376,6 +415,7 @@ export const NAV: NavItem[] = [
     label: "Kit de interfaz",
     group: "Desarrollo",
     roles: TODOS,
+    icon: <PaletteIcon />,
     owner: "Jorge",
     task: "J-0.2",
     desc: "Catálogo de componentes reutilizables del frontend.",

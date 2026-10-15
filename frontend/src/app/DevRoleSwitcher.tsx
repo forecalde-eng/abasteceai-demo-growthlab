@@ -12,6 +12,7 @@ import {
  * ni capa de datos de David. Desaparece al poner `USAR_SESION_TEMPORAL = false`.
  *
  * No es una medida de seguridad: el rol real llegará firmado desde la base con el JWT.
+ * Va sobre la barra lateral oscura, por eso usa los tokens `--sidebar-*`.
  */
 export function DevRoleSwitcher() {
   const { data } = useSession();
@@ -20,13 +21,13 @@ export function DevRoleSwitcher() {
 
   return (
     <label
-      className="flex items-center gap-2 text-xs text-muted-foreground"
+      className="block text-xs text-sidebar-foreground"
       title="Temporal: sirve para ver la demo por rol hasta que exista el login real (J-0.3)."
     >
-      <span className="hidden sm:inline">Rol de prueba</span>
+      <span className="mb-1 block font-medium">Rol de prueba</span>
       <select
         aria-label="Cambiar rol de prueba (temporal, sin login)"
-        className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+        className="h-8 w-full rounded-md border border-sidebar-border bg-sidebar-accent px-2 text-xs text-sidebar-accent-foreground"
         value={data.role}
         onChange={(event) => setDevRole(event.target.value as Role)}
       >

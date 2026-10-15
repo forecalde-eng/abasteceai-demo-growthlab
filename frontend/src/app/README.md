@@ -35,6 +35,15 @@ Reparto rol → pantalla, según `docs/04_SPEC_MAESTRA.md §2` y las HU:
 logística (nacen de empaque, recepción y courier); asistente para admin y gerencia. Si Omar o
 Bruno lo corrigen, se cambia solo en `navigation.tsx`.
 
+## Diseño (`docs/07_GUIA_DISENO.md`)
+
+- Paleta de marca en `src/index.css` (`:root`). No hay modo oscuro.
+- Colores de estado en 6 familias, en [`../ui/tonos.ts`](../ui/tonos.ts). El violeta es
+  **solo** para IA; ningún estado de negocio lo usa.
+- Toda pantalla empieza con `PageHeader` (icono, título, subtítulo y la acción principal) y su
+  contenido va en `mx-auto max-w-7xl space-y-6 p-6`.
+- Los iconos del menú se declaran por módulo en `navigation.tsx` (campo `icon`).
+
 ## Añadir tu pantalla (Bruno)
 
 1. Crea el componente en **tu** carpeta (`src/features/<tu-feature>/`).
@@ -50,7 +59,7 @@ se simula en [`dev/session.ts`](./dev/session.ts):
 
 - `useSession()` devuelve `{ data, isLoading, isError }`, imitando el resultado de React Query
   para que el cambio a `src/data/useSession` no obligue a reescribir pantallas.
-- El rol se elige con el selector «Rol de prueba» de la cabecera (`DevRoleSwitcher`).
+- El rol se elige con el selector «Rol de prueba» de la barra lateral (`DevRoleSwitcher`).
 
 Para pasar a datos reales: `USAR_SESION_TEMPORAL = false` y cambiar los imports de
 `@/app/dev/session` a `@/data`.

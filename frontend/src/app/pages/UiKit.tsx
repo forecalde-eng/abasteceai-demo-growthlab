@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { InfoIcon, PackageIcon, RefreshCwIcon } from "lucide-react";
+import { InfoIcon, PackageIcon, PaletteIcon, RefreshCwIcon } from "lucide-react";
 
 import {
   AiSourceBadge,
@@ -17,8 +17,10 @@ import {
   ErrorState,
   LoadingState,
   Modal,
+  PageHeader,
   Skeleton,
   StatusBadge,
+  TONO,
   Table,
   TableBody,
   TableCell,
@@ -29,7 +31,10 @@ import {
   toast,
   type EstadoCobertura,
   type EstadoEnvio,
+  type EstadoIncidencia,
   type EstadoPedido,
+  type SeveridadIncidencia,
+  type Tono,
 } from "@/ui";
 
 const PEDIDOS: EstadoPedido[] = [
@@ -55,6 +60,20 @@ const ENVIOS: EstadoEnvio[] = [
 
 const COBERTURAS: EstadoCobertura[] = ["critical", "attention", "covered", "excess"];
 
+const SEVERIDADES: SeveridadIncidencia[] = ["high", "medium", "low"];
+
+const INCIDENCIAS: EstadoIncidencia[] = ["open", "under_review", "resolved"];
+
+/** Las 6 familias de color: docs/07_GUIA_DISENO.md §3. */
+const FAMILIAS: { tono: Tono; nombre: string; significa: string }[] = [
+  { tono: "neutro", nombre: "Neutro", significa: "Aún no pasa nada / cerrado sin acción" },
+  { tono: "curso", nombre: "En curso", significa: "Avanza normal por el flujo" },
+  { tono: "atencion", nombre: "Atención", significa: "Requiere que alguien mire o falta un paso" },
+  { tono: "ok", nombre: "OK", significa: "Terminado y verificado" },
+  { tono: "problema", nombre: "Problema", significa: "Diferencia, faltante, crítico" },
+  { tono: "ia", nombre: "IA", significa: "Lo propuso un modelo · violeta exclusivo de IA" },
+];
+
 const TOKENS = [
   { name: "--primary", label: "Primario", className: "bg-primary" },
   { name: "--secondary", label: "Secundario", className: "bg-secondary" },
@@ -71,10 +90,11 @@ const SECCIONES = [
   { id: "tarjetas", title: "Tarjetas" },
   { id: "tabla", title: "Tabla" },
   { id: "estados", title: "Estados de negocio" },
+  { id: "tonos", title: "Colores de estado" },
   { id: "ia", title: "Origen de IA" },
   { id: "modal", title: "Modal y notificaciones" },
   { id: "carga", title: "Estados de pantalla" },
-  { id: "tokens", title: "Tokens y colores" },
+  { id: "tokens", title: "Tokens de marca" },
 ];
 
 function Seccion({
@@ -111,24 +131,29 @@ export function UiKit() {
   const [modalAbierto, setModalAbierto] = useState(false);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <header className="border-b border-border pb-8">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge>J-0.2</Badge>
-          <Badge variant="secondary">shadcn/ui · radix-nova</Badge>
-          <Badge variant="outline">src/ui/</Badge>
-        </div>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">Kit de interfaz</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Componentes compartidos para las pantallas del equipo. Se importan siempre desde{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">@/ui</code>. No llaman a Supabase
-          ni a <code className="rounded bg-muted px-1 py-0.5 text-xs">fetch</code>: los datos
-          llegan por props desde los hooks de{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">src/data/</code>.
-        </p>
-      </header>
+    <div className="mx-auto max-w-7xl space-y-6 p-6">
+      <PageHeader
+        icon={<PaletteIcon />}
+        title="Kit de interfaz"
+        description={
+          <>
+            Componentes compartidos para las pantallas del equipo. Se importan siempre desde{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">@/ui</code>. No llaman a Supabase
+            ni a <code className="rounded bg-muted px-1 py-0.5 text-xs">fetch</code>: los datos
+            llegan por props desde los hooks de{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">src/data/</code>.
+          </>
+        }
+        actions={
+          <>
+            <Badge>J-0.2</Badge>
+            <Badge variant="secondary">shadcn/ui · radix-nova</Badge>
+            <Badge variant="outline">Guía de diseño</Badge>
+          </>
+        }
+      />
 
-      <div className="mt-8 grid gap-12 lg:grid-cols-[180px_1fr]">
+      <div className="grid gap-12 lg:grid-cols-[180px_1fr]">
         <aside className="hidden lg:block">
           <nav className="sticky top-28 space-y-0.5 text-sm">
             <p className="mb-2 px-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
@@ -278,7 +303,54 @@ export function UiKit() {
                   ))}
                 </div>
               </div>
+              <div>
+                <Rotulo>Incidencia · incidents.severity</Rotulo>
+                <div className="flex flex-wrap gap-2">
+                  {SEVERIDADES.map((v) => (
+                    <StatusBadge key={v} kind="severidad" value={v} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Rotulo>Incidencia · incidents.status</Rotulo>
+                <div className="flex flex-wrap gap-2">
+                  {INCIDENCIAS.map((v) => (
+                    <StatusBadge key={v} kind="incidencia" value={v} />
+                  ))}
+                </div>
+              </div>
             </div>
+          </Seccion>
+
+          <Seccion
+            id="tonos"
+            title="Colores de estado"
+            desc="Seis familias, un solo significado (guía de diseño §3). El violeta es exclusivo de la IA: si algo es violeta, lo propuso un modelo."
+          >
+            <Card>
+              <CardContent className="grid gap-3 pt-6 sm:grid-cols-2">
+                {FAMILIAS.map((f) => (
+                  <div key={f.tono} className="flex items-center gap-3">
+                    <Badge variant="outline" className={cn("border font-medium", TONO[f.tono])}>
+                      {f.nombre}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">{f.significa}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+            <Alert>
+              <InfoIcon />
+              <AlertTitle>Nadie escribe colores sueltos</AlertTitle>
+              <AlertDescription>
+                Bruno: si necesitas un badge nuevo (por ejemplo «Retrasado»), usa{" "}
+                <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                  &lt;Badge className=&#123;TONO.problema&#125;&gt;
+                </code>{" "}
+                o pide añadirlo a <code>StatusBadge</code>. Los colores viven en{" "}
+                <code>src/ui/tonos.ts</code>.
+              </AlertDescription>
+            </Alert>
           </Seccion>
 
           <Seccion
@@ -384,14 +456,15 @@ export function UiKit() {
 
           <Seccion
             id="tokens"
-            title="Tokens y colores"
-            desc="Paleta provisional. Cuando Omar cierre el spec de marca, se cambia en src/index.css y todo el kit se actualiza."
+            title="Tokens de marca"
+            desc="Paleta aplicada desde docs/07_GUIA_DISENO.md §2.1 (marca teal #0F766E, fondo slate-50, sidebar slate-900). Solo modo claro."
           >
             <Card>
               <CardHeader>
                 <CardTitle>Tokens del tema</CardTitle>
                 <CardDescription>
-                  Los componentes no usan colores fijos de negocio: usan estos tokens.
+                  Los componentes no usan colores fijos de negocio: usan estos tokens. Cambiar la
+                  marca es editar solo <code>src/index.css</code>.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -408,15 +481,6 @@ export function UiKit() {
                 ))}
               </CardContent>
             </Card>
-            <Alert>
-              <InfoIcon />
-              <AlertTitle>Colores de negocio pendientes</AlertTitle>
-              <AlertDescription>
-                La paleta de marca y los colores de estado (cobertura, incidencias) están pendientes
-                del spec de Omar. Hoy los badges de estado usan colores de Tailwind
-                (red/amber/emerald/…); se migrarán a tokens cuando existan.
-              </AlertDescription>
-            </Alert>
           </Seccion>
         </div>
       </div>
