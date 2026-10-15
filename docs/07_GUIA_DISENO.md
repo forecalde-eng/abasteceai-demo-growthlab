@@ -157,7 +157,7 @@ Bruno: si necesitas un badge nuevo (p. ej. "Retrasado", "Lote vencido"), usa `<B
 |---|---|
 | **Logo** | Texto, sin imagen: icono `PackageCheck` de lucide en `teal-500` + **Abastece**`AI` (la palabra en blanco semibold, "AI" en `teal-400`), dentro de la sidebar |
 | **Banner DEMO FICTICIA** | Franja de 32 px arriba de todo, a ancho completo: `bg-amber-100 text-amber-900 border-b border-amber-300`, texto centrado en mayúsculas `text-xs font-semibold tracking-wide`: `DEMO FICTICIA · Todos los datos son simulados` |
-| **Usuario y rol** | Arriba a la derecha: nombre + badge Neutro con el rol en español (Auxiliar, Supervisor, Administrador, Bodega, Logística, Compras, Gerencia) |
+| **Usuario y rol** | Abajo en la barra lateral (ver §7): nombre + badge Neutro con el rol en español (Auxiliar, Supervisor, Administrador, Bodega, Logística, Compras, Gerencia) |
 
 ---
 
