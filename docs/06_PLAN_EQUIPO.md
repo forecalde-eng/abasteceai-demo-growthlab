@@ -2,7 +2,7 @@
 
 > Versión 1.1 · 14-oct-2026 · **Reemplaza el reparto A/B/C/D** de `00-handoffs/02_PLAN_EQUIPO_SDD.md` y de `05_PLAN_IMPLEMENTACION.md §4`.
 > Qué se construye: `04_SPEC_MAESTRA.md`. Decisiones técnicas (D1–D12) y riesgos: `05_PLAN_IMPLEMENTACION.md`.
-> Hoja de tareas de cada uno: `docs/equipo/<nombre>.md`. **Cada persona le da a su IA `AGENTS.md` + su hoja.**
+> Hoja de tareas de cada uno: `docs/equipo/<nombre>.md`, y cada tarea es un **ticket** en GitHub ([issues](https://github.com/forecalde-eng/abasteceai-demo-growthlab/issues), [hitos por fase](https://github.com/forecalde-eng/abasteceai-demo-growthlab/milestones)). **Cada persona le da a su IA `AGENTS.md` + su hoja.**
 > v1.1: Omar toma FastAPI; David pasa la lógica de escritura a **funciones SQL**. Ciclo en vivo (PED-DEMO-001) y migración 07 confirmados.
 
 ---

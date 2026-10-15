@@ -5,6 +5,8 @@ Hackathon Expo Clean Ecuador 2026 · Reto 1: trazabilidad y abastecimiento de in
 
 ## Por dónde empezar
 
+**Tus tickets:** [abasteceai-demo-growthlab/issues asignados a ti](https://github.com/forecalde-eng/abasteceai-demo-growthlab/issues?q=is%3Aopen+assignee%3A%40me) · [por fase](https://github.com/forecalde-eng/abasteceai-demo-growthlab/milestones). Cada tarea de tu hoja es un ticket con su criterio de "hecho cuando".
+
 1. `00-handoffs/01_CONTEXTO_PROYECTO.md`: el negocio, el modelo de datos, el flujo y los roles.
 2. `docs/04_SPEC_MAESTRA.md`: qué construimos y cómo se comprueba (historias, criterios, guion del pitch).
 3. `docs/05_PLAN_IMPLEMENTACION.md`: decisiones técnicas, pruebas, cronograma y riesgos.
