@@ -1,0 +1,306 @@
+{
+  "engine": "PGlite / PostgreSQL embedded; Auth stub for local policy tests, not a cloud Supabase deployment",
+  "live_api_calls": 0,
+  "tests_passed": 61,
+  "storage": {
+    "schema_plus_indexes_bytes": 4317184,
+    "whole_local_database_bytes": 12779643,
+    "supabase_free_reference_mb": 500,
+    "planning_demo_target_mb": 100,
+    "cloud_size_not_measured": true
+  },
+  "results": [
+    {
+      "test": "700 service points",
+      "passed": true,
+      "actual": 700
+    },
+    {
+      "test": "24 detailed points",
+      "passed": true,
+      "actual": 24
+    },
+    {
+      "test": "Quito master distribution",
+      "passed": true,
+      "actual": 300
+    },
+    {
+      "test": "Quito detailed distribution",
+      "passed": true,
+      "actual": 10
+    },
+    {
+      "test": "Guayaquil master distribution",
+      "passed": true,
+      "actual": 250
+    },
+    {
+      "test": "Guayaquil detailed distribution",
+      "passed": true,
+      "actual": 8
+    },
+    {
+      "test": "Cuenca master distribution",
+      "passed": true,
+      "actual": 150
+    },
+    {
+      "test": "Cuenca detailed distribution",
+      "passed": true,
+      "actual": 6
+    },
+    {
+      "test": "All display codes use city prefix and number",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "30 products",
+      "passed": true,
+      "actual": 30
+    },
+    {
+      "test": "7 roles",
+      "passed": true,
+      "actual": 7
+    },
+    {
+      "test": "26 orders",
+      "passed": true,
+      "actual": 26
+    },
+    {
+      "test": "6 months of synthetic consumption",
+      "passed": true,
+      "actual": 6
+    },
+    {
+      "test": "No negative balances",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "No negative available stock",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Transfer groups conserve stock",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Expired stock excluded from usable",
+      "passed": true,
+      "actual": "8.000"
+    },
+    {
+      "test": "Unchecked delivery has no receipt quantities",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "10 shipped, 8 received, 2 shortage",
+      "passed": true,
+      "actual": "2.000"
+    },
+    {
+      "test": "Confirmed receipt adds eight units",
+      "passed": true,
+      "actual": "8.000"
+    },
+    {
+      "test": "Courier delay follows a promised date",
+      "passed": true,
+      "actual": 1
+    },
+    {
+      "test": "Own-route shipments stay in Quito",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Warehouse has one unreserved unit for INS-005",
+      "passed": true,
+      "actual": "1.000"
+    },
+    {
+      "test": "Mock decision billed zero",
+      "passed": true,
+      "actual": "0.00000000"
+    },
+    {
+      "test": "All requester assignments valid",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Invalid product relation rejected",
+      "passed": true
+    },
+    {
+      "test": "Stock movement cannot make inventory negative",
+      "passed": true
+    },
+    {
+      "test": "Stock history cannot be edited",
+      "passed": true
+    },
+    {
+      "test": "Reserved stock cannot be consumed by adjustment",
+      "passed": true
+    },
+    {
+      "test": "Idempotency key cannot be reused",
+      "passed": true
+    },
+    {
+      "test": "Own request cannot be approved",
+      "passed": true
+    },
+    {
+      "test": "Expired lot cannot be reserved",
+      "passed": true
+    },
+    {
+      "test": "Receipt cannot exceed shipment",
+      "passed": true
+    },
+    {
+      "test": "Shipment cannot exceed preparation",
+      "passed": true
+    },
+    {
+      "test": "Point scope for auxiliar",
+      "passed": true,
+      "actual": 3
+    },
+    {
+      "test": "Cost scope for auxiliar",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Point scope for supervisor",
+      "passed": true,
+      "actual": 24
+    },
+    {
+      "test": "Cost scope for supervisor",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Point scope for administrador",
+      "passed": true,
+      "actual": 703
+    },
+    {
+      "test": "Cost scope for administrador",
+      "passed": true,
+      "actual": 30
+    },
+    {
+      "test": "Point scope for bodega",
+      "passed": true,
+      "actual": 703
+    },
+    {
+      "test": "Cost scope for bodega",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Point scope for logistica",
+      "passed": true,
+      "actual": 703
+    },
+    {
+      "test": "Cost scope for logistica",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Point scope for compras",
+      "passed": true,
+      "actual": 703
+    },
+    {
+      "test": "Cost scope for compras",
+      "passed": true,
+      "actual": 30
+    },
+    {
+      "test": "Point scope for gerencia",
+      "passed": true,
+      "actual": 703
+    },
+    {
+      "test": "Cost scope for gerencia",
+      "passed": true,
+      "actual": 30
+    },
+    {
+      "test": "Auxiliar only sees assigned service points",
+      "passed": true,
+      "actual": 3
+    },
+    {
+      "test": "Auxiliar sees own five orders",
+      "passed": true,
+      "actual": 5
+    },
+    {
+      "test": "Auxiliar cannot read purchase costs",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Auxiliar cannot retrieve restricted cost document",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Auxiliar sees own profile only",
+      "passed": true,
+      "actual": 1
+    },
+    {
+      "test": "RLS applies to joined order trace",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "test": "Auxiliar cannot change role",
+      "passed": true
+    },
+    {
+      "test": "Client cannot write inventory directly",
+      "passed": true
+    },
+    {
+      "test": "Administrator sees all 26 orders",
+      "passed": true,
+      "actual": 26
+    },
+    {
+      "test": "Administrator can read product costs",
+      "passed": true,
+      "actual": 30
+    },
+    {
+      "test": "Anonymous visitor cannot read data",
+      "passed": true
+    },
+    {
+      "test": "All example queries execute",
+      "passed": true
+    },
+    {
+      "test": "Local data plus indexes under 100 MB planning target",
+      "passed": true,
+      "actual_bytes": 4317184
+    }
+  ]
+}

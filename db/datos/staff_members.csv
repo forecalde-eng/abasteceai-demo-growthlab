@@ -1,0 +1,8 @@
+﻿id,auth_user_id,full_name,demo_email,role,active,is_synthetic
+054ae798-96a3-56e2-b309-336a4f88b772,,Ana Demo,auxiliar@abasteceai.example,auxiliar,True,True
+aca13b82-3dc4-538e-8e99-f7760d016163,,Luis Demo,supervisor@abasteceai.example,supervisor,True,True
+a5b961f0-21b2-5119-b94a-139b47f39828,,Carla Demo,administrador@abasteceai.example,administrador,True,True
+ede103ca-2997-55af-82cc-547d545c75f2,,Diego Demo,bodega@abasteceai.example,bodega,True,True
+e3f6611a-a9f0-5f0d-ad3d-2e02e3bebdcc,,Elena Demo,logistica@abasteceai.example,logistica,True,True
+d888c5be-d088-58b5-bf2d-17ae33c5bc1a,,Fabian Demo,compras@abasteceai.example,compras,True,True
+24e3adc4-68d1-5a5e-8a54-7d2929198729,,Gabriela Demo,gerencia@abasteceai.example,gerencia,True,True

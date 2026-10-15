@@ -1,0 +1,2 @@
+﻿id,code,supplier_name,created_by,status,approved_by,approved_at,ordered_at,expected_at,provenance
+a591b69c-3cbf-5981-9870-8444a1e2efbb,COMPRA-DEMO-001,Proveedor DEMO de insumos (ficticio),d888c5be-d088-58b5-bf2d-17ae33c5bc1a,ordered,a5b961f0-21b2-5119-b94a-139b47f39828,2026-10-09T15:00:00Z,2026-10-09T16:00:00Z,2026-10-12T17:00:00Z,synthetic

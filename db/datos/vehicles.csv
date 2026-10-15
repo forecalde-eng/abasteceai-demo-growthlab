@@ -1,0 +1,4 @@
+﻿id,code,description,capacity_kg,capacity_m3,available_from,available_until,is_synthetic
+667d15ce-881b-5c45-a64c-3909b19b0c0f,VEH-DEMO-1,Vehículo propio ficticio 1,600,5.5,07:30:00,17:30:00,True
+dc6a29bb-5e86-5535-94d6-eb53e4e89751,VEH-DEMO-2,Vehículo propio ficticio 2,350,3.2,07:30:00,17:30:00,True
+f1374831-d9cc-539b-bfcf-72f56888cc70,VEH-DEMO-3,Vehículo propio ficticio 3,900,8.0,07:30:00,17:30:00,True

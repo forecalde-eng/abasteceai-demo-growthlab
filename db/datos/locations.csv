@@ -1,0 +1,704 @@
+﻿id,code,name,kind,city,zone,latitude,longitude,site_type,area_m2,workers,window_start,window_end,service_minutes,demo_scope,is_synthetic
+51770e3d-066c-52e2-bce9-f69799dae7ce,BOD-DEMO,Bodega central DEMO,warehouse,Quito,Interna,-0.221,-78.5019,,,,,,0,internal,True
+7b5c400b-cf4d-5b24-82a8-62113826865c,TRA-DEMO,Inventario en tránsito DEMO,transit,Quito,Interna,-0.221,-78.5019,,,,,,0,internal,True
+204d557c-cc53-589f-ab66-0d7e88ec822c,CUA-DEMO,Cuarentena de revisión DEMO,quarantine,Quito,Interna,-0.221,-78.5019,,,,,,0,internal,True
+704dfcd6-b98d-56ce-8661-bfc410332be8,Q-001,Oficina DEMO Quito Centro 001,service_point,Quito,Quito / Centro,-0.1847,-78.4838,oficina,1000,10,08:00:00,16:00:00,15,detailed,True
+50756d9d-9267-5fc0-ac92-4ea8f6abdc1a,Q-002,Local comercial DEMO Quito Norte 002,service_point,Quito,Quito / Norte,-0.1847,-78.4758,local_comercial,1800,28,08:00:00,16:00:00,20,detailed,True
+83ceb3cf-e00e-5994-8a74-84812eecb588,Q-003,Centro educativo DEMO Quito Sur 003,service_point,Quito,Quito / Sur,-0.1847,-78.4678,centro_educativo,220,26,10:00:00,17:00:00,10,detailed,True
+ba44ff75-f5e0-59ad-a1fa-a7dc032c35e6,Q-004,Bodega del cliente DEMO Quito Este 004,service_point,Quito,Quito / Este,-0.1847,-78.4598,bodega_operativa,760,13,08:00:00,16:00:00,15,detailed,True
+85ffdf07-af4c-54ec-8829-1003b49a6879,Q-005,Oficina DEMO Quito Centro 005,service_point,Quito,Quito / Centro,-0.1847,-78.4518,oficina,1140,13,08:00:00,16:00:00,20,detailed,True
+191e60d9-e04d-5f6b-ae71-18833915b11d,Q-006,Local comercial DEMO Quito Norte 006,service_point,Quito,Quito / Norte,-0.1767,-78.4838,local_comercial,1020,11,10:00:00,17:00:00,10,detailed,True
+26f20a3b-ed43-5992-bacf-2d747abc8a85,Q-007,Centro educativo DEMO Quito Sur 007,service_point,Quito,Quito / Sur,-0.1767,-78.4758,centro_educativo,1720,8,08:00:00,16:00:00,15,detailed,True
+ac257a20-9323-575f-8ec8-1ceef8a5e999,G-001,Bodega del cliente DEMO Guayaquil Centro 001,service_point,Guayaquil,Guayaquil / Centro,-2.174,-79.938,bodega_operativa,540,15,08:00:00,16:00:00,20,detailed,True
+e12cbeb4-3490-5f21-921d-16d94fa7d5c5,Q-008,Oficina DEMO Quito Este 008,service_point,Quito,Quito / Este,-0.1767,-78.4678,oficina,2060,17,10:00:00,17:00:00,10,detailed,True
+04a3bad0-73e4-53ef-8c50-ecdd7fe14243,Q-009,Local comercial DEMO Quito Centro 009,service_point,Quito,Quito / Centro,-0.1767,-78.4598,local_comercial,120,28,08:00:00,16:00:00,15,detailed,True
+b99a8bfa-409f-5cef-83e0-c282401ba4f2,Q-010,Centro educativo DEMO Quito Norte 010,service_point,Quito,Quito / Norte,-0.1767,-78.4518,centro_educativo,1560,19,08:00:00,16:00:00,20,detailed,True
+65dc8678-f7b0-5047-8920-0449f98c7edf,G-002,Bodega del cliente DEMO Guayaquil Norte 002,service_point,Guayaquil,Guayaquil / Norte,-2.174,-79.93,bodega_operativa,860,13,10:00:00,17:00:00,10,detailed,True
+5278b347-937a-56af-a04c-7f328772d459,G-003,Oficina DEMO Guayaquil Sur 003,service_point,Guayaquil,Guayaquil / Sur,-2.174,-79.922,oficina,1240,22,08:00:00,16:00:00,15,detailed,True
+0b3db3fb-db17-5171-b818-710783741bcf,G-004,Local comercial DEMO Guayaquil Este 004,service_point,Guayaquil,Guayaquil / Este,-2.174,-79.914,local_comercial,2120,8,08:00:00,16:00:00,20,detailed,True
+2b5243d4-361a-5922-9f5f-7653a670bb10,G-005,Centro educativo DEMO Guayaquil Centro 005,service_point,Guayaquil,Guayaquil / Centro,-2.174,-79.906,centro_educativo,600,14,10:00:00,17:00:00,10,detailed,True
+1be05b48-d856-5cd1-b1e8-bfef1eeee7e7,G-006,Bodega del cliente DEMO Guayaquil Norte 006,service_point,Guayaquil,Guayaquil / Norte,-2.166,-79.938,bodega_operativa,860,12,08:00:00,16:00:00,15,detailed,True
+c3d0444f-de56-5e32-b275-854c516b7d5c,G-007,Oficina DEMO Guayaquil Sur 007,service_point,Guayaquil,Guayaquil / Sur,-2.166,-79.93,oficina,380,27,08:00:00,16:00:00,20,detailed,True
+4f4f47cc-c97b-5d6f-853c-aa04962c3850,G-008,Local comercial DEMO Guayaquil Este 008,service_point,Guayaquil,Guayaquil / Este,-2.166,-79.922,local_comercial,340,24,10:00:00,17:00:00,10,detailed,True
+418e8c63-c23d-5f71-95a9-da65f2b0c23a,C-001,Centro educativo DEMO Cuenca Centro 001,service_point,Cuenca,Cuenca / Centro,-2.9041,-79.0219,centro_educativo,260,5,08:00:00,16:00:00,15,detailed,True
+1fd87662-12ef-5c13-ae5c-b245317ec657,C-002,Bodega del cliente DEMO Cuenca Norte 002,service_point,Cuenca,Cuenca / Norte,-2.9041,-79.0139,bodega_operativa,800,13,08:00:00,16:00:00,20,detailed,True
+61982fca-0fb1-56cb-8eaf-36c1e4e8fa2d,C-003,Oficina DEMO Cuenca Sur 003,service_point,Cuenca,Cuenca / Sur,-2.9041,-79.0059,oficina,1120,12,10:00:00,17:00:00,10,detailed,True
+755fa63c-a56a-5d66-ac3e-1d1f99d4251e,C-004,Local comercial DEMO Cuenca Este 004,service_point,Cuenca,Cuenca / Este,-2.9041,-78.9979,local_comercial,1840,4,08:00:00,16:00:00,15,detailed,True
+840711da-8638-51f6-b1f1-d09c4bca88aa,C-005,Centro educativo DEMO Cuenca Centro 005,service_point,Cuenca,Cuenca / Centro,-2.9041,-78.9899,centro_educativo,1280,15,08:00:00,16:00:00,20,detailed,True
+5947e50e-ab5b-5baa-8e06-84a67e6f9197,C-006,Bodega del cliente DEMO Cuenca Norte 006,service_point,Cuenca,Cuenca / Norte,-2.8961,-79.0219,bodega_operativa,460,30,10:00:00,17:00:00,10,detailed,True
+42221a07-996a-5196-8789-a8503b19bba9,Q-011,Oficina DEMO Quito Sur 011,service_point,Quito,Quito / Sur,-0.164045,-78.463528,oficina,220,20,08:00:00,16:00:00,15,catalog,True
+a6517eda-df57-59ef-9e82-763b48635036,Q-012,Local comercial DEMO Quito Este 012,service_point,Quito,Quito / Este,-0.186382,-78.444864,local_comercial,660,28,08:00:00,16:00:00,20,catalog,True
+56486b7f-70ee-57eb-9e47-9c14f52813f9,Q-013,Centro educativo DEMO Quito Centro 013,service_point,Quito,Quito / Centro,-0.210902,-78.463468,centro_educativo,2100,12,10:00:00,17:00:00,10,catalog,True
+f1dd935d-7139-51a3-8acf-b1579749b63c,Q-014,Bodega del cliente DEMO Quito Norte 014,service_point,Quito,Quito / Norte,-0.173186,-78.441662,bodega_operativa,1840,22,08:00:00,16:00:00,15,catalog,True
+e7baa24c-87cc-511c-935b-6ce055826d0d,Q-015,Oficina DEMO Quito Sur 015,service_point,Quito,Quito / Sur,-0.186445,-78.488106,oficina,1480,15,08:00:00,16:00:00,20,catalog,True
+7fdfb43f-9018-5eef-9a00-c213e2216573,Q-016,Local comercial DEMO Quito Este 016,service_point,Quito,Quito / Este,-0.185607,-78.480753,local_comercial,1360,18,10:00:00,17:00:00,10,catalog,True
+8eff3d39-e2cf-57f7-b1bb-bde777b48456,Q-017,Centro educativo DEMO Quito Centro 017,service_point,Quito,Quito / Centro,-0.177814,-78.4421,centro_educativo,520,3,08:00:00,16:00:00,15,catalog,True
+e829044c-d8d1-5617-9d9c-8aea7e00c3cf,Q-018,Bodega del cliente DEMO Quito Norte 018,service_point,Quito,Quito / Norte,-0.170722,-78.465718,bodega_operativa,1160,7,08:00:00,16:00:00,20,catalog,True
+d83d2e0e-602d-52ac-bd0d-9f3d4aacee18,Q-019,Oficina DEMO Quito Sur 019,service_point,Quito,Quito / Sur,-0.160975,-78.473219,oficina,1360,21,10:00:00,17:00:00,10,catalog,True
+47698490-2960-5a46-bf25-bfc7c0f56242,Q-020,Local comercial DEMO Quito Este 020,service_point,Quito,Quito / Este,-0.196996,-78.487751,local_comercial,580,16,08:00:00,16:00:00,15,catalog,True
+51230b6d-e369-515a-9005-84dadac06bef,Q-021,Centro educativo DEMO Quito Centro 021,service_point,Quito,Quito / Centro,-0.170544,-78.478551,centro_educativo,300,29,08:00:00,16:00:00,20,catalog,True
+87c3159f-cbef-5c46-80bf-b5dd25f7d2c4,Q-022,Bodega del cliente DEMO Quito Norte 022,service_point,Quito,Quito / Norte,-0.195352,-78.455356,bodega_operativa,240,3,10:00:00,17:00:00,10,catalog,True
+97f79c0a-f97d-5ecb-84ec-e2ba0aa8199a,Q-023,Oficina DEMO Quito Sur 023,service_point,Quito,Quito / Sur,-0.178805,-78.492198,oficina,1740,11,08:00:00,16:00:00,15,catalog,True
+d76186bc-2589-5dcc-8c2d-e32f7cfb411a,Q-024,Local comercial DEMO Quito Este 024,service_point,Quito,Quito / Este,-0.168309,-78.502695,local_comercial,480,30,08:00:00,16:00:00,20,catalog,True
+ad20a188-6843-50fa-90cc-ba1d756a9834,Q-025,Centro educativo DEMO Quito Centro 025,service_point,Quito,Quito / Centro,-0.167321,-78.462806,centro_educativo,1700,19,10:00:00,17:00:00,10,catalog,True
+6667461d-edd8-55e1-bf1a-73aa74cf6e59,Q-026,Bodega del cliente DEMO Quito Norte 026,service_point,Quito,Quito / Norte,-0.167928,-78.45602,bodega_operativa,1460,4,08:00:00,16:00:00,15,catalog,True
+87ec8623-e54d-52f9-8950-b9b8b25c1191,Q-027,Oficina DEMO Quito Sur 027,service_point,Quito,Quito / Sur,-0.17938,-78.489804,oficina,1120,7,08:00:00,16:00:00,20,catalog,True
+54b00df9-7df2-5d75-87c8-e5269faddc2a,Q-028,Local comercial DEMO Quito Este 028,service_point,Quito,Quito / Este,-0.16163,-78.452533,local_comercial,1560,21,10:00:00,17:00:00,10,catalog,True
+b7fdcbdd-09de-5e73-a42c-5abbafabba81,Q-029,Centro educativo DEMO Quito Centro 029,service_point,Quito,Quito / Centro,-0.198284,-78.500265,centro_educativo,160,18,08:00:00,16:00:00,15,catalog,True
+e3d32a21-29e0-5bad-9090-f4d3e13fe8d9,Q-030,Bodega del cliente DEMO Quito Norte 030,service_point,Quito,Quito / Norte,-0.158666,-78.434139,bodega_operativa,2100,15,08:00:00,16:00:00,20,catalog,True
+a54bbe55-a40e-5ea0-ae77-c23653a82e03,Q-031,Oficina DEMO Quito Sur 031,service_point,Quito,Quito / Sur,-0.180458,-78.5021,oficina,480,7,10:00:00,17:00:00,10,catalog,True
+03cc7fa9-2722-5ce4-891c-43fa52d90370,Q-032,Local comercial DEMO Quito Este 032,service_point,Quito,Quito / Este,-0.192656,-78.491763,local_comercial,1580,27,08:00:00,16:00:00,15,catalog,True
+65b9c8e2-0f98-5eba-bd65-a0f095a73846,Q-033,Centro educativo DEMO Quito Centro 033,service_point,Quito,Quito / Centro,-0.154265,-78.454479,centro_educativo,1160,27,08:00:00,16:00:00,20,catalog,True
+797dfd7e-713a-5b49-97d5-3d5d7e1a85bc,Q-034,Bodega del cliente DEMO Quito Norte 034,service_point,Quito,Quito / Norte,-0.172295,-78.439266,bodega_operativa,1580,22,10:00:00,17:00:00,10,catalog,True
+70d3fa6c-792a-51e7-9bca-755de5c17720,Q-035,Oficina DEMO Quito Sur 035,service_point,Quito,Quito / Sur,-0.182265,-78.461616,oficina,1280,15,08:00:00,16:00:00,15,catalog,True
+7a53e2d2-751e-54a9-ba67-42cdc3e75676,Q-036,Local comercial DEMO Quito Este 036,service_point,Quito,Quito / Este,-0.184317,-78.478711,local_comercial,2020,7,08:00:00,16:00:00,20,catalog,True
+69ce3d6f-e692-510b-a43f-ba8d54f32572,Q-037,Centro educativo DEMO Quito Centro 037,service_point,Quito,Quito / Centro,-0.179471,-78.489216,centro_educativo,1940,18,10:00:00,17:00:00,10,catalog,True
+f101d26b-73d9-5e03-8e79-274e13a5396e,Q-038,Bodega del cliente DEMO Quito Norte 038,service_point,Quito,Quito / Norte,-0.17059,-78.451925,bodega_operativa,1140,26,08:00:00,16:00:00,15,catalog,True
+e02c3045-1d31-54e1-a688-f9f8cfc4a6c6,Q-039,Oficina DEMO Quito Sur 039,service_point,Quito,Quito / Sur,-0.201618,-78.453558,oficina,1580,4,08:00:00,16:00:00,20,catalog,True
+0cad6d4f-791c-5a2f-950f-bf9a07627f43,Q-040,Local comercial DEMO Quito Este 040,service_point,Quito,Quito / Este,-0.194865,-78.478166,local_comercial,1280,6,10:00:00,17:00:00,10,catalog,True
+0d20e6f8-3616-5f04-a82f-b0e14307f784,Q-041,Centro educativo DEMO Quito Centro 041,service_point,Quito,Quito / Centro,-0.145935,-78.486834,centro_educativo,1760,10,08:00:00,16:00:00,15,catalog,True
+eecd2d0f-83c1-541c-ba9b-43237781c684,Q-042,Bodega del cliente DEMO Quito Norte 042,service_point,Quito,Quito / Norte,-0.186814,-78.451044,bodega_operativa,1540,28,08:00:00,16:00:00,20,catalog,True
+9c1d4563-a7ed-507f-ab0d-eb4f230c9058,Q-043,Oficina DEMO Quito Sur 043,service_point,Quito,Quito / Sur,-0.178799,-78.473669,oficina,140,8,10:00:00,17:00:00,10,catalog,True
+1e08019f-e4ed-53bc-8309-c5be769ebffb,Q-044,Local comercial DEMO Quito Este 044,service_point,Quito,Quito / Este,-0.183793,-78.501415,local_comercial,720,20,08:00:00,16:00:00,15,catalog,True
+3a29e025-a7fc-5467-9dbb-c97b3a51165b,Q-045,Centro educativo DEMO Quito Centro 045,service_point,Quito,Quito / Centro,-0.169634,-78.453546,centro_educativo,2060,4,08:00:00,16:00:00,20,catalog,True
+f1917070-7eb1-5390-bfb6-2ad0b6897eea,Q-046,Bodega del cliente DEMO Quito Norte 046,service_point,Quito,Quito / Norte,-0.209623,-78.480912,bodega_operativa,1640,29,10:00:00,17:00:00,10,catalog,True
+0c1957a1-22e9-5d8b-9718-6c7b5c2cc100,Q-047,Oficina DEMO Quito Sur 047,service_point,Quito,Quito / Sur,-0.20077,-78.484313,oficina,1320,20,08:00:00,16:00:00,15,catalog,True
+f7c7a3aa-f9a1-5768-b0de-2e0b25c20418,Q-048,Local comercial DEMO Quito Este 048,service_point,Quito,Quito / Este,-0.212268,-78.477524,local_comercial,2040,15,08:00:00,16:00:00,20,catalog,True
+7c69b63b-7fbe-5d14-8c67-cdad12b73432,Q-049,Centro educativo DEMO Quito Centro 049,service_point,Quito,Quito / Centro,-0.172861,-78.474077,centro_educativo,1420,11,10:00:00,17:00:00,10,catalog,True
+e0ab6686-a505-5c52-8030-4c662770dafc,Q-050,Bodega del cliente DEMO Quito Norte 050,service_point,Quito,Quito / Norte,-0.16341,-78.481362,bodega_operativa,1060,17,08:00:00,16:00:00,15,catalog,True
+4f8dfb82-7ac3-57ff-957a-2413142e8d0e,Q-051,Oficina DEMO Quito Sur 051,service_point,Quito,Quito / Sur,-0.213832,-78.489591,oficina,120,19,08:00:00,16:00:00,20,catalog,True
+00298523-e4ba-527e-afa8-78a9e12d12b9,Q-052,Local comercial DEMO Quito Este 052,service_point,Quito,Quito / Este,-0.197944,-78.476204,local_comercial,1520,23,10:00:00,17:00:00,10,catalog,True
+b082361e-52a5-5247-bf35-66da62eb3e59,Q-053,Centro educativo DEMO Quito Centro 053,service_point,Quito,Quito / Centro,-0.209205,-78.49637,centro_educativo,1700,26,08:00:00,16:00:00,15,catalog,True
+147d0c36-3550-50a7-b3e1-2957e2af6489,Q-054,Bodega del cliente DEMO Quito Norte 054,service_point,Quito,Quito / Norte,-0.163708,-78.434467,bodega_operativa,1260,28,08:00:00,16:00:00,20,catalog,True
+03414e91-6375-5c94-8a13-8f5fad38b2bf,Q-055,Oficina DEMO Quito Sur 055,service_point,Quito,Quito / Sur,-0.163985,-78.457456,oficina,220,20,10:00:00,17:00:00,10,catalog,True
+1fc5b0ae-da18-5cf2-b6ce-b87eff322105,Q-056,Local comercial DEMO Quito Este 056,service_point,Quito,Quito / Este,-0.156762,-78.499052,local_comercial,1500,29,08:00:00,16:00:00,15,catalog,True
+2ed2630e-19a5-5c30-96fe-bbcd66d8e344,Q-057,Centro educativo DEMO Quito Centro 057,service_point,Quito,Quito / Centro,-0.21497,-78.435149,centro_educativo,1100,24,08:00:00,16:00:00,20,catalog,True
+1d2f8b58-e165-5894-b6d0-4f4e179a86e3,Q-058,Bodega del cliente DEMO Quito Norte 058,service_point,Quito,Quito / Norte,-0.160172,-78.442943,bodega_operativa,1080,6,10:00:00,17:00:00,10,catalog,True
+2ff92d1f-985b-54bb-bb6a-9e9578368a2c,Q-059,Oficina DEMO Quito Sur 059,service_point,Quito,Quito / Sur,-0.209445,-78.437353,oficina,320,7,08:00:00,16:00:00,15,catalog,True
+332e4b91-1096-5829-9e5e-9073873ec73b,Q-060,Local comercial DEMO Quito Este 060,service_point,Quito,Quito / Este,-0.170733,-78.480561,local_comercial,800,7,08:00:00,16:00:00,20,catalog,True
+6545d129-b662-57ac-8174-0a1980b2acf2,Q-061,Centro educativo DEMO Quito Centro 061,service_point,Quito,Quito / Centro,-0.200352,-78.452191,centro_educativo,1580,3,10:00:00,17:00:00,10,catalog,True
+4e50ddeb-c0e7-5fd1-8ca1-114abea16a02,Q-062,Bodega del cliente DEMO Quito Norte 062,service_point,Quito,Quito / Norte,-0.200647,-78.446274,bodega_operativa,1760,6,08:00:00,16:00:00,15,catalog,True
+2c1c9c4f-d2ab-5d1e-8169-1c661687fe33,Q-063,Oficina DEMO Quito Sur 063,service_point,Quito,Quito / Sur,-0.167347,-78.486372,oficina,260,19,08:00:00,16:00:00,20,catalog,True
+95a29a89-ffc6-5d48-a19d-f5ac2f47ed2b,Q-064,Local comercial DEMO Quito Este 064,service_point,Quito,Quito / Este,-0.200347,-78.48224,local_comercial,1460,9,10:00:00,17:00:00,10,catalog,True
+915b9d1a-6e3f-514b-9a13-f1b8c8cfdeec,Q-065,Centro educativo DEMO Quito Centro 065,service_point,Quito,Quito / Centro,-0.149935,-78.468013,centro_educativo,2200,15,08:00:00,16:00:00,15,catalog,True
+10f704d4-eb17-560f-8698-78e0104bdd7e,Q-066,Bodega del cliente DEMO Quito Norte 066,service_point,Quito,Quito / Norte,-0.17114,-78.454865,bodega_operativa,340,20,08:00:00,16:00:00,20,catalog,True
+9b52f4d5-82c1-5aa3-b4b0-9963e42f8c03,Q-067,Oficina DEMO Quito Sur 067,service_point,Quito,Quito / Sur,-0.171471,-78.479564,oficina,640,10,10:00:00,17:00:00,10,catalog,True
+2c24b134-3c5d-5855-952d-94d3df5e5de8,Q-068,Local comercial DEMO Quito Este 068,service_point,Quito,Quito / Este,-0.159859,-78.449401,local_comercial,460,10,08:00:00,16:00:00,15,catalog,True
+3dabbaf9-6e81-551b-947c-320a6ad401d5,Q-069,Centro educativo DEMO Quito Centro 069,service_point,Quito,Quito / Centro,-0.154066,-78.477358,centro_educativo,2060,28,08:00:00,16:00:00,20,catalog,True
+b7dd9f24-6ffc-54de-8da0-dc7ec6ff5a6a,Q-070,Bodega del cliente DEMO Quito Norte 070,service_point,Quito,Quito / Norte,-0.152323,-78.460724,bodega_operativa,180,29,10:00:00,17:00:00,10,catalog,True
+af049563-1739-5a75-9ff4-3282d90ca80f,Q-071,Oficina DEMO Quito Sur 071,service_point,Quito,Quito / Sur,-0.178563,-78.462111,oficina,1180,28,08:00:00,16:00:00,15,catalog,True
+8f309e4e-bd7a-559c-8d47-95a7ed90b32a,Q-072,Local comercial DEMO Quito Este 072,service_point,Quito,Quito / Este,-0.180683,-78.487607,local_comercial,800,16,08:00:00,16:00:00,20,catalog,True
+b184bc21-fc33-5587-b07a-bb6694031351,Q-073,Centro educativo DEMO Quito Centro 073,service_point,Quito,Quito / Centro,-0.186237,-78.441996,centro_educativo,580,18,10:00:00,17:00:00,10,catalog,True
+c77598de-e0af-5069-8ac4-2d6e14d86f0b,Q-074,Bodega del cliente DEMO Quito Norte 074,service_point,Quito,Quito / Norte,-0.199629,-78.469548,bodega_operativa,840,8,08:00:00,16:00:00,15,catalog,True
+080a5ec8-60b6-5037-8a2b-6a0d6a9f5f3a,Q-075,Oficina DEMO Quito Sur 075,service_point,Quito,Quito / Sur,-0.147963,-78.471159,oficina,2120,28,08:00:00,16:00:00,20,catalog,True
+eab97895-e441-5b67-8466-c87ce93d4048,Q-076,Local comercial DEMO Quito Este 076,service_point,Quito,Quito / Este,-0.210742,-78.448935,local_comercial,1280,28,10:00:00,17:00:00,10,catalog,True
+fe5f6810-71ec-5a44-b0b3-e48fff0b8953,Q-077,Centro educativo DEMO Quito Centro 077,service_point,Quito,Quito / Centro,-0.17321,-78.472093,centro_educativo,1120,27,08:00:00,16:00:00,15,catalog,True
+cc4ebcca-2ae7-5ad8-af91-ecc95ea0acda,Q-078,Bodega del cliente DEMO Quito Norte 078,service_point,Quito,Quito / Norte,-0.183325,-78.499294,bodega_operativa,580,13,08:00:00,16:00:00,20,catalog,True
+15e84812-197d-56da-8255-6d25c261e7a5,Q-079,Oficina DEMO Quito Sur 079,service_point,Quito,Quito / Sur,-0.193589,-78.486218,oficina,1380,25,10:00:00,17:00:00,10,catalog,True
+99011b35-709d-5cff-98f0-b68512310f74,Q-080,Local comercial DEMO Quito Este 080,service_point,Quito,Quito / Este,-0.171727,-78.492285,local_comercial,1000,9,08:00:00,16:00:00,15,catalog,True
+a0c07f47-880e-50f0-bd35-fa96c7fc7a0d,Q-081,Centro educativo DEMO Quito Centro 081,service_point,Quito,Quito / Centro,-0.181696,-78.450992,centro_educativo,1960,26,08:00:00,16:00:00,20,catalog,True
+b64adfd8-98e2-514b-b25b-da947eebcc8c,Q-082,Bodega del cliente DEMO Quito Norte 082,service_point,Quito,Quito / Norte,-0.215592,-78.435716,bodega_operativa,440,10,10:00:00,17:00:00,10,catalog,True
+1a3b4c9d-f1f3-5544-a987-41f652d333ff,Q-083,Oficina DEMO Quito Sur 083,service_point,Quito,Quito / Sur,-0.184821,-78.447732,oficina,1820,12,08:00:00,16:00:00,15,catalog,True
+9be7d713-1dcf-5daa-bc02-8f108fb82c78,Q-084,Local comercial DEMO Quito Este 084,service_point,Quito,Quito / Este,-0.179255,-78.480252,local_comercial,1860,9,08:00:00,16:00:00,20,catalog,True
+8073a082-ec5b-57e3-a27b-1efa088c907e,Q-085,Centro educativo DEMO Quito Centro 085,service_point,Quito,Quito / Centro,-0.198179,-78.480297,centro_educativo,1080,21,10:00:00,17:00:00,10,catalog,True
+43d48dcf-f1d8-54cb-95aa-0f71db9f5ddc,Q-086,Bodega del cliente DEMO Quito Norte 086,service_point,Quito,Quito / Norte,-0.184633,-78.476336,bodega_operativa,560,4,08:00:00,16:00:00,15,catalog,True
+7a8d081b-3182-5784-a95f-4e826674862a,Q-087,Oficina DEMO Quito Sur 087,service_point,Quito,Quito / Sur,-0.204009,-78.469691,oficina,160,23,08:00:00,16:00:00,20,catalog,True
+1893589b-0108-5d80-96a6-387f071750c2,Q-088,Local comercial DEMO Quito Este 088,service_point,Quito,Quito / Este,-0.176799,-78.445058,local_comercial,2160,3,10:00:00,17:00:00,10,catalog,True
+f1c36565-144d-5196-9a16-fcea1c255f3e,Q-089,Centro educativo DEMO Quito Centro 089,service_point,Quito,Quito / Centro,-0.176237,-78.49153,centro_educativo,920,8,08:00:00,16:00:00,15,catalog,True
+36e72d71-db56-5c73-92d9-07f8b371041f,Q-090,Bodega del cliente DEMO Quito Norte 090,service_point,Quito,Quito / Norte,-0.181479,-78.499468,bodega_operativa,1540,24,08:00:00,16:00:00,20,catalog,True
+192e3d20-f362-56db-a629-1e85e41f3f4f,Q-091,Oficina DEMO Quito Sur 091,service_point,Quito,Quito / Sur,-0.18273,-78.473865,oficina,1980,24,10:00:00,17:00:00,10,catalog,True
+26a65007-c462-5b48-b623-e7127a19f968,Q-092,Local comercial DEMO Quito Este 092,service_point,Quito,Quito / Este,-0.166039,-78.440449,local_comercial,700,6,08:00:00,16:00:00,15,catalog,True
+2fd67eec-0a63-5c5b-b3c5-f7050a6cf2ce,Q-093,Centro educativo DEMO Quito Centro 093,service_point,Quito,Quito / Centro,-0.203092,-78.483402,centro_educativo,1840,10,08:00:00,16:00:00,20,catalog,True
+c1aeb3a5-e0d9-59b5-990a-8fc6bad33479,Q-094,Bodega del cliente DEMO Quito Norte 094,service_point,Quito,Quito / Norte,-0.18648,-78.501804,bodega_operativa,860,28,10:00:00,17:00:00,10,catalog,True
+d076f1b4-0701-5528-8767-5b8cb0e15e57,Q-095,Oficina DEMO Quito Sur 095,service_point,Quito,Quito / Sur,-0.215488,-78.474567,oficina,440,5,08:00:00,16:00:00,15,catalog,True
+5f2801e9-0f2f-5875-8a1c-b288b5e29707,Q-096,Local comercial DEMO Quito Este 096,service_point,Quito,Quito / Este,-0.180374,-78.477254,local_comercial,1060,3,08:00:00,16:00:00,20,catalog,True
+97a457a5-379c-5b50-a807-3acf34baa68a,Q-097,Centro educativo DEMO Quito Centro 097,service_point,Quito,Quito / Centro,-0.20597,-78.496452,centro_educativo,260,11,10:00:00,17:00:00,10,catalog,True
+c333cd4a-729e-5bc6-aed3-206f00a6c4bb,Q-098,Bodega del cliente DEMO Quito Norte 098,service_point,Quito,Quito / Norte,-0.174247,-78.471855,bodega_operativa,180,15,08:00:00,16:00:00,15,catalog,True
+278817b2-95ae-557b-92fb-9304becbc273,Q-099,Oficina DEMO Quito Sur 099,service_point,Quito,Quito / Sur,-0.158294,-78.460646,oficina,1300,5,08:00:00,16:00:00,20,catalog,True
+a9d667f3-eeaf-55d2-9871-f791fcf5e2c8,Q-100,Local comercial DEMO Quito Este 100,service_point,Quito,Quito / Este,-0.184274,-78.474225,local_comercial,1920,8,10:00:00,17:00:00,10,catalog,True
+ed77face-041b-57cb-adf1-7689dd2b6011,Q-101,Centro educativo DEMO Quito Centro 101,service_point,Quito,Quito / Centro,-0.206073,-78.494645,centro_educativo,980,18,08:00:00,16:00:00,15,catalog,True
+391de8aa-e13f-55a3-841b-eadaff2f3dcf,Q-102,Bodega del cliente DEMO Quito Norte 102,service_point,Quito,Quito / Norte,-0.201026,-78.449005,bodega_operativa,1640,27,08:00:00,16:00:00,20,catalog,True
+40c455f2-e790-5b79-8908-4b71393f11ef,Q-103,Oficina DEMO Quito Sur 103,service_point,Quito,Quito / Sur,-0.214377,-78.486515,oficina,320,19,10:00:00,17:00:00,10,catalog,True
+20941bde-c77a-5035-ac3d-081cbf0d1f71,Q-104,Local comercial DEMO Quito Este 104,service_point,Quito,Quito / Este,-0.163909,-78.445884,local_comercial,380,22,08:00:00,16:00:00,15,catalog,True
+20f841ed-e4e3-5452-b844-2ad09f5f16a0,Q-105,Centro educativo DEMO Quito Centro 105,service_point,Quito,Quito / Centro,-0.149756,-78.438422,centro_educativo,660,19,08:00:00,16:00:00,20,catalog,True
+e597eca8-8006-53f0-8107-17ae0474f703,Q-106,Bodega del cliente DEMO Quito Norte 106,service_point,Quito,Quito / Norte,-0.214993,-78.443398,bodega_operativa,840,14,10:00:00,17:00:00,10,catalog,True
+dfb794e6-2b2a-589b-9939-3249a96acfa9,Q-107,Oficina DEMO Quito Sur 107,service_point,Quito,Quito / Sur,-0.175555,-78.482871,oficina,1000,9,08:00:00,16:00:00,15,catalog,True
+24edd704-c0e2-5be7-bb03-72d150c77bac,Q-108,Local comercial DEMO Quito Este 108,service_point,Quito,Quito / Este,-0.196703,-78.481997,local_comercial,140,26,08:00:00,16:00:00,20,catalog,True
+813bcbab-e01d-536c-9755-ad7362df75a9,Q-109,Centro educativo DEMO Quito Centro 109,service_point,Quito,Quito / Centro,-0.206916,-78.486309,centro_educativo,1120,6,10:00:00,17:00:00,10,catalog,True
+4e47a724-dfcd-5863-857f-705111aaf61b,Q-110,Bodega del cliente DEMO Quito Norte 110,service_point,Quito,Quito / Norte,-0.151662,-78.475059,bodega_operativa,1360,24,08:00:00,16:00:00,15,catalog,True
+e202c08d-89b2-5454-908d-4c0afb89c23d,Q-111,Oficina DEMO Quito Sur 111,service_point,Quito,Quito / Sur,-0.190786,-78.47262,oficina,540,20,08:00:00,16:00:00,20,catalog,True
+6fc8cd48-af2e-57de-86b4-bb66f6291264,Q-112,Local comercial DEMO Quito Este 112,service_point,Quito,Quito / Este,-0.184955,-78.458857,local_comercial,1620,4,10:00:00,17:00:00,10,catalog,True
+f8311082-5d5e-5041-ac0c-e69ce6a74645,Q-113,Centro educativo DEMO Quito Centro 113,service_point,Quito,Quito / Centro,-0.151292,-78.448287,centro_educativo,1440,28,08:00:00,16:00:00,15,catalog,True
+635d0224-cf56-53ec-8edf-d95f5f387bfe,Q-114,Bodega del cliente DEMO Quito Norte 114,service_point,Quito,Quito / Norte,-0.164319,-78.494276,bodega_operativa,1240,6,08:00:00,16:00:00,20,catalog,True
+786abbbf-0e95-5773-bc29-c1d9d19dfe53,Q-115,Oficina DEMO Quito Sur 115,service_point,Quito,Quito / Sur,-0.171102,-78.488866,oficina,1740,23,10:00:00,17:00:00,10,catalog,True
+994513da-07e8-5ec4-9aaa-2877f5449549,Q-116,Local comercial DEMO Quito Este 116,service_point,Quito,Quito / Este,-0.166905,-78.50079,local_comercial,340,12,08:00:00,16:00:00,15,catalog,True
+a272e9bf-d5de-59f1-be95-e75b64efcd78,Q-117,Centro educativo DEMO Quito Centro 117,service_point,Quito,Quito / Centro,-0.147989,-78.457556,centro_educativo,160,28,08:00:00,16:00:00,20,catalog,True
+f9d43161-be75-52b0-9afc-372fc18094bd,Q-118,Bodega del cliente DEMO Quito Norte 118,service_point,Quito,Quito / Norte,-0.176172,-78.474107,bodega_operativa,1000,14,10:00:00,17:00:00,10,catalog,True
+9f25c4ec-d4f9-5271-a9b0-589a38972f27,Q-119,Oficina DEMO Quito Sur 119,service_point,Quito,Quito / Sur,-0.210371,-78.449229,oficina,780,30,08:00:00,16:00:00,15,catalog,True
+861a6bb9-b7eb-5563-bc85-3ee6660297e9,Q-120,Local comercial DEMO Quito Este 120,service_point,Quito,Quito / Este,-0.15905,-78.449868,local_comercial,700,17,08:00:00,16:00:00,20,catalog,True
+103f87ae-4109-55ed-93d4-0091b195ddc0,Q-121,Centro educativo DEMO Quito Centro 121,service_point,Quito,Quito / Centro,-0.199277,-78.478388,centro_educativo,1720,22,10:00:00,17:00:00,10,catalog,True
+bd1a4728-0c63-53d7-ac19-54fc6b0204a9,Q-122,Bodega del cliente DEMO Quito Norte 122,service_point,Quito,Quito / Norte,-0.205386,-78.481762,bodega_operativa,1040,5,08:00:00,16:00:00,15,catalog,True
+5fc55555-172f-502f-bd29-25a76c08daf9,Q-123,Oficina DEMO Quito Sur 123,service_point,Quito,Quito / Sur,-0.215189,-78.439748,oficina,860,6,08:00:00,16:00:00,20,catalog,True
+5648cc8e-0cca-5863-9543-5a8dd33a401e,Q-124,Local comercial DEMO Quito Este 124,service_point,Quito,Quito / Este,-0.152436,-78.437439,local_comercial,2060,10,10:00:00,17:00:00,10,catalog,True
+81e4f947-ce6d-5823-ba3d-5bde47f79388,Q-125,Centro educativo DEMO Quito Centro 125,service_point,Quito,Quito / Centro,-0.194705,-78.463896,centro_educativo,760,27,08:00:00,16:00:00,15,catalog,True
+0a501dea-55e5-583f-ab78-a68293d5d4b0,Q-126,Bodega del cliente DEMO Quito Norte 126,service_point,Quito,Quito / Norte,-0.207592,-78.476057,bodega_operativa,2020,17,08:00:00,16:00:00,20,catalog,True
+92b69428-7e77-5771-81ff-ac77625fe1eb,Q-127,Oficina DEMO Quito Sur 127,service_point,Quito,Quito / Sur,-0.194776,-78.478849,oficina,1000,9,10:00:00,17:00:00,10,catalog,True
+a939cf04-aedb-5003-8948-40142ac6b8d8,Q-128,Local comercial DEMO Quito Este 128,service_point,Quito,Quito / Este,-0.213346,-78.502149,local_comercial,140,19,08:00:00,16:00:00,15,catalog,True
+1f66e846-732c-56ec-8409-c5184f101964,Q-129,Centro educativo DEMO Quito Centro 129,service_point,Quito,Quito / Centro,-0.165456,-78.493738,centro_educativo,560,16,08:00:00,16:00:00,20,catalog,True
+5e09e9ec-755c-5212-8fef-038d2cb9a869,Q-130,Bodega del cliente DEMO Quito Norte 130,service_point,Quito,Quito / Norte,-0.189696,-78.458915,bodega_operativa,1540,10,10:00:00,17:00:00,10,catalog,True
+b96acf0d-1ba8-5b0c-b605-53be61e0b056,Q-131,Oficina DEMO Quito Sur 131,service_point,Quito,Quito / Sur,-0.167682,-78.435398,oficina,560,3,08:00:00,16:00:00,15,catalog,True
+d708abd8-8123-5988-b7d5-56c2926cf80a,Q-132,Local comercial DEMO Quito Este 132,service_point,Quito,Quito / Este,-0.180565,-78.453762,local_comercial,1700,28,08:00:00,16:00:00,20,catalog,True
+1bce4904-47f3-5ef9-a4fc-c01864f0257e,Q-133,Centro educativo DEMO Quito Centro 133,service_point,Quito,Quito / Centro,-0.205671,-78.490811,centro_educativo,1540,8,10:00:00,17:00:00,10,catalog,True
+3b8ad90f-446d-514d-bd1e-6d536de394e4,Q-134,Bodega del cliente DEMO Quito Norte 134,service_point,Quito,Quito / Norte,-0.166204,-78.446208,bodega_operativa,980,29,08:00:00,16:00:00,15,catalog,True
+9073ca8e-2e21-5220-8f72-f62a9ab1df3f,Q-135,Oficina DEMO Quito Sur 135,service_point,Quito,Quito / Sur,-0.146892,-78.474119,oficina,820,19,08:00:00,16:00:00,20,catalog,True
+41fcae1b-92b2-5150-b1e2-fe171a497ce6,Q-136,Local comercial DEMO Quito Este 136,service_point,Quito,Quito / Este,-0.195546,-78.436945,local_comercial,1260,19,10:00:00,17:00:00,10,catalog,True
+812d6aed-7a3a-549b-9e2a-335ea601581a,Q-137,Centro educativo DEMO Quito Centro 137,service_point,Quito,Quito / Centro,-0.146937,-78.487682,centro_educativo,1380,11,08:00:00,16:00:00,15,catalog,True
+fa32d01f-e0c1-52fa-8442-dfe030993e59,Q-138,Bodega del cliente DEMO Quito Norte 138,service_point,Quito,Quito / Norte,-0.182263,-78.476227,bodega_operativa,1640,21,08:00:00,16:00:00,20,catalog,True
+0a256345-8ee4-52e6-8f74-1939bf7d63b3,Q-139,Oficina DEMO Quito Sur 139,service_point,Quito,Quito / Sur,-0.188733,-78.458571,oficina,1300,21,10:00:00,17:00:00,10,catalog,True
+c5d371a3-ce9f-5942-a0d2-8fb34cc2c14c,Q-140,Local comercial DEMO Quito Este 140,service_point,Quito,Quito / Este,-0.185882,-78.45442,local_comercial,460,29,08:00:00,16:00:00,15,catalog,True
+25806942-da98-58c7-9406-18f6909cbed2,Q-141,Centro educativo DEMO Quito Centro 141,service_point,Quito,Quito / Centro,-0.157487,-78.495093,centro_educativo,1460,29,08:00:00,16:00:00,20,catalog,True
+de6c29f8-718a-58ee-876f-540e4b819b32,Q-142,Bodega del cliente DEMO Quito Norte 142,service_point,Quito,Quito / Norte,-0.151242,-78.43922,bodega_operativa,1880,29,10:00:00,17:00:00,10,catalog,True
+2bab1864-d108-5e0b-a113-1650c9f8798f,Q-143,Oficina DEMO Quito Sur 143,service_point,Quito,Quito / Sur,-0.165032,-78.486387,oficina,2020,15,08:00:00,16:00:00,15,catalog,True
+884ae10b-b7e8-5520-accb-4605ff60c803,Q-144,Local comercial DEMO Quito Este 144,service_point,Quito,Quito / Este,-0.169654,-78.500904,local_comercial,1340,13,08:00:00,16:00:00,20,catalog,True
+51c9f8e2-5d8e-5199-9d12-574a0b88b0d4,Q-145,Centro educativo DEMO Quito Centro 145,service_point,Quito,Quito / Centro,-0.192067,-78.44036,centro_educativo,240,16,10:00:00,17:00:00,10,catalog,True
+ad80c40a-7fc6-560d-abba-a6fe968c45d3,Q-146,Bodega del cliente DEMO Quito Norte 146,service_point,Quito,Quito / Norte,-0.160686,-78.434224,bodega_operativa,1940,26,08:00:00,16:00:00,15,catalog,True
+c97082fd-decd-557c-a5bc-7e95c339e1d4,Q-147,Oficina DEMO Quito Sur 147,service_point,Quito,Quito / Sur,-0.197539,-78.463652,oficina,1860,14,08:00:00,16:00:00,20,catalog,True
+e239c6d4-52d9-5694-9221-81238b775192,Q-148,Local comercial DEMO Quito Este 148,service_point,Quito,Quito / Este,-0.168943,-78.460923,local_comercial,860,26,10:00:00,17:00:00,10,catalog,True
+9b280a35-63f0-570e-a44d-2f48afd1f94e,Q-149,Centro educativo DEMO Quito Centro 149,service_point,Quito,Quito / Centro,-0.212627,-78.437737,centro_educativo,640,26,08:00:00,16:00:00,15,catalog,True
+aa8e0f3b-a7b0-5417-ac9a-06cb39cbbed9,Q-150,Bodega del cliente DEMO Quito Norte 150,service_point,Quito,Quito / Norte,-0.179579,-78.458803,bodega_operativa,1540,27,08:00:00,16:00:00,20,catalog,True
+cf637a56-5350-5af9-85c0-3f2fa91ff7e3,Q-151,Oficina DEMO Quito Sur 151,service_point,Quito,Quito / Sur,-0.146624,-78.439685,oficina,1100,18,10:00:00,17:00:00,10,catalog,True
+79020eac-aa55-5181-852d-106e0ca04139,Q-152,Local comercial DEMO Quito Este 152,service_point,Quito,Quito / Este,-0.205667,-78.46522,local_comercial,1000,14,08:00:00,16:00:00,15,catalog,True
+124dd122-e1e0-5ced-bb40-0d99278f5b36,Q-153,Centro educativo DEMO Quito Centro 153,service_point,Quito,Quito / Centro,-0.200144,-78.502486,centro_educativo,820,18,08:00:00,16:00:00,20,catalog,True
+4edb4851-acfc-521f-ad80-5d75bd4896b2,Q-154,Bodega del cliente DEMO Quito Norte 154,service_point,Quito,Quito / Norte,-0.199491,-78.447804,bodega_operativa,860,5,10:00:00,17:00:00,10,catalog,True
+4766ec6f-a497-5c84-b77d-d44d839486ad,Q-155,Oficina DEMO Quito Sur 155,service_point,Quito,Quito / Sur,-0.207013,-78.465194,oficina,2080,19,08:00:00,16:00:00,15,catalog,True
+365b6ee5-8164-530d-8c19-d4ba52e7c748,Q-156,Local comercial DEMO Quito Este 156,service_point,Quito,Quito / Este,-0.177635,-78.469577,local_comercial,1920,11,08:00:00,16:00:00,20,catalog,True
+79a787c6-6bc0-5ad6-83ed-5f605532103a,Q-157,Centro educativo DEMO Quito Centro 157,service_point,Quito,Quito / Centro,-0.203203,-78.440718,centro_educativo,460,7,10:00:00,17:00:00,10,catalog,True
+c37ffa3a-de7e-58ce-804c-f4a618f5c296,Q-158,Bodega del cliente DEMO Quito Norte 158,service_point,Quito,Quito / Norte,-0.189926,-78.486557,bodega_operativa,300,29,08:00:00,16:00:00,15,catalog,True
+80314996-3e9c-59f2-a4b8-cead29b750f1,Q-159,Oficina DEMO Quito Sur 159,service_point,Quito,Quito / Sur,-0.18068,-78.474165,oficina,1280,30,08:00:00,16:00:00,20,catalog,True
+090ccd99-97c5-5c69-9cfa-41481bf2ea62,Q-160,Local comercial DEMO Quito Este 160,service_point,Quito,Quito / Este,-0.186802,-78.439044,local_comercial,2180,28,10:00:00,17:00:00,10,catalog,True
+b37ea48c-7b2c-5f8a-a14b-fba2a52624e9,Q-161,Centro educativo DEMO Quito Centro 161,service_point,Quito,Quito / Centro,-0.209454,-78.476817,centro_educativo,1900,27,08:00:00,16:00:00,15,catalog,True
+7e1339b7-135a-5331-b5be-c56ddec35012,Q-162,Bodega del cliente DEMO Quito Norte 162,service_point,Quito,Quito / Norte,-0.164824,-78.443802,bodega_operativa,680,27,08:00:00,16:00:00,20,catalog,True
+d0533460-6897-54a8-8568-ba5f72b7a1e2,Q-163,Oficina DEMO Quito Sur 163,service_point,Quito,Quito / Sur,-0.154242,-78.495081,oficina,1160,30,10:00:00,17:00:00,10,catalog,True
+c6a35ed0-6337-5374-8430-df2245dca142,Q-164,Local comercial DEMO Quito Este 164,service_point,Quito,Quito / Este,-0.180892,-78.44372,local_comercial,260,13,08:00:00,16:00:00,15,catalog,True
+7b03d3c7-7d2f-58e1-8640-90b1134986fc,Q-165,Centro educativo DEMO Quito Centro 165,service_point,Quito,Quito / Centro,-0.187012,-78.488251,centro_educativo,1440,17,08:00:00,16:00:00,20,catalog,True
+9c1d1ca1-c780-5e44-9aba-0f37b67b535c,Q-166,Bodega del cliente DEMO Quito Norte 166,service_point,Quito,Quito / Norte,-0.152454,-78.439888,bodega_operativa,1500,5,10:00:00,17:00:00,10,catalog,True
+9e5c8d39-e32a-577a-aad0-e04393647da9,Q-167,Oficina DEMO Quito Sur 167,service_point,Quito,Quito / Sur,-0.173016,-78.478568,oficina,1780,28,08:00:00,16:00:00,15,catalog,True
+dc9c66d6-1f30-5d70-94c8-612420a18220,Q-168,Local comercial DEMO Quito Este 168,service_point,Quito,Quito / Este,-0.203617,-78.474505,local_comercial,2040,30,08:00:00,16:00:00,20,catalog,True
+6f3fc5bf-a13b-5c47-966a-dc3ceec51fc5,Q-169,Centro educativo DEMO Quito Centro 169,service_point,Quito,Quito / Centro,-0.151225,-78.465857,centro_educativo,1500,8,10:00:00,17:00:00,10,catalog,True
+4e5b7813-d51f-599a-beeb-8feb8946c990,Q-170,Bodega del cliente DEMO Quito Norte 170,service_point,Quito,Quito / Norte,-0.196964,-78.441616,bodega_operativa,340,13,08:00:00,16:00:00,15,catalog,True
+2f86afca-b89d-51a9-b67b-a7490fe257f9,Q-171,Oficina DEMO Quito Sur 171,service_point,Quito,Quito / Sur,-0.214149,-78.444844,oficina,340,21,08:00:00,16:00:00,20,catalog,True
+ef98d470-c432-5038-9c4a-62067d850ff0,Q-172,Local comercial DEMO Quito Este 172,service_point,Quito,Quito / Este,-0.163638,-78.497675,local_comercial,920,22,10:00:00,17:00:00,10,catalog,True
+58aa7768-ac6f-5a7c-96bb-f13badc1ad03,Q-173,Centro educativo DEMO Quito Centro 173,service_point,Quito,Quito / Centro,-0.212758,-78.477264,centro_educativo,1620,15,08:00:00,16:00:00,15,catalog,True
+4b014040-daec-5c51-a69d-fc62b1a1cd3b,Q-174,Bodega del cliente DEMO Quito Norte 174,service_point,Quito,Quito / Norte,-0.183071,-78.446169,bodega_operativa,1140,26,08:00:00,16:00:00,20,catalog,True
+219a8560-efee-5ef5-83e7-903bc4a19a8c,Q-175,Oficina DEMO Quito Sur 175,service_point,Quito,Quito / Sur,-0.186191,-78.434365,oficina,1260,7,10:00:00,17:00:00,10,catalog,True
+c52f4a23-6dbe-5fc2-91bf-ba2efae226e2,Q-176,Local comercial DEMO Quito Este 176,service_point,Quito,Quito / Este,-0.209454,-78.484327,local_comercial,740,13,08:00:00,16:00:00,15,catalog,True
+6dedbdd3-0951-59be-8a00-8a0cf5b4481d,Q-177,Centro educativo DEMO Quito Centro 177,service_point,Quito,Quito / Centro,-0.178957,-78.478153,centro_educativo,1360,15,08:00:00,16:00:00,20,catalog,True
+e29c04c2-88ad-5535-bbcd-cce39726985c,Q-178,Bodega del cliente DEMO Quito Norte 178,service_point,Quito,Quito / Norte,-0.181046,-78.455604,bodega_operativa,1280,28,10:00:00,17:00:00,10,catalog,True
+09783359-8a9b-5018-a7a2-d8e72334ec20,Q-179,Oficina DEMO Quito Sur 179,service_point,Quito,Quito / Sur,-0.174787,-78.465213,oficina,1740,3,08:00:00,16:00:00,15,catalog,True
+b520ac78-ab83-5db1-af22-0030bc5fc38f,Q-180,Local comercial DEMO Quito Este 180,service_point,Quito,Quito / Este,-0.151689,-78.480202,local_comercial,1980,8,08:00:00,16:00:00,20,catalog,True
+243d7165-7eb1-5764-b50e-f6e33c8f0f8d,Q-181,Centro educativo DEMO Quito Centro 181,service_point,Quito,Quito / Centro,-0.20726,-78.47005,centro_educativo,740,28,10:00:00,17:00:00,10,catalog,True
+b1d591fa-efcf-5b79-97f8-4e5830953fd6,Q-182,Bodega del cliente DEMO Quito Norte 182,service_point,Quito,Quito / Norte,-0.168262,-78.479241,bodega_operativa,1820,3,08:00:00,16:00:00,15,catalog,True
+d802b595-76d3-535b-8fbe-18c9135ccb70,Q-183,Oficina DEMO Quito Sur 183,service_point,Quito,Quito / Sur,-0.198626,-78.493603,oficina,1400,25,08:00:00,16:00:00,20,catalog,True
+a5354860-7d8a-5c8e-9536-f5077bc791c5,Q-184,Local comercial DEMO Quito Este 184,service_point,Quito,Quito / Este,-0.192807,-78.437409,local_comercial,1560,12,10:00:00,17:00:00,10,catalog,True
+e3b7dbbe-5e27-564d-8ec4-6e18b72aeb72,Q-185,Centro educativo DEMO Quito Centro 185,service_point,Quito,Quito / Centro,-0.186498,-78.435266,centro_educativo,1980,7,08:00:00,16:00:00,15,catalog,True
+ae8ea9e9-5fdd-557c-9a45-a514a4d45e07,Q-186,Bodega del cliente DEMO Quito Norte 186,service_point,Quito,Quito / Norte,-0.212457,-78.465058,bodega_operativa,920,16,08:00:00,16:00:00,20,catalog,True
+720c1520-19a0-55e5-ab7b-0366122c5047,Q-187,Oficina DEMO Quito Sur 187,service_point,Quito,Quito / Sur,-0.196874,-78.450316,oficina,1500,17,10:00:00,17:00:00,10,catalog,True
+d3b19a96-1cad-5d61-bd3d-b52eabf07a27,Q-188,Local comercial DEMO Quito Este 188,service_point,Quito,Quito / Este,-0.208912,-78.450405,local_comercial,440,30,08:00:00,16:00:00,15,catalog,True
+554bbdc3-7239-5a4b-8597-37ec6ed3b08a,Q-189,Centro educativo DEMO Quito Centro 189,service_point,Quito,Quito / Centro,-0.209738,-78.452502,centro_educativo,1600,17,08:00:00,16:00:00,20,catalog,True
+9d4e4510-8fe8-555f-abae-17b00974b2bc,Q-190,Bodega del cliente DEMO Quito Norte 190,service_point,Quito,Quito / Norte,-0.153031,-78.476619,bodega_operativa,1880,9,10:00:00,17:00:00,10,catalog,True
+4425989b-cba7-548d-adc2-930c1372e9b2,Q-191,Oficina DEMO Quito Sur 191,service_point,Quito,Quito / Sur,-0.175703,-78.447153,oficina,1640,16,08:00:00,16:00:00,15,catalog,True
+d853dad2-d60b-58f4-abf5-5c6dd4e9dd5e,Q-192,Local comercial DEMO Quito Este 192,service_point,Quito,Quito / Este,-0.1667,-78.438202,local_comercial,680,11,08:00:00,16:00:00,20,catalog,True
+d1001182-1a6c-547d-a47b-dfa5c1cd9ea5,Q-193,Centro educativo DEMO Quito Centro 193,service_point,Quito,Quito / Centro,-0.211119,-78.439059,centro_educativo,1000,4,10:00:00,17:00:00,10,catalog,True
+6e1ea355-b504-550d-8b74-1a2448a0a23b,Q-194,Bodega del cliente DEMO Quito Norte 194,service_point,Quito,Quito / Norte,-0.176166,-78.43865,bodega_operativa,660,5,08:00:00,16:00:00,15,catalog,True
+94dbcf9d-7b37-5a4d-895a-29c27313cc01,Q-195,Oficina DEMO Quito Sur 195,service_point,Quito,Quito / Sur,-0.193657,-78.460657,oficina,1120,25,08:00:00,16:00:00,20,catalog,True
+dcc7459d-1dcc-5318-a79d-e617bb735cff,Q-196,Local comercial DEMO Quito Este 196,service_point,Quito,Quito / Este,-0.160736,-78.456583,local_comercial,140,9,10:00:00,17:00:00,10,catalog,True
+af9114b7-70ce-559d-bef2-4d7c25bdb082,Q-197,Centro educativo DEMO Quito Centro 197,service_point,Quito,Quito / Centro,-0.192292,-78.483402,centro_educativo,1600,25,08:00:00,16:00:00,15,catalog,True
+8fe0f475-3132-502d-8a0a-8aeac0f2e62b,Q-198,Bodega del cliente DEMO Quito Norte 198,service_point,Quito,Quito / Norte,-0.15018,-78.499247,bodega_operativa,1080,21,08:00:00,16:00:00,20,catalog,True
+c066e9bf-b3c5-57d9-8477-d20923d651ff,Q-199,Oficina DEMO Quito Sur 199,service_point,Quito,Quito / Sur,-0.16716,-78.474386,oficina,180,27,10:00:00,17:00:00,10,catalog,True
+c8b2edb6-f741-5df4-84e3-d0e6878561b0,Q-200,Local comercial DEMO Quito Este 200,service_point,Quito,Quito / Este,-0.159686,-78.471512,local_comercial,1700,12,08:00:00,16:00:00,15,catalog,True
+f26593af-fa46-5157-a57e-3c84d98f4cc8,Q-201,Centro educativo DEMO Quito Centro 201,service_point,Quito,Quito / Centro,-0.174264,-78.485843,centro_educativo,940,3,08:00:00,16:00:00,20,catalog,True
+77636b65-3c93-5162-8d7b-71c9a6fa1cee,Q-202,Bodega del cliente DEMO Quito Norte 202,service_point,Quito,Quito / Norte,-0.160589,-78.442582,bodega_operativa,260,9,10:00:00,17:00:00,10,catalog,True
+7bb24c86-5df9-5b6b-aa17-929b7a2bfdae,Q-203,Oficina DEMO Quito Sur 203,service_point,Quito,Quito / Sur,-0.159853,-78.475654,oficina,1800,19,08:00:00,16:00:00,15,catalog,True
+222fb4dd-aa5c-51ee-b680-15d61cd3a946,Q-204,Local comercial DEMO Quito Este 204,service_point,Quito,Quito / Este,-0.177832,-78.449024,local_comercial,1860,6,08:00:00,16:00:00,20,catalog,True
+06d9061f-90c4-5a78-b2b7-88a933038bda,Q-205,Centro educativo DEMO Quito Centro 205,service_point,Quito,Quito / Centro,-0.205416,-78.438652,centro_educativo,1980,28,10:00:00,17:00:00,10,catalog,True
+dd3ea87f-b0f4-5641-8391-8f58555de1d3,Q-206,Bodega del cliente DEMO Quito Norte 206,service_point,Quito,Quito / Norte,-0.146873,-78.492211,bodega_operativa,1260,18,08:00:00,16:00:00,15,catalog,True
+5a5eaae7-244b-57fe-bbca-72f2a9872f5c,Q-207,Oficina DEMO Quito Sur 207,service_point,Quito,Quito / Sur,-0.148154,-78.492855,oficina,240,7,08:00:00,16:00:00,20,catalog,True
+52960546-8325-5622-a009-096c32a27e55,Q-208,Local comercial DEMO Quito Este 208,service_point,Quito,Quito / Este,-0.176362,-78.491465,local_comercial,1840,28,10:00:00,17:00:00,10,catalog,True
+1d014b45-81f8-5b57-b772-0608444e5b5a,Q-209,Centro educativo DEMO Quito Centro 209,service_point,Quito,Quito / Centro,-0.195585,-78.471846,centro_educativo,1780,21,08:00:00,16:00:00,15,catalog,True
+a9621883-2897-563b-8f69-824af59152a0,Q-210,Bodega del cliente DEMO Quito Norte 210,service_point,Quito,Quito / Norte,-0.196267,-78.45206,bodega_operativa,2140,24,08:00:00,16:00:00,20,catalog,True
+0532205a-bb41-5d2f-b2d4-d0f0ee524bbf,Q-211,Oficina DEMO Quito Sur 211,service_point,Quito,Quito / Sur,-0.158974,-78.49032,oficina,840,9,10:00:00,17:00:00,10,catalog,True
+b1738909-91ff-5d68-9161-76c5650795db,Q-212,Local comercial DEMO Quito Este 212,service_point,Quito,Quito / Este,-0.21011,-78.476359,local_comercial,520,20,08:00:00,16:00:00,15,catalog,True
+0c80b64c-667a-561c-ac6d-7c5937573b74,Q-213,Centro educativo DEMO Quito Centro 213,service_point,Quito,Quito / Centro,-0.204104,-78.480946,centro_educativo,800,25,08:00:00,16:00:00,20,catalog,True
+5dcded91-4fb7-5807-9436-de47ef48736a,Q-214,Bodega del cliente DEMO Quito Norte 214,service_point,Quito,Quito / Norte,-0.214808,-78.43915,bodega_operativa,1500,22,10:00:00,17:00:00,10,catalog,True
+32982a1b-0614-5ca0-98b4-fb34a4ea672e,Q-215,Oficina DEMO Quito Sur 215,service_point,Quito,Quito / Sur,-0.202319,-78.433688,oficina,1460,30,08:00:00,16:00:00,15,catalog,True
+02ba69dc-99e4-5271-b9f6-02a1906f5131,Q-216,Local comercial DEMO Quito Este 216,service_point,Quito,Quito / Este,-0.19204,-78.458328,local_comercial,2160,9,08:00:00,16:00:00,20,catalog,True
+7ea781f4-4582-579a-b046-95854262ecdd,Q-217,Centro educativo DEMO Quito Centro 217,service_point,Quito,Quito / Centro,-0.173851,-78.43801,centro_educativo,540,26,10:00:00,17:00:00,10,catalog,True
+3c958582-4371-59db-ac41-2522c970a4be,Q-218,Bodega del cliente DEMO Quito Norte 218,service_point,Quito,Quito / Norte,-0.146559,-78.489861,bodega_operativa,1500,29,08:00:00,16:00:00,15,catalog,True
+f3afedcd-3537-5277-ae3a-397cf5e5a578,Q-219,Oficina DEMO Quito Sur 219,service_point,Quito,Quito / Sur,-0.215485,-78.47691,oficina,880,18,08:00:00,16:00:00,20,catalog,True
+f3364fed-775f-5b99-9901-bed9c1c74a88,Q-220,Local comercial DEMO Quito Este 220,service_point,Quito,Quito / Este,-0.166024,-78.451589,local_comercial,540,19,10:00:00,17:00:00,10,catalog,True
+425c2536-c263-5ed3-b212-dbc4f3b5915e,Q-221,Centro educativo DEMO Quito Centro 221,service_point,Quito,Quito / Centro,-0.175897,-78.494691,centro_educativo,1500,13,08:00:00,16:00:00,15,catalog,True
+ccb781cf-ebfe-595d-b80e-1c639325b961,Q-222,Bodega del cliente DEMO Quito Norte 222,service_point,Quito,Quito / Norte,-0.161225,-78.459493,bodega_operativa,340,15,08:00:00,16:00:00,20,catalog,True
+68635636-b5d9-59b0-9ad7-7a3fe892e86b,Q-223,Oficina DEMO Quito Sur 223,service_point,Quito,Quito / Sur,-0.193977,-78.482461,oficina,760,16,10:00:00,17:00:00,10,catalog,True
+3a7a0958-4228-55b1-bc14-6722e8d1ee88,Q-224,Local comercial DEMO Quito Este 224,service_point,Quito,Quito / Este,-0.157792,-78.467202,local_comercial,400,3,08:00:00,16:00:00,15,catalog,True
+f0bd0c73-3278-59f9-9ba5-44b701b5caac,Q-225,Centro educativo DEMO Quito Centro 225,service_point,Quito,Quito / Centro,-0.165979,-78.451478,centro_educativo,840,5,08:00:00,16:00:00,20,catalog,True
+c55288f8-52d5-5e54-a697-d550d62ea0c3,Q-226,Bodega del cliente DEMO Quito Norte 226,service_point,Quito,Quito / Norte,-0.19449,-78.472694,bodega_operativa,1680,10,10:00:00,17:00:00,10,catalog,True
+5d4551c0-9c1f-5309-a62b-5b08e05b653b,Q-227,Oficina DEMO Quito Sur 227,service_point,Quito,Quito / Sur,-0.152767,-78.498412,oficina,220,19,08:00:00,16:00:00,15,catalog,True
+1076b941-0060-5aa2-865b-7f6ea7fb9e1f,Q-228,Local comercial DEMO Quito Este 228,service_point,Quito,Quito / Este,-0.151431,-78.462396,local_comercial,1300,12,08:00:00,16:00:00,20,catalog,True
+65eb516e-8e22-590a-a07c-e37e81846e89,Q-229,Centro educativo DEMO Quito Centro 229,service_point,Quito,Quito / Centro,-0.170614,-78.459884,centro_educativo,180,6,10:00:00,17:00:00,10,catalog,True
+efe92931-2ce8-5d91-8973-7dfc473fcf54,Q-230,Bodega del cliente DEMO Quito Norte 230,service_point,Quito,Quito / Norte,-0.169569,-78.494564,bodega_operativa,480,26,08:00:00,16:00:00,15,catalog,True
+0cd1bef8-ebcd-50f6-ae2c-4e5931313305,Q-231,Oficina DEMO Quito Sur 231,service_point,Quito,Quito / Sur,-0.155454,-78.479997,oficina,1820,10,08:00:00,16:00:00,20,catalog,True
+5d16fdb3-ac02-513d-8009-2107a183f8e4,Q-232,Local comercial DEMO Quito Este 232,service_point,Quito,Quito / Este,-0.205345,-78.4883,local_comercial,560,4,10:00:00,17:00:00,10,catalog,True
+c4a57123-4615-59ff-8471-5812df44b1b0,Q-233,Centro educativo DEMO Quito Centro 233,service_point,Quito,Quito / Centro,-0.213165,-78.489798,centro_educativo,320,10,08:00:00,16:00:00,15,catalog,True
+3e0636c8-db33-5ba6-824d-1bacd17c2c7f,Q-234,Bodega del cliente DEMO Quito Norte 234,service_point,Quito,Quito / Norte,-0.170703,-78.440388,bodega_operativa,1060,8,08:00:00,16:00:00,20,catalog,True
+daec75c7-edbd-5625-b650-72d0a9dc42b7,Q-235,Oficina DEMO Quito Sur 235,service_point,Quito,Quito / Sur,-0.212593,-78.463523,oficina,1500,3,10:00:00,17:00:00,10,catalog,True
+ca13efaa-725c-5e6c-8986-9b42fd5d78de,Q-236,Local comercial DEMO Quito Este 236,service_point,Quito,Quito / Este,-0.168084,-78.484205,local_comercial,740,12,08:00:00,16:00:00,15,catalog,True
+3149d51b-32ae-5d16-96dd-047d38ebfbec,Q-237,Centro educativo DEMO Quito Centro 237,service_point,Quito,Quito / Centro,-0.147286,-78.472522,centro_educativo,620,11,08:00:00,16:00:00,20,catalog,True
+db8bf65c-69b1-5281-b05a-4ef0ff7c3a70,Q-238,Bodega del cliente DEMO Quito Norte 238,service_point,Quito,Quito / Norte,-0.17763,-78.485821,bodega_operativa,1020,13,10:00:00,17:00:00,10,catalog,True
+c53442e0-7ab3-55c2-bdd0-615d49ed9911,Q-239,Oficina DEMO Quito Sur 239,service_point,Quito,Quito / Sur,-0.204524,-78.44027,oficina,1220,20,08:00:00,16:00:00,15,catalog,True
+1d9a9995-e85d-5b09-b691-e93ffdd0d5f9,Q-240,Local comercial DEMO Quito Este 240,service_point,Quito,Quito / Este,-0.202922,-78.45459,local_comercial,220,16,08:00:00,16:00:00,20,catalog,True
+a0ba4494-1642-5b73-af49-3b74d8b3841d,Q-241,Centro educativo DEMO Quito Centro 241,service_point,Quito,Quito / Centro,-0.196246,-78.452307,centro_educativo,240,4,10:00:00,17:00:00,10,catalog,True
+ee3d2c4a-cdbf-53ad-b8a6-c2250c90e58e,Q-242,Bodega del cliente DEMO Quito Norte 242,service_point,Quito,Quito / Norte,-0.160019,-78.483705,bodega_operativa,1440,9,08:00:00,16:00:00,15,catalog,True
+fc30c769-a382-5660-867f-10c94781a173,Q-243,Oficina DEMO Quito Sur 243,service_point,Quito,Quito / Sur,-0.148994,-78.48816,oficina,1340,13,08:00:00,16:00:00,20,catalog,True
+dcf819d7-ccec-5ae5-9cb4-d888343e0e9f,Q-244,Local comercial DEMO Quito Este 244,service_point,Quito,Quito / Este,-0.162077,-78.470508,local_comercial,2020,11,10:00:00,17:00:00,10,catalog,True
+16a2da0b-2785-5a2c-98d2-10c92b6a5da5,Q-245,Centro educativo DEMO Quito Centro 245,service_point,Quito,Quito / Centro,-0.181805,-78.465067,centro_educativo,1820,20,08:00:00,16:00:00,15,catalog,True
+3fb046cf-13c0-5b9f-9b9b-ea959a529ece,Q-246,Bodega del cliente DEMO Quito Norte 246,service_point,Quito,Quito / Norte,-0.183013,-78.49562,bodega_operativa,1480,16,08:00:00,16:00:00,20,catalog,True
+38846827-affd-5e4f-a572-34a6bba2c966,Q-247,Oficina DEMO Quito Sur 247,service_point,Quito,Quito / Sur,-0.182463,-78.440208,oficina,1580,23,10:00:00,17:00:00,10,catalog,True
+719e3096-1de1-5b3a-944a-1239b07c8cde,Q-248,Local comercial DEMO Quito Este 248,service_point,Quito,Quito / Este,-0.170234,-78.496806,local_comercial,1720,30,08:00:00,16:00:00,15,catalog,True
+17db6aa5-2915-5ab0-ae24-db8a834410de,Q-249,Centro educativo DEMO Quito Centro 249,service_point,Quito,Quito / Centro,-0.175472,-78.449358,centro_educativo,920,17,08:00:00,16:00:00,20,catalog,True
+d1b5c546-b0f7-5299-ac8c-20852ce651cd,Q-250,Bodega del cliente DEMO Quito Norte 250,service_point,Quito,Quito / Norte,-0.21419,-78.474521,bodega_operativa,700,3,10:00:00,17:00:00,10,catalog,True
+0534b57a-4f8d-52ad-ad04-484d6be5bd2f,Q-251,Oficina DEMO Quito Sur 251,service_point,Quito,Quito / Sur,-0.198594,-78.452249,oficina,580,16,08:00:00,16:00:00,15,catalog,True
+6fa6f7d8-1eb9-5218-af38-2a4d0a04f85f,Q-252,Local comercial DEMO Quito Este 252,service_point,Quito,Quito / Este,-0.172023,-78.465109,local_comercial,140,12,08:00:00,16:00:00,20,catalog,True
+1520ceca-dc02-5426-af12-832581eb39f8,Q-253,Centro educativo DEMO Quito Centro 253,service_point,Quito,Quito / Centro,-0.153363,-78.433348,centro_educativo,1380,7,10:00:00,17:00:00,10,catalog,True
+196518b6-9222-520c-b8db-ffc797c559c7,Q-254,Bodega del cliente DEMO Quito Norte 254,service_point,Quito,Quito / Norte,-0.177327,-78.49691,bodega_operativa,360,13,08:00:00,16:00:00,15,catalog,True
+33735d5a-1bed-5860-8b28-b70c4244e453,Q-255,Oficina DEMO Quito Sur 255,service_point,Quito,Quito / Sur,-0.163879,-78.455961,oficina,1100,26,08:00:00,16:00:00,20,catalog,True
+0c43974a-1971-5d45-90c2-b3e25b932222,Q-256,Local comercial DEMO Quito Este 256,service_point,Quito,Quito / Este,-0.196653,-78.45449,local_comercial,1880,17,10:00:00,17:00:00,10,catalog,True
+b491eec6-063a-5f21-ae9d-17e87bbd7503,Q-257,Centro educativo DEMO Quito Centro 257,service_point,Quito,Quito / Centro,-0.190071,-78.502405,centro_educativo,2000,11,08:00:00,16:00:00,15,catalog,True
+c411b936-2fe6-5247-89e2-f2c31a027cd9,Q-258,Bodega del cliente DEMO Quito Norte 258,service_point,Quito,Quito / Norte,-0.184641,-78.437459,bodega_operativa,1280,27,08:00:00,16:00:00,20,catalog,True
+c436e6b4-86cd-535c-8ddd-bfe34a0e62c6,Q-259,Oficina DEMO Quito Sur 259,service_point,Quito,Quito / Sur,-0.208664,-78.499824,oficina,1820,11,10:00:00,17:00:00,10,catalog,True
+635a590d-ec47-58fc-80df-f5c24113e8c7,Q-260,Local comercial DEMO Quito Este 260,service_point,Quito,Quito / Este,-0.176413,-78.480636,local_comercial,1840,16,08:00:00,16:00:00,15,catalog,True
+0f84618b-8396-5373-ac52-cf0e91071241,Q-261,Centro educativo DEMO Quito Centro 261,service_point,Quito,Quito / Centro,-0.191808,-78.439653,centro_educativo,1360,20,08:00:00,16:00:00,20,catalog,True
+6726ef5a-3272-569a-9733-9a638a97933e,Q-262,Bodega del cliente DEMO Quito Norte 262,service_point,Quito,Quito / Norte,-0.188087,-78.500412,bodega_operativa,2100,22,10:00:00,17:00:00,10,catalog,True
+dae730ad-7d30-5e2c-830a-8d0f27628a06,Q-263,Oficina DEMO Quito Sur 263,service_point,Quito,Quito / Sur,-0.160669,-78.469783,oficina,1100,13,08:00:00,16:00:00,15,catalog,True
+93dedbcc-ee34-5c2c-bd81-544f10cb4f4a,Q-264,Local comercial DEMO Quito Este 264,service_point,Quito,Quito / Este,-0.150182,-78.501028,local_comercial,1120,14,08:00:00,16:00:00,20,catalog,True
+2db24567-d55a-5d40-af98-f46066d29552,Q-265,Centro educativo DEMO Quito Centro 265,service_point,Quito,Quito / Centro,-0.200817,-78.466403,centro_educativo,720,11,10:00:00,17:00:00,10,catalog,True
+860b1b99-5f8b-59ca-9d6a-b32a3ca7054d,Q-266,Bodega del cliente DEMO Quito Norte 266,service_point,Quito,Quito / Norte,-0.179933,-78.46384,bodega_operativa,700,17,08:00:00,16:00:00,15,catalog,True
+65d98ee1-ff69-53f9-8e28-9e3c3c758955,Q-267,Oficina DEMO Quito Sur 267,service_point,Quito,Quito / Sur,-0.154437,-78.437104,oficina,1940,12,08:00:00,16:00:00,20,catalog,True
+60389baf-c8b1-582d-bfd0-700517464911,Q-268,Local comercial DEMO Quito Este 268,service_point,Quito,Quito / Este,-0.186466,-78.482262,local_comercial,720,14,10:00:00,17:00:00,10,catalog,True
+4b37bb98-2090-5426-8ae6-33044f80752c,Q-269,Centro educativo DEMO Quito Centro 269,service_point,Quito,Quito / Centro,-0.1844,-78.471442,centro_educativo,500,27,08:00:00,16:00:00,15,catalog,True
+7347e80e-74b9-5bc2-8ca4-c1f4c629dbb9,Q-270,Bodega del cliente DEMO Quito Norte 270,service_point,Quito,Quito / Norte,-0.191305,-78.477607,bodega_operativa,500,22,08:00:00,16:00:00,20,catalog,True
+278e4236-133e-54af-8b18-a228564991f9,Q-271,Oficina DEMO Quito Sur 271,service_point,Quito,Quito / Sur,-0.212704,-78.481309,oficina,1020,6,10:00:00,17:00:00,10,catalog,True
+49e2027d-cfd5-5ade-af09-7b5a6cdb11c7,Q-272,Local comercial DEMO Quito Este 272,service_point,Quito,Quito / Este,-0.208517,-78.487762,local_comercial,1020,5,08:00:00,16:00:00,15,catalog,True
+40ea3429-f5f5-5435-aaf3-8d9688187adf,Q-273,Centro educativo DEMO Quito Centro 273,service_point,Quito,Quito / Centro,-0.189303,-78.463317,centro_educativo,760,24,08:00:00,16:00:00,20,catalog,True
+4383e87a-7763-5468-9ed6-fe3e878adcc3,Q-274,Bodega del cliente DEMO Quito Norte 274,service_point,Quito,Quito / Norte,-0.197217,-78.46505,bodega_operativa,760,25,10:00:00,17:00:00,10,catalog,True
+d4f59966-3405-5e5c-90fb-f98b54b787d2,Q-275,Oficina DEMO Quito Sur 275,service_point,Quito,Quito / Sur,-0.158135,-78.44627,oficina,180,18,08:00:00,16:00:00,15,catalog,True
+80f771d0-5872-59e0-99f3-d63186d76d5d,Q-276,Local comercial DEMO Quito Este 276,service_point,Quito,Quito / Este,-0.181836,-78.455044,local_comercial,860,17,08:00:00,16:00:00,20,catalog,True
+db097313-f2f1-57ea-95ac-d659d92e639e,Q-277,Centro educativo DEMO Quito Centro 277,service_point,Quito,Quito / Centro,-0.193671,-78.437121,centro_educativo,1160,29,10:00:00,17:00:00,10,catalog,True
+47f697d9-a7e9-5be2-b5bc-ee5ed62cf03c,Q-278,Bodega del cliente DEMO Quito Norte 278,service_point,Quito,Quito / Norte,-0.160925,-78.482221,bodega_operativa,740,17,08:00:00,16:00:00,15,catalog,True
+af0d6bad-f2c7-5f7c-89e3-c9060678e27f,Q-279,Oficina DEMO Quito Sur 279,service_point,Quito,Quito / Sur,-0.197894,-78.443554,oficina,1520,15,08:00:00,16:00:00,20,catalog,True
+36ec2c0a-4279-539e-b7fd-c6cc855db0d7,Q-280,Local comercial DEMO Quito Este 280,service_point,Quito,Quito / Este,-0.18845,-78.492409,local_comercial,460,5,10:00:00,17:00:00,10,catalog,True
+f82bd686-42a4-5877-8528-61091e1b24f0,Q-281,Centro educativo DEMO Quito Centro 281,service_point,Quito,Quito / Centro,-0.21126,-78.489034,centro_educativo,1600,23,08:00:00,16:00:00,15,catalog,True
+f0741cc1-8069-5ea0-9988-d5bfbd456509,Q-282,Bodega del cliente DEMO Quito Norte 282,service_point,Quito,Quito / Norte,-0.190002,-78.473192,bodega_operativa,1920,16,08:00:00,16:00:00,20,catalog,True
+6d70096f-3ae4-5baa-b46e-34e1f3f47580,Q-283,Oficina DEMO Quito Sur 283,service_point,Quito,Quito / Sur,-0.20677,-78.460759,oficina,1820,9,10:00:00,17:00:00,10,catalog,True
+12a03ca3-69b8-5138-b963-4a12de64837b,Q-284,Local comercial DEMO Quito Este 284,service_point,Quito,Quito / Este,-0.181078,-78.447374,local_comercial,1660,12,08:00:00,16:00:00,15,catalog,True
+4a5d9c49-bf1b-5f8e-b45d-04e0ca5137c6,Q-285,Centro educativo DEMO Quito Centro 285,service_point,Quito,Quito / Centro,-0.191922,-78.489994,centro_educativo,960,20,08:00:00,16:00:00,20,catalog,True
+1ecd15df-8a93-50d3-a1f3-3386162297ee,Q-286,Bodega del cliente DEMO Quito Norte 286,service_point,Quito,Quito / Norte,-0.148515,-78.488971,bodega_operativa,820,4,10:00:00,17:00:00,10,catalog,True
+f0aa1ef1-9105-59c5-8ce8-a530a65fd157,Q-287,Oficina DEMO Quito Sur 287,service_point,Quito,Quito / Sur,-0.161756,-78.486192,oficina,1760,10,08:00:00,16:00:00,15,catalog,True
+2da402b4-0c42-5ce4-813f-efaa9fac450a,Q-288,Local comercial DEMO Quito Este 288,service_point,Quito,Quito / Este,-0.17849,-78.487641,local_comercial,1720,30,08:00:00,16:00:00,20,catalog,True
+61dbfcc6-4769-5edc-a113-340c029a8e5e,Q-289,Centro educativo DEMO Quito Centro 289,service_point,Quito,Quito / Centro,-0.212534,-78.444546,centro_educativo,1720,13,10:00:00,17:00:00,10,catalog,True
+3d369eba-d652-51e0-a549-fda6f5204b34,Q-290,Bodega del cliente DEMO Quito Norte 290,service_point,Quito,Quito / Norte,-0.19766,-78.49434,bodega_operativa,1420,29,08:00:00,16:00:00,15,catalog,True
+98e2119a-10fd-5db3-b80d-f6db46df09d9,Q-291,Oficina DEMO Quito Sur 291,service_point,Quito,Quito / Sur,-0.154918,-78.439497,oficina,940,13,08:00:00,16:00:00,20,catalog,True
+ec1865bd-7e34-58af-8ef1-5fbd9cc88cb1,Q-292,Local comercial DEMO Quito Este 292,service_point,Quito,Quito / Este,-0.194637,-78.439385,local_comercial,1120,8,10:00:00,17:00:00,10,catalog,True
+44497735-1ad8-506a-99c8-db864dd34a00,Q-293,Centro educativo DEMO Quito Centro 293,service_point,Quito,Quito / Centro,-0.173891,-78.474353,centro_educativo,1680,15,08:00:00,16:00:00,15,catalog,True
+1aed9a35-3306-5ac3-82d2-638f4a3f46a0,Q-294,Bodega del cliente DEMO Quito Norte 294,service_point,Quito,Quito / Norte,-0.189568,-78.439883,bodega_operativa,820,21,08:00:00,16:00:00,20,catalog,True
+e0f829b8-f6d2-5a64-bf82-1722145584c4,Q-295,Oficina DEMO Quito Sur 295,service_point,Quito,Quito / Sur,-0.204317,-78.463617,oficina,680,4,10:00:00,17:00:00,10,catalog,True
+b9a7002e-4263-511d-b48d-1bd6e2efc304,Q-296,Local comercial DEMO Quito Este 296,service_point,Quito,Quito / Este,-0.190102,-78.444335,local_comercial,840,26,08:00:00,16:00:00,15,catalog,True
+316693f4-b739-5ff0-89d5-4d476b52de4e,Q-297,Centro educativo DEMO Quito Centro 297,service_point,Quito,Quito / Centro,-0.150729,-78.474297,centro_educativo,1260,11,08:00:00,16:00:00,20,catalog,True
+c875edfc-9bc8-5e8f-839f-e9f80a7e6192,Q-298,Bodega del cliente DEMO Quito Norte 298,service_point,Quito,Quito / Norte,-0.199165,-78.498445,bodega_operativa,1900,24,10:00:00,17:00:00,10,catalog,True
+f7cf6352-00b2-5ea4-834a-88129ba1f672,Q-299,Oficina DEMO Quito Sur 299,service_point,Quito,Quito / Sur,-0.200791,-78.444331,oficina,1220,9,08:00:00,16:00:00,15,catalog,True
+61c5b6de-ef15-505b-9a57-721a141b80b2,Q-300,Local comercial DEMO Quito Este 300,service_point,Quito,Quito / Este,-0.207287,-78.458595,local_comercial,500,27,08:00:00,16:00:00,20,catalog,True
+9b2a6055-1fc6-5359-b564-1a75f8a55760,G-009,Centro educativo DEMO Guayaquil Centro 009,service_point,Guayaquil,Guayaquil / Centro,-2.155254,-79.894723,centro_educativo,560,23,10:00:00,17:00:00,10,catalog,True
+e4d00f49-9f81-5a0a-8b65-7d4a5bb273ee,G-010,Bodega del cliente DEMO Guayaquil Norte 010,service_point,Guayaquil,Guayaquil / Norte,-2.161637,-79.943112,bodega_operativa,1220,25,08:00:00,16:00:00,15,catalog,True
+478a9a16-3064-5edb-b2b9-ea4463d189ab,G-011,Oficina DEMO Guayaquil Sur 011,service_point,Guayaquil,Guayaquil / Sur,-2.16962,-79.929712,oficina,1000,16,08:00:00,16:00:00,20,catalog,True
+62da7e3d-0daa-51f6-9534-d9fc9191dc6b,G-012,Local comercial DEMO Guayaquil Este 012,service_point,Guayaquil,Guayaquil / Este,-2.19112,-79.948982,local_comercial,1540,27,10:00:00,17:00:00,10,catalog,True
+f38bfc8b-7aa3-5789-84d2-a03385b7da04,G-013,Centro educativo DEMO Guayaquil Centro 013,service_point,Guayaquil,Guayaquil / Centro,-2.192809,-79.951462,centro_educativo,1800,20,08:00:00,16:00:00,15,catalog,True
+f7f6e757-1fd3-5d27-93d5-387c2700d01b,G-014,Bodega del cliente DEMO Guayaquil Norte 014,service_point,Guayaquil,Guayaquil / Norte,-2.137375,-79.928312,bodega_operativa,1660,23,08:00:00,16:00:00,20,catalog,True
+269cbf27-cab8-548f-8ca1-948fe01080cc,G-015,Oficina DEMO Guayaquil Sur 015,service_point,Guayaquil,Guayaquil / Sur,-2.141718,-79.949714,oficina,1780,10,10:00:00,17:00:00,10,catalog,True
+8e1a52ba-cae8-5aba-b7df-3a2c679ff6b1,G-016,Local comercial DEMO Guayaquil Este 016,service_point,Guayaquil,Guayaquil / Este,-2.174607,-79.924717,local_comercial,420,3,08:00:00,16:00:00,15,catalog,True
+0da41a9c-978c-5252-a3f9-0e2814fac6f1,G-017,Centro educativo DEMO Guayaquil Centro 017,service_point,Guayaquil,Guayaquil / Centro,-2.144713,-79.955901,centro_educativo,740,24,08:00:00,16:00:00,20,catalog,True
+a5c90a70-e6da-527a-b509-75bc8f523776,G-018,Bodega del cliente DEMO Guayaquil Norte 018,service_point,Guayaquil,Guayaquil / Norte,-2.146571,-79.954943,bodega_operativa,900,26,10:00:00,17:00:00,10,catalog,True
+2ea5e1ce-7888-5692-8659-33c0a03c9625,G-019,Oficina DEMO Guayaquil Sur 019,service_point,Guayaquil,Guayaquil / Sur,-2.176186,-79.918117,oficina,1540,7,08:00:00,16:00:00,15,catalog,True
+441ce8f7-4eaf-5dd4-a611-f309b4853975,G-020,Local comercial DEMO Guayaquil Este 020,service_point,Guayaquil,Guayaquil / Este,-2.173672,-79.928724,local_comercial,300,19,08:00:00,16:00:00,20,catalog,True
+8d38010a-c33e-5003-8b09-165205a3e192,G-021,Centro educativo DEMO Guayaquil Centro 021,service_point,Guayaquil,Guayaquil / Centro,-2.200306,-79.912837,centro_educativo,380,18,10:00:00,17:00:00,10,catalog,True
+6daaf173-1a4d-55f0-b84d-8c9c82282d2e,G-022,Bodega del cliente DEMO Guayaquil Norte 022,service_point,Guayaquil,Guayaquil / Norte,-2.155498,-79.920681,bodega_operativa,900,28,08:00:00,16:00:00,15,catalog,True
+b7ee2cb4-6a8e-56a9-a592-2c759a67de76,G-023,Oficina DEMO Guayaquil Sur 023,service_point,Guayaquil,Guayaquil / Sur,-2.202137,-79.929023,oficina,1540,18,08:00:00,16:00:00,20,catalog,True
+ff0c0e8e-6e75-517a-b894-5599eb307b65,G-024,Local comercial DEMO Guayaquil Este 024,service_point,Guayaquil,Guayaquil / Este,-2.192281,-79.907341,local_comercial,220,27,10:00:00,17:00:00,10,catalog,True
+0238ffdf-172b-52df-9ff3-1a1b635eae02,G-025,Centro educativo DEMO Guayaquil Centro 025,service_point,Guayaquil,Guayaquil / Centro,-2.154239,-79.896461,centro_educativo,740,6,08:00:00,16:00:00,15,catalog,True
+755e6ff3-3aba-59e3-abc0-87b0ede3e79e,G-026,Bodega del cliente DEMO Guayaquil Norte 026,service_point,Guayaquil,Guayaquil / Norte,-2.196374,-79.930118,bodega_operativa,1140,28,08:00:00,16:00:00,20,catalog,True
+0714958e-5204-5a69-a4d9-9a1840bc88eb,G-027,Oficina DEMO Guayaquil Sur 027,service_point,Guayaquil,Guayaquil / Sur,-2.143056,-79.895295,oficina,1240,20,10:00:00,17:00:00,10,catalog,True
+b25542a8-9ec7-5e98-bb85-9cffce31f7be,G-028,Local comercial DEMO Guayaquil Este 028,service_point,Guayaquil,Guayaquil / Este,-2.140374,-79.890517,local_comercial,500,19,08:00:00,16:00:00,15,catalog,True
+06f13885-fdbd-5398-a93b-26fa3c432ce4,G-029,Centro educativo DEMO Guayaquil Centro 029,service_point,Guayaquil,Guayaquil / Centro,-2.198619,-79.92241,centro_educativo,900,11,08:00:00,16:00:00,20,catalog,True
+48939eb8-9f01-5611-886b-6a3679b83657,G-030,Bodega del cliente DEMO Guayaquil Norte 030,service_point,Guayaquil,Guayaquil / Norte,-2.158059,-79.898338,bodega_operativa,520,24,10:00:00,17:00:00,10,catalog,True
+d40f6212-9689-5fc6-b85c-095f4eba18de,G-031,Oficina DEMO Guayaquil Sur 031,service_point,Guayaquil,Guayaquil / Sur,-2.155702,-79.920789,oficina,2180,7,08:00:00,16:00:00,15,catalog,True
+b4734fb6-03ba-5815-a3b3-1695f94f3246,G-032,Local comercial DEMO Guayaquil Este 032,service_point,Guayaquil,Guayaquil / Este,-2.188459,-79.908989,local_comercial,640,23,08:00:00,16:00:00,20,catalog,True
+654dc065-bf1f-5e08-80ec-9c07ad1df4da,G-033,Centro educativo DEMO Guayaquil Centro 033,service_point,Guayaquil,Guayaquil / Centro,-2.150081,-79.952306,centro_educativo,420,28,10:00:00,17:00:00,10,catalog,True
+61d6168a-5931-5399-b3f2-39dd375eeb01,G-034,Bodega del cliente DEMO Guayaquil Norte 034,service_point,Guayaquil,Guayaquil / Norte,-2.162546,-79.895618,bodega_operativa,520,7,08:00:00,16:00:00,15,catalog,True
+03150f95-c6aa-5844-b8ea-e23a4796b74b,G-035,Oficina DEMO Guayaquil Sur 035,service_point,Guayaquil,Guayaquil / Sur,-2.157244,-79.891342,oficina,1780,14,08:00:00,16:00:00,20,catalog,True
+db1d4959-1f96-54bb-a1e5-941b3fc99459,G-036,Local comercial DEMO Guayaquil Este 036,service_point,Guayaquil,Guayaquil / Este,-2.192237,-79.911379,local_comercial,2060,21,10:00:00,17:00:00,10,catalog,True
+b673abfb-8b05-5a49-a6a6-c449f9298a8c,G-037,Centro educativo DEMO Guayaquil Centro 037,service_point,Guayaquil,Guayaquil / Centro,-2.179822,-79.899748,centro_educativo,1380,15,08:00:00,16:00:00,15,catalog,True
+67c45d5a-c33f-576e-ae22-cdd34bf4bf57,G-038,Bodega del cliente DEMO Guayaquil Norte 038,service_point,Guayaquil,Guayaquil / Norte,-2.176898,-79.925433,bodega_operativa,1400,8,08:00:00,16:00:00,20,catalog,True
+6012a384-ea53-5f2a-9bf1-978cf6b86960,G-039,Oficina DEMO Guayaquil Sur 039,service_point,Guayaquil,Guayaquil / Sur,-2.138617,-79.904726,oficina,1700,3,10:00:00,17:00:00,10,catalog,True
+f6b251a6-9d79-5cda-89fb-830c2302ba2c,G-040,Local comercial DEMO Guayaquil Este 040,service_point,Guayaquil,Guayaquil / Este,-2.155716,-79.90572,local_comercial,1300,17,08:00:00,16:00:00,15,catalog,True
+48e9726c-4a30-55a2-82b2-b36d7706e457,G-041,Centro educativo DEMO Guayaquil Centro 041,service_point,Guayaquil,Guayaquil / Centro,-2.191177,-79.94791,centro_educativo,1940,3,08:00:00,16:00:00,20,catalog,True
+5e1e50e3-eaf0-5e51-997b-080fb77cd02a,G-042,Bodega del cliente DEMO Guayaquil Norte 042,service_point,Guayaquil,Guayaquil / Norte,-2.149119,-79.92515,bodega_operativa,440,16,10:00:00,17:00:00,10,catalog,True
+babee14f-340d-50ae-94aa-34c0187c8ede,G-043,Oficina DEMO Guayaquil Sur 043,service_point,Guayaquil,Guayaquil / Sur,-2.194381,-79.934966,oficina,1100,8,08:00:00,16:00:00,15,catalog,True
+11a64985-8cfe-5f29-a3fe-fe4e2fa7cec3,G-044,Local comercial DEMO Guayaquil Este 044,service_point,Guayaquil,Guayaquil / Este,-2.180287,-79.928982,local_comercial,1140,12,08:00:00,16:00:00,20,catalog,True
+853039dd-51f3-5ae2-9999-1a360cf0bfb3,G-045,Centro educativo DEMO Guayaquil Centro 045,service_point,Guayaquil,Guayaquil / Centro,-2.145813,-79.928155,centro_educativo,640,4,10:00:00,17:00:00,10,catalog,True
+bec07d99-555d-5009-9c5c-8e8bb05d4197,G-046,Bodega del cliente DEMO Guayaquil Norte 046,service_point,Guayaquil,Guayaquil / Norte,-2.203276,-79.954102,bodega_operativa,2060,17,08:00:00,16:00:00,15,catalog,True
+f6f6fc17-9055-51fc-b025-9d35ac297e5d,G-047,Oficina DEMO Guayaquil Sur 047,service_point,Guayaquil,Guayaquil / Sur,-2.16607,-79.932318,oficina,2140,23,08:00:00,16:00:00,20,catalog,True
+3b6a70ab-43be-5082-95f0-c4b00a945faf,G-048,Local comercial DEMO Guayaquil Este 048,service_point,Guayaquil,Guayaquil / Este,-2.171674,-79.892638,local_comercial,260,22,10:00:00,17:00:00,10,catalog,True
+3981a740-ab02-5be5-a5a7-2db1f5854e4a,G-049,Centro educativo DEMO Guayaquil Centro 049,service_point,Guayaquil,Guayaquil / Centro,-2.173909,-79.944732,centro_educativo,2120,30,08:00:00,16:00:00,15,catalog,True
+e4104124-0dc4-5225-9578-c6a7825f86a5,G-050,Bodega del cliente DEMO Guayaquil Norte 050,service_point,Guayaquil,Guayaquil / Norte,-2.150662,-79.917482,bodega_operativa,1280,5,08:00:00,16:00:00,20,catalog,True
+c79621f2-a23e-5f46-85b0-06fcb61e862e,G-051,Oficina DEMO Guayaquil Sur 051,service_point,Guayaquil,Guayaquil / Sur,-2.174011,-79.888851,oficina,2140,16,10:00:00,17:00:00,10,catalog,True
+e81a082e-5729-518c-ae14-6c0ed4c44ef7,G-052,Local comercial DEMO Guayaquil Este 052,service_point,Guayaquil,Guayaquil / Este,-2.14117,-79.949332,local_comercial,1620,20,08:00:00,16:00:00,15,catalog,True
+454ffc3d-9caa-5044-817d-58e122924dc0,G-053,Centro educativo DEMO Guayaquil Centro 053,service_point,Guayaquil,Guayaquil / Centro,-2.199522,-79.916407,centro_educativo,1100,28,08:00:00,16:00:00,20,catalog,True
+73848899-13a0-5dc8-8881-137b76a303b1,G-054,Bodega del cliente DEMO Guayaquil Norte 054,service_point,Guayaquil,Guayaquil / Norte,-2.143529,-79.930848,bodega_operativa,440,5,10:00:00,17:00:00,10,catalog,True
+f7bf16e4-d826-5358-b16b-a02d8a9729d6,G-055,Oficina DEMO Guayaquil Sur 055,service_point,Guayaquil,Guayaquil / Sur,-2.162733,-79.930706,oficina,160,26,08:00:00,16:00:00,15,catalog,True
+853106be-7752-55b4-9779-01d76aa921c7,G-056,Local comercial DEMO Guayaquil Este 056,service_point,Guayaquil,Guayaquil / Este,-2.165195,-79.893994,local_comercial,2040,26,08:00:00,16:00:00,20,catalog,True
+1a366869-67d8-5911-95c9-997ff891079d,G-057,Centro educativo DEMO Guayaquil Centro 057,service_point,Guayaquil,Guayaquil / Centro,-2.169393,-79.916107,centro_educativo,400,3,10:00:00,17:00:00,10,catalog,True
+bbb38172-a42c-5d5e-adf6-c8c05860ff02,G-058,Bodega del cliente DEMO Guayaquil Norte 058,service_point,Guayaquil,Guayaquil / Norte,-2.157202,-79.950829,bodega_operativa,800,29,08:00:00,16:00:00,15,catalog,True
+b9d992b0-5b55-5e2d-a237-87aed4df7b12,G-059,Oficina DEMO Guayaquil Sur 059,service_point,Guayaquil,Guayaquil / Sur,-2.181209,-79.909538,oficina,220,12,08:00:00,16:00:00,20,catalog,True
+18a2c1be-3979-5cdc-b16e-f175eacd618a,G-060,Local comercial DEMO Guayaquil Este 060,service_point,Guayaquil,Guayaquil / Este,-2.181426,-79.906615,local_comercial,2120,20,10:00:00,17:00:00,10,catalog,True
+61780b76-982d-5231-ac4c-cc47eda5bd41,G-061,Centro educativo DEMO Guayaquil Centro 061,service_point,Guayaquil,Guayaquil / Centro,-2.139848,-79.949699,centro_educativo,1940,9,08:00:00,16:00:00,15,catalog,True
+7204f826-768c-53d1-b9c7-332ae188dae6,G-062,Bodega del cliente DEMO Guayaquil Norte 062,service_point,Guayaquil,Guayaquil / Norte,-2.150391,-79.94872,bodega_operativa,1740,24,08:00:00,16:00:00,20,catalog,True
+50e23366-8da0-5e45-812c-11b0beaadb6e,G-063,Oficina DEMO Guayaquil Sur 063,service_point,Guayaquil,Guayaquil / Sur,-2.198959,-79.887752,oficina,1800,21,10:00:00,17:00:00,10,catalog,True
+3d794f42-4a68-5a84-bf82-8bb3639897d2,G-064,Local comercial DEMO Guayaquil Este 064,service_point,Guayaquil,Guayaquil / Este,-2.139709,-79.910881,local_comercial,1780,11,08:00:00,16:00:00,15,catalog,True
+ecafadb1-d1f8-5c80-9cb5-65c956124029,G-065,Centro educativo DEMO Guayaquil Centro 065,service_point,Guayaquil,Guayaquil / Centro,-2.198227,-79.955364,centro_educativo,820,6,08:00:00,16:00:00,20,catalog,True
+556666f7-7f36-5edc-a2bf-5c9c770ae252,G-066,Bodega del cliente DEMO Guayaquil Norte 066,service_point,Guayaquil,Guayaquil / Norte,-2.143155,-79.919794,bodega_operativa,1680,15,10:00:00,17:00:00,10,catalog,True
+722851d8-5a30-51ed-9663-ad370b74ebb2,G-067,Oficina DEMO Guayaquil Sur 067,service_point,Guayaquil,Guayaquil / Sur,-2.173347,-79.902511,oficina,480,27,08:00:00,16:00:00,15,catalog,True
+00f7bc03-403f-50af-8975-51715049a082,G-068,Local comercial DEMO Guayaquil Este 068,service_point,Guayaquil,Guayaquil / Este,-2.195419,-79.895124,local_comercial,720,19,08:00:00,16:00:00,20,catalog,True
+479cf3fb-2d7c-5e70-b1d6-a627df49fd3a,G-069,Centro educativo DEMO Guayaquil Centro 069,service_point,Guayaquil,Guayaquil / Centro,-2.17715,-79.936521,centro_educativo,1720,7,10:00:00,17:00:00,10,catalog,True
+198819b4-6dde-5191-8489-f4c129d65dd0,G-070,Bodega del cliente DEMO Guayaquil Norte 070,service_point,Guayaquil,Guayaquil / Norte,-2.148068,-79.95325,bodega_operativa,1780,18,08:00:00,16:00:00,15,catalog,True
+235ceeae-5c2d-5176-8e25-9af450e326bb,G-071,Oficina DEMO Guayaquil Sur 071,service_point,Guayaquil,Guayaquil / Sur,-2.176409,-79.896091,oficina,1320,25,08:00:00,16:00:00,20,catalog,True
+ce30bc34-a6bf-591f-9f73-46603348cdc3,G-072,Local comercial DEMO Guayaquil Este 072,service_point,Guayaquil,Guayaquil / Este,-2.140676,-79.927683,local_comercial,220,10,10:00:00,17:00:00,10,catalog,True
+04f858fc-9fb8-5d97-8837-5899102fbebe,G-073,Centro educativo DEMO Guayaquil Centro 073,service_point,Guayaquil,Guayaquil / Centro,-2.197979,-79.941896,centro_educativo,1320,27,08:00:00,16:00:00,15,catalog,True
+642a0ad3-8e51-5b14-83c2-0790ae7c578a,G-074,Bodega del cliente DEMO Guayaquil Norte 074,service_point,Guayaquil,Guayaquil / Norte,-2.192987,-79.910435,bodega_operativa,800,16,08:00:00,16:00:00,20,catalog,True
+dd517762-524c-5c49-adbc-5ddd5bf49a76,G-075,Oficina DEMO Guayaquil Sur 075,service_point,Guayaquil,Guayaquil / Sur,-2.153859,-79.927249,oficina,180,14,10:00:00,17:00:00,10,catalog,True
+6c59271a-be2f-5db0-b1c6-64ed97e9f44f,G-076,Local comercial DEMO Guayaquil Este 076,service_point,Guayaquil,Guayaquil / Este,-2.191757,-79.914467,local_comercial,1400,11,08:00:00,16:00:00,15,catalog,True
+9f342dc6-a551-5d14-9d2c-4d42563bc4ad,G-077,Centro educativo DEMO Guayaquil Centro 077,service_point,Guayaquil,Guayaquil / Centro,-2.190676,-79.93198,centro_educativo,2180,10,08:00:00,16:00:00,20,catalog,True
+0d707808-e400-5566-96af-fe6ad178cfe6,G-078,Bodega del cliente DEMO Guayaquil Norte 078,service_point,Guayaquil,Guayaquil / Norte,-2.184715,-79.914914,bodega_operativa,920,5,10:00:00,17:00:00,10,catalog,True
+ce0ad4f4-a963-5888-8359-69aa9c14e40c,G-079,Oficina DEMO Guayaquil Sur 079,service_point,Guayaquil,Guayaquil / Sur,-2.176588,-79.928084,oficina,1560,21,08:00:00,16:00:00,15,catalog,True
+895460b4-284b-5268-a2ea-835b746b6159,G-080,Local comercial DEMO Guayaquil Este 080,service_point,Guayaquil,Guayaquil / Este,-2.151497,-79.896681,local_comercial,600,18,08:00:00,16:00:00,20,catalog,True
+befedd3b-2421-5011-b7a4-cd6636936d5a,G-081,Centro educativo DEMO Guayaquil Centro 081,service_point,Guayaquil,Guayaquil / Centro,-2.203291,-79.915419,centro_educativo,680,5,10:00:00,17:00:00,10,catalog,True
+b96792c7-4ec5-58cf-bdec-d6e7fdb2a1e4,G-082,Bodega del cliente DEMO Guayaquil Norte 082,service_point,Guayaquil,Guayaquil / Norte,-2.180303,-79.901863,bodega_operativa,840,28,08:00:00,16:00:00,15,catalog,True
+2b04dfca-dda3-5198-991a-879ac431fb1d,G-083,Oficina DEMO Guayaquil Sur 083,service_point,Guayaquil,Guayaquil / Sur,-2.203938,-79.95328,oficina,1080,26,08:00:00,16:00:00,20,catalog,True
+43af7cc1-e5bc-58a9-a8ef-00bb60ea743b,G-084,Local comercial DEMO Guayaquil Este 084,service_point,Guayaquil,Guayaquil / Este,-2.194214,-79.926216,local_comercial,1000,22,10:00:00,17:00:00,10,catalog,True
+62f0b5b8-f034-57c6-ba70-57dd3c99a619,G-085,Centro educativo DEMO Guayaquil Centro 085,service_point,Guayaquil,Guayaquil / Centro,-2.192465,-79.917842,centro_educativo,1020,11,08:00:00,16:00:00,15,catalog,True
+cd3ea10d-4a7f-5ee2-b6f0-5763c6e1f501,G-086,Bodega del cliente DEMO Guayaquil Norte 086,service_point,Guayaquil,Guayaquil / Norte,-2.171882,-79.925717,bodega_operativa,260,20,08:00:00,16:00:00,20,catalog,True
+d8f93144-b54c-5e13-b06c-b83a29e962cd,G-087,Oficina DEMO Guayaquil Sur 087,service_point,Guayaquil,Guayaquil / Sur,-2.182406,-79.890805,oficina,880,28,10:00:00,17:00:00,10,catalog,True
+32319927-acfb-51fa-aecf-677679938cf8,G-088,Local comercial DEMO Guayaquil Este 088,service_point,Guayaquil,Guayaquil / Este,-2.1953,-79.951695,local_comercial,1080,14,08:00:00,16:00:00,15,catalog,True
+8ca1ea91-f960-5eac-801a-ae87b50ab41e,G-089,Centro educativo DEMO Guayaquil Centro 089,service_point,Guayaquil,Guayaquil / Centro,-2.182477,-79.939224,centro_educativo,920,6,08:00:00,16:00:00,20,catalog,True
+f5f928e9-0ee2-5ccd-94f2-2499bcd5915a,G-090,Bodega del cliente DEMO Guayaquil Norte 090,service_point,Guayaquil,Guayaquil / Norte,-2.198051,-79.929355,bodega_operativa,1820,8,10:00:00,17:00:00,10,catalog,True
+0026459c-2e23-53d4-961f-d5fa1b9e9da9,G-091,Oficina DEMO Guayaquil Sur 091,service_point,Guayaquil,Guayaquil / Sur,-2.152461,-79.895313,oficina,1180,21,08:00:00,16:00:00,15,catalog,True
+cbdd20fd-a30e-50d1-b50e-1f7178f54bc8,G-092,Local comercial DEMO Guayaquil Este 092,service_point,Guayaquil,Guayaquil / Este,-2.198998,-79.896804,local_comercial,1260,18,08:00:00,16:00:00,20,catalog,True
+6168d0d8-cac3-5fd8-b956-4ca960edac7c,G-093,Centro educativo DEMO Guayaquil Centro 093,service_point,Guayaquil,Guayaquil / Centro,-2.163449,-79.912879,centro_educativo,320,23,10:00:00,17:00:00,10,catalog,True
+89e5361b-239b-549e-b93a-455085653159,G-094,Bodega del cliente DEMO Guayaquil Norte 094,service_point,Guayaquil,Guayaquil / Norte,-2.202461,-79.911028,bodega_operativa,360,6,08:00:00,16:00:00,15,catalog,True
+4257b875-84f1-5c9c-a192-b046f4be9c2a,G-095,Oficina DEMO Guayaquil Sur 095,service_point,Guayaquil,Guayaquil / Sur,-2.175662,-79.916863,oficina,480,8,08:00:00,16:00:00,20,catalog,True
+54c9ca3c-3b80-52f7-8ed8-46cf1ada85a4,G-096,Local comercial DEMO Guayaquil Este 096,service_point,Guayaquil,Guayaquil / Este,-2.203981,-79.913296,local_comercial,520,4,10:00:00,17:00:00,10,catalog,True
+b36a2c0e-0ee7-5aee-b699-ab5d28cc36ce,G-097,Centro educativo DEMO Guayaquil Centro 097,service_point,Guayaquil,Guayaquil / Centro,-2.143852,-79.936006,centro_educativo,1380,15,08:00:00,16:00:00,15,catalog,True
+01674a90-e5cb-58c4-832e-48967c4570d4,G-098,Bodega del cliente DEMO Guayaquil Norte 098,service_point,Guayaquil,Guayaquil / Norte,-2.153644,-79.93467,bodega_operativa,960,11,08:00:00,16:00:00,20,catalog,True
+4dd985f1-b971-5a0b-afb8-16a075761475,G-099,Oficina DEMO Guayaquil Sur 099,service_point,Guayaquil,Guayaquil / Sur,-2.136784,-79.911912,oficina,180,11,10:00:00,17:00:00,10,catalog,True
+c411bbb8-59d9-567c-98c4-f2c2a4585be5,G-100,Local comercial DEMO Guayaquil Este 100,service_point,Guayaquil,Guayaquil / Este,-2.156377,-79.911586,local_comercial,660,18,08:00:00,16:00:00,15,catalog,True
+9c03aade-83ac-5382-a22b-496a806ce6ca,G-101,Centro educativo DEMO Guayaquil Centro 101,service_point,Guayaquil,Guayaquil / Centro,-2.158679,-79.925533,centro_educativo,1240,8,08:00:00,16:00:00,20,catalog,True
+f06c8f5e-3e5e-58a0-b475-ca75d872501a,G-102,Bodega del cliente DEMO Guayaquil Norte 102,service_point,Guayaquil,Guayaquil / Norte,-2.163316,-79.910488,bodega_operativa,1700,25,10:00:00,17:00:00,10,catalog,True
+9b2f11f4-c03c-52f8-9aee-d448d9fb020c,G-103,Oficina DEMO Guayaquil Sur 103,service_point,Guayaquil,Guayaquil / Sur,-2.188414,-79.945226,oficina,1160,20,08:00:00,16:00:00,15,catalog,True
+aebd5def-3532-525c-a8ec-574b7be39705,G-104,Local comercial DEMO Guayaquil Este 104,service_point,Guayaquil,Guayaquil / Este,-2.194855,-79.889041,local_comercial,2060,21,08:00:00,16:00:00,20,catalog,True
+8cc39231-fc00-5ba2-8ff3-11a4946475b0,G-105,Centro educativo DEMO Guayaquil Centro 105,service_point,Guayaquil,Guayaquil / Centro,-2.19503,-79.930302,centro_educativo,540,8,10:00:00,17:00:00,10,catalog,True
+ed04f130-04eb-5e5f-b88c-c8d8d4e6459c,G-106,Bodega del cliente DEMO Guayaquil Norte 106,service_point,Guayaquil,Guayaquil / Norte,-2.144525,-79.902287,bodega_operativa,1340,20,08:00:00,16:00:00,15,catalog,True
+89c57c3f-783b-543d-b862-bc485a4c0cb3,G-107,Oficina DEMO Guayaquil Sur 107,service_point,Guayaquil,Guayaquil / Sur,-2.178864,-79.933819,oficina,1480,23,08:00:00,16:00:00,20,catalog,True
+89490ad9-363f-5a73-be9b-de90e29bbc5d,G-108,Local comercial DEMO Guayaquil Este 108,service_point,Guayaquil,Guayaquil / Este,-2.1898,-79.893505,local_comercial,1020,12,10:00:00,17:00:00,10,catalog,True
+1018f9f3-6bfc-5096-9430-1864814f1c67,G-109,Centro educativo DEMO Guayaquil Centro 109,service_point,Guayaquil,Guayaquil / Centro,-2.161768,-79.948324,centro_educativo,1960,21,08:00:00,16:00:00,15,catalog,True
+c0b4763b-1bb9-5004-b7fc-59590a4cb9c2,G-110,Bodega del cliente DEMO Guayaquil Norte 110,service_point,Guayaquil,Guayaquil / Norte,-2.177404,-79.893598,bodega_operativa,760,15,08:00:00,16:00:00,20,catalog,True
+c7379c24-c340-56e6-a346-9c7209ec1476,G-111,Oficina DEMO Guayaquil Sur 111,service_point,Guayaquil,Guayaquil / Sur,-2.148323,-79.918555,oficina,840,14,10:00:00,17:00:00,10,catalog,True
+035bb6aa-6dfa-586d-9c25-e90c415752f9,G-112,Local comercial DEMO Guayaquil Este 112,service_point,Guayaquil,Guayaquil / Este,-2.192697,-79.892994,local_comercial,240,11,08:00:00,16:00:00,15,catalog,True
+3a2fc6c0-9aa1-5e83-b235-78e69eff8940,G-113,Centro educativo DEMO Guayaquil Centro 113,service_point,Guayaquil,Guayaquil / Centro,-2.135744,-79.92535,centro_educativo,1340,17,08:00:00,16:00:00,20,catalog,True
+e12aedf5-6cfb-58f3-8267-351fcf0f323c,G-114,Bodega del cliente DEMO Guayaquil Norte 114,service_point,Guayaquil,Guayaquil / Norte,-2.183514,-79.907871,bodega_operativa,940,9,10:00:00,17:00:00,10,catalog,True
+901c6c94-c611-5a85-9479-4bc048af2cd8,G-115,Oficina DEMO Guayaquil Sur 115,service_point,Guayaquil,Guayaquil / Sur,-2.171662,-79.952785,oficina,1140,21,08:00:00,16:00:00,15,catalog,True
+6da549fd-d5ac-5a2e-90fb-6e883b321912,G-116,Local comercial DEMO Guayaquil Este 116,service_point,Guayaquil,Guayaquil / Este,-2.195606,-79.942302,local_comercial,580,10,08:00:00,16:00:00,20,catalog,True
+d5bab6b9-b512-5a55-865a-2eeb566cea6a,G-117,Centro educativo DEMO Guayaquil Centro 117,service_point,Guayaquil,Guayaquil / Centro,-2.186453,-79.907219,centro_educativo,900,30,10:00:00,17:00:00,10,catalog,True
+468ca27c-fa90-55fe-a65d-79db9988dc0c,G-118,Bodega del cliente DEMO Guayaquil Norte 118,service_point,Guayaquil,Guayaquil / Norte,-2.175255,-79.909834,bodega_operativa,1560,19,08:00:00,16:00:00,15,catalog,True
+ae44835a-6b78-5a5e-80cc-13aee588efa6,G-119,Oficina DEMO Guayaquil Sur 119,service_point,Guayaquil,Guayaquil / Sur,-2.149527,-79.887906,oficina,2120,19,08:00:00,16:00:00,20,catalog,True
+447aff81-3de1-5e77-92c8-2a28c448c326,G-120,Local comercial DEMO Guayaquil Este 120,service_point,Guayaquil,Guayaquil / Este,-2.147868,-79.895332,local_comercial,1320,26,10:00:00,17:00:00,10,catalog,True
+6ed76daa-2ca7-5372-a86c-acc6b37d9f56,G-121,Centro educativo DEMO Guayaquil Centro 121,service_point,Guayaquil,Guayaquil / Centro,-2.1804,-79.948164,centro_educativo,740,23,08:00:00,16:00:00,15,catalog,True
+ea3b1d92-42e6-5629-a1d5-7fef50e1d62d,G-122,Bodega del cliente DEMO Guayaquil Norte 122,service_point,Guayaquil,Guayaquil / Norte,-2.175636,-79.951114,bodega_operativa,1620,8,08:00:00,16:00:00,20,catalog,True
+efd9dda0-54a1-5a39-995c-2093628905af,G-123,Oficina DEMO Guayaquil Sur 123,service_point,Guayaquil,Guayaquil / Sur,-2.136169,-79.920456,oficina,160,21,10:00:00,17:00:00,10,catalog,True
+d8033ade-ccdc-5631-a6d8-7d310d859513,G-124,Local comercial DEMO Guayaquil Este 124,service_point,Guayaquil,Guayaquil / Este,-2.166042,-79.925394,local_comercial,2060,29,08:00:00,16:00:00,15,catalog,True
+904959a0-4098-52d6-ad45-bfa2f3671c87,G-125,Centro educativo DEMO Guayaquil Centro 125,service_point,Guayaquil,Guayaquil / Centro,-2.192233,-79.949986,centro_educativo,2080,13,08:00:00,16:00:00,20,catalog,True
+1abd9650-0b0b-5946-986b-7f896edf893b,G-126,Bodega del cliente DEMO Guayaquil Norte 126,service_point,Guayaquil,Guayaquil / Norte,-2.171352,-79.943636,bodega_operativa,760,11,10:00:00,17:00:00,10,catalog,True
+ae020d11-b798-5802-8b78-c29788337eea,G-127,Oficina DEMO Guayaquil Sur 127,service_point,Guayaquil,Guayaquil / Sur,-2.170211,-79.912396,oficina,1200,22,08:00:00,16:00:00,15,catalog,True
+e782805a-45e2-5a64-a0f0-f4a835eac984,G-128,Local comercial DEMO Guayaquil Este 128,service_point,Guayaquil,Guayaquil / Este,-2.173465,-79.911497,local_comercial,920,27,08:00:00,16:00:00,20,catalog,True
+356035fb-e1ac-5cd8-b27c-c271d8d7994c,G-129,Centro educativo DEMO Guayaquil Centro 129,service_point,Guayaquil,Guayaquil / Centro,-2.161067,-79.916978,centro_educativo,1140,17,10:00:00,17:00:00,10,catalog,True
+0114cca6-ab28-5fc1-977d-3bdea1999a03,G-130,Bodega del cliente DEMO Guayaquil Norte 130,service_point,Guayaquil,Guayaquil / Norte,-2.153303,-79.913344,bodega_operativa,620,23,08:00:00,16:00:00,15,catalog,True
+47c5d3b5-ddda-5dc2-92fc-cd8d1d295155,G-131,Oficina DEMO Guayaquil Sur 131,service_point,Guayaquil,Guayaquil / Sur,-2.151079,-79.88929,oficina,620,10,08:00:00,16:00:00,20,catalog,True
+330d42e9-4462-5e02-9e78-51a183f10fdc,G-132,Local comercial DEMO Guayaquil Este 132,service_point,Guayaquil,Guayaquil / Este,-2.196608,-79.93329,local_comercial,920,14,10:00:00,17:00:00,10,catalog,True
+685fa331-800c-5c35-b6d9-e6f72215a921,G-133,Centro educativo DEMO Guayaquil Centro 133,service_point,Guayaquil,Guayaquil / Centro,-2.1686,-79.92696,centro_educativo,2140,26,08:00:00,16:00:00,15,catalog,True
+c0d0404c-35a2-5900-be80-cfe3dc123af4,G-134,Bodega del cliente DEMO Guayaquil Norte 134,service_point,Guayaquil,Guayaquil / Norte,-2.198701,-79.896922,bodega_operativa,400,14,08:00:00,16:00:00,20,catalog,True
+e18c7415-8c9c-5ac8-b43c-e67dcaef4eed,G-135,Oficina DEMO Guayaquil Sur 135,service_point,Guayaquil,Guayaquil / Sur,-2.152982,-79.926235,oficina,300,29,10:00:00,17:00:00,10,catalog,True
+a8b12e67-1840-5015-a1db-d0430b73c889,G-136,Local comercial DEMO Guayaquil Este 136,service_point,Guayaquil,Guayaquil / Este,-2.140951,-79.927879,local_comercial,660,23,08:00:00,16:00:00,15,catalog,True
+dc69459b-d3aa-51b5-9f7d-7417a24fd116,G-137,Centro educativo DEMO Guayaquil Centro 137,service_point,Guayaquil,Guayaquil / Centro,-2.161189,-79.943362,centro_educativo,860,28,08:00:00,16:00:00,20,catalog,True
+31fa7125-f784-5fa1-8f7d-b604b570d908,G-138,Bodega del cliente DEMO Guayaquil Norte 138,service_point,Guayaquil,Guayaquil / Norte,-2.147177,-79.925056,bodega_operativa,1660,28,10:00:00,17:00:00,10,catalog,True
+9db4a9ab-41c3-545c-a76f-2c168f55e2b5,G-139,Oficina DEMO Guayaquil Sur 139,service_point,Guayaquil,Guayaquil / Sur,-2.166407,-79.94141,oficina,760,10,08:00:00,16:00:00,15,catalog,True
+91cf5cac-0631-595b-8dc0-87edcf14312f,G-140,Local comercial DEMO Guayaquil Este 140,service_point,Guayaquil,Guayaquil / Este,-2.172161,-79.928193,local_comercial,720,12,08:00:00,16:00:00,20,catalog,True
+b18787e2-16b5-58a0-bf8b-86ea0986e544,G-141,Centro educativo DEMO Guayaquil Centro 141,service_point,Guayaquil,Guayaquil / Centro,-2.154622,-79.908192,centro_educativo,1440,15,10:00:00,17:00:00,10,catalog,True
+a5e6158e-09ff-5206-b85f-f7a418554173,G-142,Bodega del cliente DEMO Guayaquil Norte 142,service_point,Guayaquil,Guayaquil / Norte,-2.189358,-79.915881,bodega_operativa,1640,7,08:00:00,16:00:00,15,catalog,True
+a9870530-3518-5113-86d6-4d1a4b231b82,G-143,Oficina DEMO Guayaquil Sur 143,service_point,Guayaquil,Guayaquil / Sur,-2.202695,-79.887271,oficina,440,11,08:00:00,16:00:00,20,catalog,True
+3dbafce0-f8c9-581e-9a4a-742245db1196,G-144,Local comercial DEMO Guayaquil Este 144,service_point,Guayaquil,Guayaquil / Este,-2.192303,-79.912952,local_comercial,1040,4,10:00:00,17:00:00,10,catalog,True
+65d45e15-3f06-5292-84fd-ce13c5d0c570,G-145,Centro educativo DEMO Guayaquil Centro 145,service_point,Guayaquil,Guayaquil / Centro,-2.191426,-79.91015,centro_educativo,960,9,08:00:00,16:00:00,15,catalog,True
+f34a77af-62c8-5e27-8bdd-b4f46cfbf3fb,G-146,Bodega del cliente DEMO Guayaquil Norte 146,service_point,Guayaquil,Guayaquil / Norte,-2.198148,-79.933955,bodega_operativa,420,7,08:00:00,16:00:00,20,catalog,True
+e78e6989-e9c4-5fbd-a426-fb24df55d13a,G-147,Oficina DEMO Guayaquil Sur 147,service_point,Guayaquil,Guayaquil / Sur,-2.159811,-79.933143,oficina,1840,22,10:00:00,17:00:00,10,catalog,True
+bdbb40d7-77eb-5387-88f2-4bcbb0736ee8,G-148,Local comercial DEMO Guayaquil Este 148,service_point,Guayaquil,Guayaquil / Este,-2.170884,-79.923944,local_comercial,1140,13,08:00:00,16:00:00,15,catalog,True
+857f30a9-ecfb-5d91-a427-9a9e7ff5a568,G-149,Centro educativo DEMO Guayaquil Centro 149,service_point,Guayaquil,Guayaquil / Centro,-2.201474,-79.895466,centro_educativo,1700,4,08:00:00,16:00:00,20,catalog,True
+88ed8e9a-1390-55ed-9979-efdf8643218e,G-150,Bodega del cliente DEMO Guayaquil Norte 150,service_point,Guayaquil,Guayaquil / Norte,-2.155456,-79.90924,bodega_operativa,1280,3,10:00:00,17:00:00,10,catalog,True
+75b553cb-94c4-5976-9813-db66f04498f8,G-151,Oficina DEMO Guayaquil Sur 151,service_point,Guayaquil,Guayaquil / Sur,-2.13917,-79.944102,oficina,820,3,08:00:00,16:00:00,15,catalog,True
+b0945607-fce9-5c60-a901-f983e99ca07a,G-152,Local comercial DEMO Guayaquil Este 152,service_point,Guayaquil,Guayaquil / Este,-2.142932,-79.941952,local_comercial,1440,15,08:00:00,16:00:00,20,catalog,True
+67751fe7-aece-57a7-8263-c786832d9765,G-153,Centro educativo DEMO Guayaquil Centro 153,service_point,Guayaquil,Guayaquil / Centro,-2.184432,-79.895532,centro_educativo,1480,21,10:00:00,17:00:00,10,catalog,True
+fdebf442-a116-5102-81f6-06854731cbde,G-154,Bodega del cliente DEMO Guayaquil Norte 154,service_point,Guayaquil,Guayaquil / Norte,-2.187427,-79.926784,bodega_operativa,1200,20,08:00:00,16:00:00,15,catalog,True
+1af3cd06-437d-51d1-b3df-acbfc4d8cb4d,G-155,Oficina DEMO Guayaquil Sur 155,service_point,Guayaquil,Guayaquil / Sur,-2.193097,-79.913333,oficina,820,20,08:00:00,16:00:00,20,catalog,True
+6150a790-4997-5cd6-bf2d-09fc839d45bb,G-156,Local comercial DEMO Guayaquil Este 156,service_point,Guayaquil,Guayaquil / Este,-2.171967,-79.89382,local_comercial,1800,7,10:00:00,17:00:00,10,catalog,True
+08670dda-c69c-5cee-ab2a-9161d4f27373,G-157,Centro educativo DEMO Guayaquil Centro 157,service_point,Guayaquil,Guayaquil / Centro,-2.162117,-79.890019,centro_educativo,780,22,08:00:00,16:00:00,15,catalog,True
+9d457b46-3856-5537-b3ab-e0a0add32d68,G-158,Bodega del cliente DEMO Guayaquil Norte 158,service_point,Guayaquil,Guayaquil / Norte,-2.160064,-79.934163,bodega_operativa,1000,25,08:00:00,16:00:00,20,catalog,True
+4037112c-67e9-5dcc-8395-7235d729e18a,G-159,Oficina DEMO Guayaquil Sur 159,service_point,Guayaquil,Guayaquil / Sur,-2.179673,-79.928889,oficina,1240,11,10:00:00,17:00:00,10,catalog,True
+437c27ab-dba6-5a44-a7f7-305f4db01bb4,G-160,Local comercial DEMO Guayaquil Este 160,service_point,Guayaquil,Guayaquil / Este,-2.154717,-79.956155,local_comercial,620,23,08:00:00,16:00:00,15,catalog,True
+3db1a281-8b61-504c-b54c-8bf4c08cda93,G-161,Centro educativo DEMO Guayaquil Centro 161,service_point,Guayaquil,Guayaquil / Centro,-2.148221,-79.928725,centro_educativo,1740,27,08:00:00,16:00:00,20,catalog,True
+c2f2225b-0180-5fb8-894c-c6bff21f0845,G-162,Bodega del cliente DEMO Guayaquil Norte 162,service_point,Guayaquil,Guayaquil / Norte,-2.162413,-79.920829,bodega_operativa,1100,8,10:00:00,17:00:00,10,catalog,True
+961b606b-9b21-5a00-a0e0-3b1eaf5a52c4,G-163,Oficina DEMO Guayaquil Sur 163,service_point,Guayaquil,Guayaquil / Sur,-2.146403,-79.904721,oficina,2180,17,08:00:00,16:00:00,15,catalog,True
+381ebf76-03ed-54c4-9601-70bc195bcb5d,G-164,Local comercial DEMO Guayaquil Este 164,service_point,Guayaquil,Guayaquil / Este,-2.167195,-79.941596,local_comercial,900,10,08:00:00,16:00:00,20,catalog,True
+3f7dd7cb-37a5-5011-bfac-ace0b5f8f7de,G-165,Centro educativo DEMO Guayaquil Centro 165,service_point,Guayaquil,Guayaquil / Centro,-2.188772,-79.923131,centro_educativo,620,17,10:00:00,17:00:00,10,catalog,True
+c860c4d6-dce9-5473-a15e-92a5b77f3e53,G-166,Bodega del cliente DEMO Guayaquil Norte 166,service_point,Guayaquil,Guayaquil / Norte,-2.154649,-79.949595,bodega_operativa,1860,8,08:00:00,16:00:00,15,catalog,True
+8765cc7d-1bd5-5d07-88bf-21a5b69acc3b,G-167,Oficina DEMO Guayaquil Sur 167,service_point,Guayaquil,Guayaquil / Sur,-2.1769,-79.895142,oficina,2100,29,08:00:00,16:00:00,20,catalog,True
+acbec976-bf2c-503e-bccf-152401d74ad0,G-168,Local comercial DEMO Guayaquil Este 168,service_point,Guayaquil,Guayaquil / Este,-2.197456,-79.925191,local_comercial,1140,15,10:00:00,17:00:00,10,catalog,True
+d8425ad5-6374-5c9f-a6da-81487ed22a17,G-169,Centro educativo DEMO Guayaquil Centro 169,service_point,Guayaquil,Guayaquil / Centro,-2.204635,-79.92113,centro_educativo,2080,10,08:00:00,16:00:00,15,catalog,True
+829505c7-d555-53e6-9a33-3eec3149edf8,G-170,Bodega del cliente DEMO Guayaquil Norte 170,service_point,Guayaquil,Guayaquil / Norte,-2.184907,-79.95457,bodega_operativa,1680,26,08:00:00,16:00:00,20,catalog,True
+1efc0831-a6f1-516b-9683-0132ba975075,G-171,Oficina DEMO Guayaquil Sur 171,service_point,Guayaquil,Guayaquil / Sur,-2.159822,-79.956452,oficina,2160,27,10:00:00,17:00:00,10,catalog,True
+942baa0b-b0ab-59d7-8c5f-1102e8cf03f1,G-172,Local comercial DEMO Guayaquil Este 172,service_point,Guayaquil,Guayaquil / Este,-2.180077,-79.922993,local_comercial,2040,18,08:00:00,16:00:00,15,catalog,True
+2062077e-9c73-5d03-ba74-2bfdc8c2bd48,G-173,Centro educativo DEMO Guayaquil Centro 173,service_point,Guayaquil,Guayaquil / Centro,-2.166949,-79.893727,centro_educativo,820,24,08:00:00,16:00:00,20,catalog,True
+c2d2da4a-03ae-5a60-a78d-de5f9520bca3,G-174,Bodega del cliente DEMO Guayaquil Norte 174,service_point,Guayaquil,Guayaquil / Norte,-2.189543,-79.955656,bodega_operativa,1600,15,10:00:00,17:00:00,10,catalog,True
+546d3ca3-69e8-532e-bcac-8cba35baa1f5,G-175,Oficina DEMO Guayaquil Sur 175,service_point,Guayaquil,Guayaquil / Sur,-2.195277,-79.905212,oficina,1800,23,08:00:00,16:00:00,15,catalog,True
+4fd31313-c356-5bf5-8b81-4d5a29fd598c,G-176,Local comercial DEMO Guayaquil Este 176,service_point,Guayaquil,Guayaquil / Este,-2.15375,-79.936921,local_comercial,1500,26,08:00:00,16:00:00,20,catalog,True
+613429ec-25ec-5994-a722-d0cfa10c0bfc,G-177,Centro educativo DEMO Guayaquil Centro 177,service_point,Guayaquil,Guayaquil / Centro,-2.196125,-79.9538,centro_educativo,1280,15,10:00:00,17:00:00,10,catalog,True
+5724f802-e9b5-501f-abb0-2434d41174fd,G-178,Bodega del cliente DEMO Guayaquil Norte 178,service_point,Guayaquil,Guayaquil / Norte,-2.155481,-79.920654,bodega_operativa,1500,22,08:00:00,16:00:00,15,catalog,True
+add27d78-80fb-593d-81cc-46c6051ab37e,G-179,Oficina DEMO Guayaquil Sur 179,service_point,Guayaquil,Guayaquil / Sur,-2.168833,-79.900013,oficina,1220,20,08:00:00,16:00:00,20,catalog,True
+79374ede-a2f4-5877-a68d-64bd0ed2f8fd,G-180,Local comercial DEMO Guayaquil Este 180,service_point,Guayaquil,Guayaquil / Este,-2.162201,-79.896262,local_comercial,900,10,10:00:00,17:00:00,10,catalog,True
+ee5a14fa-3650-5807-8f2b-ccad59f841c6,G-181,Centro educativo DEMO Guayaquil Centro 181,service_point,Guayaquil,Guayaquil / Centro,-2.174593,-79.898577,centro_educativo,1880,16,08:00:00,16:00:00,15,catalog,True
+3d51cc26-d0bb-5aaa-85fb-edfb9d32b280,G-182,Bodega del cliente DEMO Guayaquil Norte 182,service_point,Guayaquil,Guayaquil / Norte,-2.203251,-79.925938,bodega_operativa,680,9,08:00:00,16:00:00,20,catalog,True
+3a2eb219-1a8a-5d53-9a50-429cfd14f2d6,G-183,Oficina DEMO Guayaquil Sur 183,service_point,Guayaquil,Guayaquil / Sur,-2.194459,-79.915531,oficina,1660,19,10:00:00,17:00:00,10,catalog,True
+7ebdf23a-c5f6-5ab3-ab21-ba0cfe2d873f,G-184,Local comercial DEMO Guayaquil Este 184,service_point,Guayaquil,Guayaquil / Este,-2.138452,-79.912768,local_comercial,2100,19,08:00:00,16:00:00,15,catalog,True
+f35c8979-c25d-53f9-8f9a-2e1eaebe03d5,G-185,Centro educativo DEMO Guayaquil Centro 185,service_point,Guayaquil,Guayaquil / Centro,-2.147248,-79.902176,centro_educativo,460,20,08:00:00,16:00:00,20,catalog,True
+4615fb08-ac3d-5311-a263-f0e2df51c81c,G-186,Bodega del cliente DEMO Guayaquil Norte 186,service_point,Guayaquil,Guayaquil / Norte,-2.180469,-79.934273,bodega_operativa,660,26,10:00:00,17:00:00,10,catalog,True
+ed6f7b8b-0814-5356-a392-17da85e59951,G-187,Oficina DEMO Guayaquil Sur 187,service_point,Guayaquil,Guayaquil / Sur,-2.158965,-79.918727,oficina,760,12,08:00:00,16:00:00,15,catalog,True
+c8371128-7a22-521c-bfe6-d74017f315f7,G-188,Local comercial DEMO Guayaquil Este 188,service_point,Guayaquil,Guayaquil / Este,-2.187223,-79.890629,local_comercial,1240,5,08:00:00,16:00:00,20,catalog,True
+b666821c-6290-5c5e-9113-34c9d8616c85,G-189,Centro educativo DEMO Guayaquil Centro 189,service_point,Guayaquil,Guayaquil / Centro,-2.187353,-79.915671,centro_educativo,400,23,10:00:00,17:00:00,10,catalog,True
+cfc6e644-7ce2-59df-a353-00f6f7772147,G-190,Bodega del cliente DEMO Guayaquil Norte 190,service_point,Guayaquil,Guayaquil / Norte,-2.203345,-79.944854,bodega_operativa,180,11,08:00:00,16:00:00,15,catalog,True
+a07ebd0f-94f3-505f-b19e-9891e21675d2,G-191,Oficina DEMO Guayaquil Sur 191,service_point,Guayaquil,Guayaquil / Sur,-2.16794,-79.912885,oficina,1360,10,08:00:00,16:00:00,20,catalog,True
+8693cf69-e0ea-53af-a195-f3ca2f243ee6,G-192,Local comercial DEMO Guayaquil Este 192,service_point,Guayaquil,Guayaquil / Este,-2.185783,-79.888922,local_comercial,360,16,10:00:00,17:00:00,10,catalog,True
+2cd16eda-c44c-577d-b61f-bfbbcf5336e2,G-193,Centro educativo DEMO Guayaquil Centro 193,service_point,Guayaquil,Guayaquil / Centro,-2.177347,-79.92125,centro_educativo,280,30,08:00:00,16:00:00,15,catalog,True
+0ee20688-e4d9-5d9d-8355-311ae51083bc,G-194,Bodega del cliente DEMO Guayaquil Norte 194,service_point,Guayaquil,Guayaquil / Norte,-2.189336,-79.908022,bodega_operativa,260,27,08:00:00,16:00:00,20,catalog,True
+9174c162-7a63-553d-8b71-70bb10c10128,G-195,Oficina DEMO Guayaquil Sur 195,service_point,Guayaquil,Guayaquil / Sur,-2.140111,-79.937528,oficina,1140,17,10:00:00,17:00:00,10,catalog,True
+6b105b0b-09ab-5080-9086-ed3ebfc1c13a,G-196,Local comercial DEMO Guayaquil Este 196,service_point,Guayaquil,Guayaquil / Este,-2.163288,-79.913879,local_comercial,1020,6,08:00:00,16:00:00,15,catalog,True
+839e63ec-9515-5781-9600-94d1b1594655,G-197,Centro educativo DEMO Guayaquil Centro 197,service_point,Guayaquil,Guayaquil / Centro,-2.168821,-79.944559,centro_educativo,1100,16,08:00:00,16:00:00,20,catalog,True
+2c6dc8db-ab2c-5a40-832b-177a3fb10cb1,G-198,Bodega del cliente DEMO Guayaquil Norte 198,service_point,Guayaquil,Guayaquil / Norte,-2.149425,-79.943007,bodega_operativa,740,27,10:00:00,17:00:00,10,catalog,True
+b34f4a0c-bfee-5aa0-818f-d354f17073b4,G-199,Oficina DEMO Guayaquil Sur 199,service_point,Guayaquil,Guayaquil / Sur,-2.197349,-79.922065,oficina,1000,18,08:00:00,16:00:00,15,catalog,True
+1a78d5e0-ec07-52b4-9816-023cb20d19d5,G-200,Local comercial DEMO Guayaquil Este 200,service_point,Guayaquil,Guayaquil / Este,-2.144374,-79.935285,local_comercial,1700,23,08:00:00,16:00:00,20,catalog,True
+56d42095-0ff1-5cbc-bcd4-ca26d88881b5,G-201,Centro educativo DEMO Guayaquil Centro 201,service_point,Guayaquil,Guayaquil / Centro,-2.202681,-79.949308,centro_educativo,120,22,10:00:00,17:00:00,10,catalog,True
+58366fcd-5cb5-5c63-ab45-016debc843af,G-202,Bodega del cliente DEMO Guayaquil Norte 202,service_point,Guayaquil,Guayaquil / Norte,-2.164619,-79.904874,bodega_operativa,1660,28,08:00:00,16:00:00,15,catalog,True
+628f0100-4e1b-5379-9f50-2477a8dad352,G-203,Oficina DEMO Guayaquil Sur 203,service_point,Guayaquil,Guayaquil / Sur,-2.170031,-79.921775,oficina,1200,7,08:00:00,16:00:00,20,catalog,True
+73f5dcb0-14bd-588b-8b21-942c77c4fd74,G-204,Local comercial DEMO Guayaquil Este 204,service_point,Guayaquil,Guayaquil / Este,-2.142185,-79.952805,local_comercial,180,6,10:00:00,17:00:00,10,catalog,True
+be1d94f2-8b23-5bd9-bceb-1992e32f5dea,G-205,Centro educativo DEMO Guayaquil Centro 205,service_point,Guayaquil,Guayaquil / Centro,-2.175983,-79.931814,centro_educativo,1500,4,08:00:00,16:00:00,15,catalog,True
+42df5062-6fb7-563c-8a1f-381301a0eb72,G-206,Bodega del cliente DEMO Guayaquil Norte 206,service_point,Guayaquil,Guayaquil / Norte,-2.136308,-79.942254,bodega_operativa,1280,22,08:00:00,16:00:00,20,catalog,True
+b9e5dd53-25dc-50e2-a713-ed139a5cdfff,G-207,Oficina DEMO Guayaquil Sur 207,service_point,Guayaquil,Guayaquil / Sur,-2.167901,-79.923535,oficina,1300,8,10:00:00,17:00:00,10,catalog,True
+0103a85e-3b22-5166-a886-57f0505d1871,G-208,Local comercial DEMO Guayaquil Este 208,service_point,Guayaquil,Guayaquil / Este,-2.138842,-79.954828,local_comercial,1440,4,08:00:00,16:00:00,15,catalog,True
+ca4bb995-e6e2-54f4-90c0-fead96094b19,G-209,Centro educativo DEMO Guayaquil Centro 209,service_point,Guayaquil,Guayaquil / Centro,-2.203468,-79.956229,centro_educativo,1800,5,08:00:00,16:00:00,20,catalog,True
+e2454d5d-869f-5283-a66a-5a96c8805e49,G-210,Bodega del cliente DEMO Guayaquil Norte 210,service_point,Guayaquil,Guayaquil / Norte,-2.16052,-79.954853,bodega_operativa,1660,25,10:00:00,17:00:00,10,catalog,True
+d8c3f0b8-c02b-56c5-8652-c4b064097b0f,G-211,Oficina DEMO Guayaquil Sur 211,service_point,Guayaquil,Guayaquil / Sur,-2.178651,-79.887197,oficina,340,15,08:00:00,16:00:00,15,catalog,True
+0a64f4c1-e729-5c98-b6eb-053404602284,G-212,Local comercial DEMO Guayaquil Este 212,service_point,Guayaquil,Guayaquil / Este,-2.161358,-79.943158,local_comercial,1660,10,08:00:00,16:00:00,20,catalog,True
+329c9a9d-aa8a-5481-bfd0-0c41ed61b828,G-213,Centro educativo DEMO Guayaquil Centro 213,service_point,Guayaquil,Guayaquil / Centro,-2.202284,-79.93211,centro_educativo,1300,3,10:00:00,17:00:00,10,catalog,True
+3924e5bb-07ce-58d0-aae6-e62cfa513530,G-214,Bodega del cliente DEMO Guayaquil Norte 214,service_point,Guayaquil,Guayaquil / Norte,-2.196275,-79.926021,bodega_operativa,780,20,08:00:00,16:00:00,15,catalog,True
+e7cf6848-b18a-5c57-920d-d836c0916b71,G-215,Oficina DEMO Guayaquil Sur 215,service_point,Guayaquil,Guayaquil / Sur,-2.1813,-79.890695,oficina,1320,5,08:00:00,16:00:00,20,catalog,True
+973a93d3-ad33-541e-9a99-1cff77f31846,G-216,Local comercial DEMO Guayaquil Este 216,service_point,Guayaquil,Guayaquil / Este,-2.185932,-79.921238,local_comercial,820,22,10:00:00,17:00:00,10,catalog,True
+1308f824-8214-57f5-aca7-7a2443d8c814,G-217,Centro educativo DEMO Guayaquil Centro 217,service_point,Guayaquil,Guayaquil / Centro,-2.165392,-79.906751,centro_educativo,160,11,08:00:00,16:00:00,15,catalog,True
+e5a89886-406a-59fa-abd9-8526612f0833,G-218,Bodega del cliente DEMO Guayaquil Norte 218,service_point,Guayaquil,Guayaquil / Norte,-2.160092,-79.93251,bodega_operativa,1740,18,08:00:00,16:00:00,20,catalog,True
+5f24a728-be14-53ce-a341-f49ccbda5fec,G-219,Oficina DEMO Guayaquil Sur 219,service_point,Guayaquil,Guayaquil / Sur,-2.202774,-79.927684,oficina,1020,17,10:00:00,17:00:00,10,catalog,True
+33431666-e768-5993-8bbe-0d3b36cd2381,G-220,Local comercial DEMO Guayaquil Este 220,service_point,Guayaquil,Guayaquil / Este,-2.196744,-79.942655,local_comercial,1740,9,08:00:00,16:00:00,15,catalog,True
+7df140ea-dfdf-59b9-8844-72633a4d75de,G-221,Centro educativo DEMO Guayaquil Centro 221,service_point,Guayaquil,Guayaquil / Centro,-2.186464,-79.888149,centro_educativo,840,5,08:00:00,16:00:00,20,catalog,True
+746d3eb2-0d05-5970-ad68-705896bc5ec4,G-222,Bodega del cliente DEMO Guayaquil Norte 222,service_point,Guayaquil,Guayaquil / Norte,-2.182433,-79.936004,bodega_operativa,920,14,10:00:00,17:00:00,10,catalog,True
+617d6bdf-b4ea-5c22-bb5e-4eeba34a5277,G-223,Oficina DEMO Guayaquil Sur 223,service_point,Guayaquil,Guayaquil / Sur,-2.193957,-79.906544,oficina,1980,22,08:00:00,16:00:00,15,catalog,True
+4b4d85a4-4ba9-57af-9aad-cd2ee349f225,G-224,Local comercial DEMO Guayaquil Este 224,service_point,Guayaquil,Guayaquil / Este,-2.193229,-79.904695,local_comercial,1480,16,08:00:00,16:00:00,20,catalog,True
+2ea1a91b-eb5f-5fe2-8c6d-5f038fff027c,G-225,Centro educativo DEMO Guayaquil Centro 225,service_point,Guayaquil,Guayaquil / Centro,-2.194308,-79.919728,centro_educativo,1800,28,10:00:00,17:00:00,10,catalog,True
+058d6bbb-edf5-56fe-9562-c2f0a9e3a740,G-226,Bodega del cliente DEMO Guayaquil Norte 226,service_point,Guayaquil,Guayaquil / Norte,-2.143228,-79.889758,bodega_operativa,1700,15,08:00:00,16:00:00,15,catalog,True
+f7b94e66-12d0-5e85-80b3-d46876c37831,G-227,Oficina DEMO Guayaquil Sur 227,service_point,Guayaquil,Guayaquil / Sur,-2.180605,-79.897846,oficina,1920,26,08:00:00,16:00:00,20,catalog,True
+4f50ae11-3dba-596b-bd6b-4a18483095a1,G-228,Local comercial DEMO Guayaquil Este 228,service_point,Guayaquil,Guayaquil / Este,-2.16712,-79.894266,local_comercial,800,9,10:00:00,17:00:00,10,catalog,True
+74c0f10a-1ff9-5da2-85f2-6445a1114d7e,G-229,Centro educativo DEMO Guayaquil Centro 229,service_point,Guayaquil,Guayaquil / Centro,-2.195943,-79.939454,centro_educativo,2180,5,08:00:00,16:00:00,15,catalog,True
+1f6f7600-92b5-5128-bd20-1d2d21fbd90f,G-230,Bodega del cliente DEMO Guayaquil Norte 230,service_point,Guayaquil,Guayaquil / Norte,-2.161254,-79.948224,bodega_operativa,1400,14,08:00:00,16:00:00,20,catalog,True
+5592c645-4089-5ad4-863c-be1172a56f8a,G-231,Oficina DEMO Guayaquil Sur 231,service_point,Guayaquil,Guayaquil / Sur,-2.187004,-79.911795,oficina,900,27,10:00:00,17:00:00,10,catalog,True
+bd52128f-3ac5-507b-a049-d8cde5a3fe42,G-232,Local comercial DEMO Guayaquil Este 232,service_point,Guayaquil,Guayaquil / Este,-2.158815,-79.893184,local_comercial,660,24,08:00:00,16:00:00,15,catalog,True
+1deb6617-0dd3-5265-97fb-99983a1f2466,G-233,Centro educativo DEMO Guayaquil Centro 233,service_point,Guayaquil,Guayaquil / Centro,-2.156486,-79.913497,centro_educativo,200,4,08:00:00,16:00:00,20,catalog,True
+b32ee8b6-9e32-5d60-b619-ece0f782cb2a,G-234,Bodega del cliente DEMO Guayaquil Norte 234,service_point,Guayaquil,Guayaquil / Norte,-2.151513,-79.920651,bodega_operativa,1640,12,10:00:00,17:00:00,10,catalog,True
+3ca78780-bbfb-55ef-bf52-34f1d8ac09c3,G-235,Oficina DEMO Guayaquil Sur 235,service_point,Guayaquil,Guayaquil / Sur,-2.193857,-79.895143,oficina,140,13,08:00:00,16:00:00,15,catalog,True
+4209837b-6976-5dc6-be5e-e66e1a6412ab,G-236,Local comercial DEMO Guayaquil Este 236,service_point,Guayaquil,Guayaquil / Este,-2.182465,-79.918274,local_comercial,1460,25,08:00:00,16:00:00,20,catalog,True
+3cd8d0fb-4ace-57f7-86bb-34862469752d,G-237,Centro educativo DEMO Guayaquil Centro 237,service_point,Guayaquil,Guayaquil / Centro,-2.1854,-79.943632,centro_educativo,180,8,10:00:00,17:00:00,10,catalog,True
+f5c7a050-2797-5947-b23c-3d9279f64863,G-238,Bodega del cliente DEMO Guayaquil Norte 238,service_point,Guayaquil,Guayaquil / Norte,-2.168812,-79.909114,bodega_operativa,1520,21,08:00:00,16:00:00,15,catalog,True
+01aba127-fdc1-57b8-8f7d-4c7167ffbf74,G-239,Oficina DEMO Guayaquil Sur 239,service_point,Guayaquil,Guayaquil / Sur,-2.139092,-79.910612,oficina,360,7,08:00:00,16:00:00,20,catalog,True
+3a543c23-7455-512b-aa49-f60cfc08116c,G-240,Local comercial DEMO Guayaquil Este 240,service_point,Guayaquil,Guayaquil / Este,-2.149816,-79.955603,local_comercial,860,15,10:00:00,17:00:00,10,catalog,True
+45c9cbf9-5b7c-5dae-9fcf-91517fdaf33c,G-241,Centro educativo DEMO Guayaquil Centro 241,service_point,Guayaquil,Guayaquil / Centro,-2.184108,-79.948868,centro_educativo,2020,12,08:00:00,16:00:00,15,catalog,True
+8100769b-b167-584e-9a50-4320d42fbee8,G-242,Bodega del cliente DEMO Guayaquil Norte 242,service_point,Guayaquil,Guayaquil / Norte,-2.192548,-79.941015,bodega_operativa,1100,10,08:00:00,16:00:00,20,catalog,True
+2374249c-7c3e-5670-8923-23cf7e839412,G-243,Oficina DEMO Guayaquil Sur 243,service_point,Guayaquil,Guayaquil / Sur,-2.135893,-79.916362,oficina,340,18,10:00:00,17:00:00,10,catalog,True
+e0a04de3-c387-5350-a8db-f3a7e022cd16,G-244,Local comercial DEMO Guayaquil Este 244,service_point,Guayaquil,Guayaquil / Este,-2.144627,-79.912766,local_comercial,920,7,08:00:00,16:00:00,15,catalog,True
+d0f2e25c-6057-5d04-bea1-d7ee7f3ea77b,G-245,Centro educativo DEMO Guayaquil Centro 245,service_point,Guayaquil,Guayaquil / Centro,-2.178712,-79.925279,centro_educativo,420,6,08:00:00,16:00:00,20,catalog,True
+bed4484d-a9ef-53dc-80b2-e03626e8f15d,G-246,Bodega del cliente DEMO Guayaquil Norte 246,service_point,Guayaquil,Guayaquil / Norte,-2.163515,-79.95592,bodega_operativa,1320,22,10:00:00,17:00:00,10,catalog,True
+1d3b3b04-5296-53bb-9bf1-bd5e10fd150b,G-247,Oficina DEMO Guayaquil Sur 247,service_point,Guayaquil,Guayaquil / Sur,-2.17779,-79.898228,oficina,1680,27,08:00:00,16:00:00,15,catalog,True
+a442e084-ec2b-5673-a5e5-7b0826ac7adf,G-248,Local comercial DEMO Guayaquil Este 248,service_point,Guayaquil,Guayaquil / Este,-2.188745,-79.940457,local_comercial,1640,17,08:00:00,16:00:00,20,catalog,True
+658205fa-44e9-5555-bf41-d046bbddb431,G-249,Centro educativo DEMO Guayaquil Centro 249,service_point,Guayaquil,Guayaquil / Centro,-2.185476,-79.949358,centro_educativo,180,21,10:00:00,17:00:00,10,catalog,True
+47f6cdef-4592-5e1c-8136-0d4e7fffdc35,G-250,Bodega del cliente DEMO Guayaquil Norte 250,service_point,Guayaquil,Guayaquil / Norte,-2.198958,-79.917274,bodega_operativa,2160,25,08:00:00,16:00:00,15,catalog,True
+a154976b-8b32-5dbc-9078-41399cd0b7bb,C-007,Oficina DEMO Cuenca Sur 007,service_point,Cuenca,Cuenca / Sur,-2.906942,-78.987591,oficina,1060,7,08:00:00,16:00:00,20,catalog,True
+ec58e7c7-b1a4-5766-bfcb-44c6cdf74144,C-008,Local comercial DEMO Cuenca Este 008,service_point,Cuenca,Cuenca / Este,-2.904369,-78.997641,local_comercial,200,16,10:00:00,17:00:00,10,catalog,True
+6b6e91ab-0e29-5469-b070-7e449db54ec9,C-009,Centro educativo DEMO Cuenca Centro 009,service_point,Cuenca,Cuenca / Centro,-2.915195,-79.006198,centro_educativo,1200,25,08:00:00,16:00:00,15,catalog,True
+ba5fb858-f43e-5bd8-8451-c0f379322d1a,C-010,Bodega del cliente DEMO Cuenca Norte 010,service_point,Cuenca,Cuenca / Norte,-2.920573,-79.014236,bodega_operativa,1920,8,08:00:00,16:00:00,20,catalog,True
+ddfed4fa-0683-5341-b8a0-f606a5d66ed6,C-011,Oficina DEMO Cuenca Sur 011,service_point,Cuenca,Cuenca / Sur,-2.914685,-79.014282,oficina,940,17,10:00:00,17:00:00,10,catalog,True
+251943c1-9115-549b-af02-3af5350abbd8,C-012,Local comercial DEMO Cuenca Este 012,service_point,Cuenca,Cuenca / Este,-2.918991,-78.990449,local_comercial,700,21,08:00:00,16:00:00,15,catalog,True
+edcd0ac3-b921-5a53-901b-7fbd98eae919,C-013,Centro educativo DEMO Cuenca Centro 013,service_point,Cuenca,Cuenca / Centro,-2.917853,-79.014191,centro_educativo,1720,11,08:00:00,16:00:00,20,catalog,True
+626d27a6-3822-512f-9d72-6ec6115da87b,C-014,Bodega del cliente DEMO Cuenca Norte 014,service_point,Cuenca,Cuenca / Norte,-2.896675,-79.036614,bodega_operativa,2140,14,10:00:00,17:00:00,10,catalog,True
+df2fb1b2-b454-56f2-9647-28567f7a8ba4,C-015,Oficina DEMO Cuenca Sur 015,service_point,Cuenca,Cuenca / Sur,-2.892971,-79.029568,oficina,1160,5,08:00:00,16:00:00,15,catalog,True
+c2f45d82-3279-5ef6-bee2-1573dc38eedc,C-016,Local comercial DEMO Cuenca Este 016,service_point,Cuenca,Cuenca / Este,-2.890599,-78.992628,local_comercial,760,15,08:00:00,16:00:00,20,catalog,True
+13c501a3-6685-585d-bade-cdefbb691f50,C-017,Centro educativo DEMO Cuenca Centro 017,service_point,Cuenca,Cuenca / Centro,-2.908256,-79.008706,centro_educativo,360,15,10:00:00,17:00:00,10,catalog,True
+81520c7f-e13c-5b41-bd20-997185c7154a,C-018,Bodega del cliente DEMO Cuenca Norte 018,service_point,Cuenca,Cuenca / Norte,-2.868184,-78.998614,bodega_operativa,1940,23,08:00:00,16:00:00,15,catalog,True
+eb6b9856-ceba-5fcd-b4e2-01bfcff01b95,C-019,Oficina DEMO Cuenca Sur 019,service_point,Cuenca,Cuenca / Sur,-2.910916,-78.981714,oficina,1820,11,08:00:00,16:00:00,20,catalog,True
+f3cd08d5-a1fc-5453-a169-82d3d9cb9426,C-020,Local comercial DEMO Cuenca Este 020,service_point,Cuenca,Cuenca / Este,-2.903087,-79.036314,local_comercial,1300,30,10:00:00,17:00:00,10,catalog,True
+ba99348c-b7eb-5e54-bec4-162670fd908f,C-021,Centro educativo DEMO Cuenca Centro 021,service_point,Cuenca,Cuenca / Centro,-2.922156,-78.983324,centro_educativo,1840,30,08:00:00,16:00:00,15,catalog,True
+56c4981d-6902-576a-b948-a045d3e8ea88,C-022,Bodega del cliente DEMO Cuenca Norte 022,service_point,Cuenca,Cuenca / Norte,-2.894501,-79.024268,bodega_operativa,1640,17,08:00:00,16:00:00,20,catalog,True
+1d6985f0-62ec-5785-8ecb-aded92885d5a,C-023,Oficina DEMO Cuenca Sur 023,service_point,Cuenca,Cuenca / Sur,-2.909186,-79.015905,oficina,400,25,10:00:00,17:00:00,10,catalog,True
+26fe4f22-fc92-5aa5-825b-8c0beed9bafd,C-024,Local comercial DEMO Cuenca Este 024,service_point,Cuenca,Cuenca / Este,-2.875591,-79.025378,local_comercial,1860,12,08:00:00,16:00:00,15,catalog,True
+1c0cd3fa-af31-5813-945d-9c31c062e6e1,C-025,Centro educativo DEMO Cuenca Centro 025,service_point,Cuenca,Cuenca / Centro,-2.882359,-79.01059,centro_educativo,800,5,08:00:00,16:00:00,20,catalog,True
+34aae647-ea44-5eb6-9b5b-ae6b440dd4f2,C-026,Bodega del cliente DEMO Cuenca Norte 026,service_point,Cuenca,Cuenca / Norte,-2.884266,-79.019687,bodega_operativa,2060,16,10:00:00,17:00:00,10,catalog,True
+63eacf46-7e8b-56e6-8dea-5ff44f57f989,C-027,Oficina DEMO Cuenca Sur 027,service_point,Cuenca,Cuenca / Sur,-2.903733,-79.040586,oficina,1020,17,08:00:00,16:00:00,15,catalog,True
+7b8d86cb-e0b1-57ec-afef-1f1498ae0871,C-028,Local comercial DEMO Cuenca Este 028,service_point,Cuenca,Cuenca / Este,-2.872817,-78.976233,local_comercial,460,11,08:00:00,16:00:00,20,catalog,True
+5ad829dc-5e23-539e-a247-dc177ccef9ff,C-029,Centro educativo DEMO Cuenca Centro 029,service_point,Cuenca,Cuenca / Centro,-2.894867,-78.995753,centro_educativo,320,5,10:00:00,17:00:00,10,catalog,True
+8d57a0cc-4463-5ff1-8c95-883b40257fcb,C-030,Bodega del cliente DEMO Cuenca Norte 030,service_point,Cuenca,Cuenca / Norte,-2.879583,-78.98536,bodega_operativa,2120,28,08:00:00,16:00:00,15,catalog,True
+dbd7ac30-06b6-5c72-b708-3fb4c3f507b3,C-031,Oficina DEMO Cuenca Sur 031,service_point,Cuenca,Cuenca / Sur,-2.925849,-78.998643,oficina,1080,7,08:00:00,16:00:00,20,catalog,True
+7c0e3441-73a2-5fc9-a722-f7298dd0afe7,C-032,Local comercial DEMO Cuenca Este 032,service_point,Cuenca,Cuenca / Este,-2.897499,-79.039478,local_comercial,2120,17,10:00:00,17:00:00,10,catalog,True
+e69cca0c-769f-550c-9d8f-d379de3a5e64,C-033,Centro educativo DEMO Cuenca Centro 033,service_point,Cuenca,Cuenca / Centro,-2.927157,-78.999801,centro_educativo,540,26,08:00:00,16:00:00,15,catalog,True
+833883e2-5a2e-54d1-a815-9e1b21e7e6bb,C-034,Bodega del cliente DEMO Cuenca Norte 034,service_point,Cuenca,Cuenca / Norte,-2.891468,-78.993003,bodega_operativa,1200,24,08:00:00,16:00:00,20,catalog,True
+cedb1148-e16d-5343-81f7-6439502ccd9c,C-035,Oficina DEMO Cuenca Sur 035,service_point,Cuenca,Cuenca / Sur,-2.88812,-79.000471,oficina,1000,18,10:00:00,17:00:00,10,catalog,True
+e896506b-9a67-5574-a191-71497347f4bd,C-036,Local comercial DEMO Cuenca Este 036,service_point,Cuenca,Cuenca / Este,-2.916136,-79.034201,local_comercial,340,13,08:00:00,16:00:00,15,catalog,True
+954b1d51-8add-54cd-817e-6169baecc7d9,C-037,Centro educativo DEMO Cuenca Centro 037,service_point,Cuenca,Cuenca / Centro,-2.869763,-78.998677,centro_educativo,2180,4,08:00:00,16:00:00,20,catalog,True
+6e45bb5c-63be-5905-861c-ad9a3002d691,C-038,Bodega del cliente DEMO Cuenca Norte 038,service_point,Cuenca,Cuenca / Norte,-2.89586,-79.030834,bodega_operativa,2040,9,10:00:00,17:00:00,10,catalog,True
+299455c0-faf3-5866-a43c-73a00e58dfb1,C-039,Oficina DEMO Cuenca Sur 039,service_point,Cuenca,Cuenca / Sur,-2.876623,-79.030241,oficina,260,17,08:00:00,16:00:00,15,catalog,True
+2dadfe7f-58dd-5511-b2be-63c413ea3359,C-040,Local comercial DEMO Cuenca Este 040,service_point,Cuenca,Cuenca / Este,-2.91197,-79.028359,local_comercial,420,4,08:00:00,16:00:00,20,catalog,True
+bd5f4331-48ad-503e-989f-c004a15df9f1,C-041,Centro educativo DEMO Cuenca Centro 041,service_point,Cuenca,Cuenca / Centro,-2.927451,-79.018104,centro_educativo,1100,6,10:00:00,17:00:00,10,catalog,True
+c1a5ea29-33e1-5ba9-b2e5-072846abb7e7,C-042,Bodega del cliente DEMO Cuenca Norte 042,service_point,Cuenca,Cuenca / Norte,-2.872638,-79.040809,bodega_operativa,1800,6,08:00:00,16:00:00,15,catalog,True
+ff5f56b9-a539-56a2-b6c0-00e6159af34c,C-043,Oficina DEMO Cuenca Sur 043,service_point,Cuenca,Cuenca / Sur,-2.868274,-79.006442,oficina,1480,17,08:00:00,16:00:00,20,catalog,True
+73c4713d-7a3b-5e21-b60b-1a29fe21a2aa,C-044,Local comercial DEMO Cuenca Este 044,service_point,Cuenca,Cuenca / Este,-2.871628,-78.972841,local_comercial,2060,18,10:00:00,17:00:00,10,catalog,True
+9d8fc8a0-58da-586c-86bf-099d0eeaf5c1,C-045,Centro educativo DEMO Cuenca Centro 045,service_point,Cuenca,Cuenca / Centro,-2.891833,-78.994309,centro_educativo,1340,25,08:00:00,16:00:00,15,catalog,True
+d74a5662-4c22-54c7-949d-59b50fe3cbdc,C-046,Bodega del cliente DEMO Cuenca Norte 046,service_point,Cuenca,Cuenca / Norte,-2.882125,-79.027003,bodega_operativa,1820,27,08:00:00,16:00:00,20,catalog,True
+08245837-98f6-5e94-ac0d-f3326cdf4b3b,C-047,Oficina DEMO Cuenca Sur 047,service_point,Cuenca,Cuenca / Sur,-2.912375,-79.016558,oficina,1540,10,10:00:00,17:00:00,10,catalog,True
+8764cda3-7c38-531e-93d3-937c8d776e4b,C-048,Local comercial DEMO Cuenca Este 048,service_point,Cuenca,Cuenca / Este,-2.933507,-79.026226,local_comercial,260,29,08:00:00,16:00:00,15,catalog,True
+73fad9f8-4182-55d9-be28-300feae9b42c,C-049,Centro educativo DEMO Cuenca Centro 049,service_point,Cuenca,Cuenca / Centro,-2.909742,-79.008961,centro_educativo,1180,13,08:00:00,16:00:00,20,catalog,True
+9f4c82f0-f098-5835-8e29-c8ca33e1e621,C-050,Bodega del cliente DEMO Cuenca Norte 050,service_point,Cuenca,Cuenca / Norte,-2.880392,-79.026822,bodega_operativa,1320,5,10:00:00,17:00:00,10,catalog,True
+a95e72cc-c88f-5038-b784-e995917ec655,C-051,Oficina DEMO Cuenca Sur 051,service_point,Cuenca,Cuenca / Sur,-2.874608,-79.037571,oficina,1120,12,08:00:00,16:00:00,15,catalog,True
+0219dee4-a216-5425-8f6e-e472a1e6c69a,C-052,Local comercial DEMO Cuenca Este 052,service_point,Cuenca,Cuenca / Este,-2.884583,-79.03085,local_comercial,880,23,08:00:00,16:00:00,20,catalog,True
+a53838be-eb26-5d70-b90f-f9c3ae5b1512,C-053,Centro educativo DEMO Cuenca Centro 053,service_point,Cuenca,Cuenca / Centro,-2.928785,-79.019257,centro_educativo,740,16,10:00:00,17:00:00,10,catalog,True
+2a7eeeee-ee16-5891-b813-4f1855936bd1,C-054,Bodega del cliente DEMO Cuenca Norte 054,service_point,Cuenca,Cuenca / Norte,-2.899769,-78.981434,bodega_operativa,1220,12,08:00:00,16:00:00,15,catalog,True
+4e54fa4e-aeea-5705-9bce-5075b92a9d10,C-055,Oficina DEMO Cuenca Sur 055,service_point,Cuenca,Cuenca / Sur,-2.917435,-79.00072,oficina,1180,17,08:00:00,16:00:00,20,catalog,True
+f80f5492-b45a-53d1-9dc0-d424295b5e96,C-056,Local comercial DEMO Cuenca Este 056,service_point,Cuenca,Cuenca / Este,-2.909903,-79.021746,local_comercial,1780,30,10:00:00,17:00:00,10,catalog,True
+cc71ae0e-9c85-587c-bb7f-b275e6e3bdbe,C-057,Centro educativo DEMO Cuenca Centro 057,service_point,Cuenca,Cuenca / Centro,-2.932064,-79.023275,centro_educativo,2140,7,08:00:00,16:00:00,15,catalog,True
+8a890dc7-9faa-5d0b-9fcc-5de506c1c602,C-058,Bodega del cliente DEMO Cuenca Norte 058,service_point,Cuenca,Cuenca / Norte,-2.927461,-79.006263,bodega_operativa,1260,23,08:00:00,16:00:00,20,catalog,True
+9ec4c6f7-2096-5ec0-b67e-0c029f5002f9,C-059,Oficina DEMO Cuenca Sur 059,service_point,Cuenca,Cuenca / Sur,-2.882255,-78.976992,oficina,1700,13,10:00:00,17:00:00,10,catalog,True
+70a3a662-d9b9-5018-9826-14125a5e38eb,C-060,Local comercial DEMO Cuenca Este 060,service_point,Cuenca,Cuenca / Este,-2.931824,-78.971461,local_comercial,2200,7,08:00:00,16:00:00,15,catalog,True
+39b19686-7450-578f-ac42-824978defe64,C-061,Centro educativo DEMO Cuenca Centro 061,service_point,Cuenca,Cuenca / Centro,-2.866801,-78.973141,centro_educativo,1080,30,08:00:00,16:00:00,20,catalog,True
+d23784ef-8130-5c2b-b610-0ffcc4ed1efe,C-062,Bodega del cliente DEMO Cuenca Norte 062,service_point,Cuenca,Cuenca / Norte,-2.88432,-79.001279,bodega_operativa,2200,23,10:00:00,17:00:00,10,catalog,True
+d4440324-1393-5969-b965-83dd7ec4545b,C-063,Oficina DEMO Cuenca Sur 063,service_point,Cuenca,Cuenca / Sur,-2.885344,-78.998914,oficina,2060,16,08:00:00,16:00:00,15,catalog,True
+cf0dd5a3-cac8-5a5d-93d1-8a68655e555a,C-064,Local comercial DEMO Cuenca Este 064,service_point,Cuenca,Cuenca / Este,-2.907416,-78.974059,local_comercial,600,28,08:00:00,16:00:00,20,catalog,True
+8eac93dd-ba3e-54b6-afb1-39ce3bd04f64,C-065,Centro educativo DEMO Cuenca Centro 065,service_point,Cuenca,Cuenca / Centro,-2.901557,-78.976292,centro_educativo,980,5,10:00:00,17:00:00,10,catalog,True
+810a831d-8c3c-55e1-a8df-7aee79615a2b,C-066,Bodega del cliente DEMO Cuenca Norte 066,service_point,Cuenca,Cuenca / Norte,-2.919639,-78.974209,bodega_operativa,740,6,08:00:00,16:00:00,15,catalog,True
+559781d1-7f06-5f64-84a4-75b40d8d5719,C-067,Oficina DEMO Cuenca Sur 067,service_point,Cuenca,Cuenca / Sur,-2.912708,-78.997321,oficina,180,11,08:00:00,16:00:00,20,catalog,True
+86aaf96e-cc3a-507b-8715-88b907144b56,C-068,Local comercial DEMO Cuenca Este 068,service_point,Cuenca,Cuenca / Este,-2.925019,-78.971193,local_comercial,760,19,10:00:00,17:00:00,10,catalog,True
+281a504d-e772-5f01-a5a0-64861bcf743e,C-069,Centro educativo DEMO Cuenca Centro 069,service_point,Cuenca,Cuenca / Centro,-2.927379,-79.027796,centro_educativo,1320,21,08:00:00,16:00:00,15,catalog,True
+0c47be2e-4b5c-5f13-9d54-d5d4430c1a42,C-070,Bodega del cliente DEMO Cuenca Norte 070,service_point,Cuenca,Cuenca / Norte,-2.92049,-78.987551,bodega_operativa,400,27,08:00:00,16:00:00,20,catalog,True
+3434fdb3-ad2a-574c-88dc-cb44e0947970,C-071,Oficina DEMO Cuenca Sur 071,service_point,Cuenca,Cuenca / Sur,-2.909031,-79.030737,oficina,1180,11,10:00:00,17:00:00,10,catalog,True
+5a6f12dc-0ae4-5c71-8f19-a833178c8731,C-072,Local comercial DEMO Cuenca Este 072,service_point,Cuenca,Cuenca / Este,-2.890771,-79.004964,local_comercial,2020,14,08:00:00,16:00:00,15,catalog,True
+d3596254-fd0c-5cf9-8ced-e066da4c86c7,C-073,Centro educativo DEMO Cuenca Centro 073,service_point,Cuenca,Cuenca / Centro,-2.923393,-78.979841,centro_educativo,320,25,08:00:00,16:00:00,20,catalog,True
+342eb201-457e-5fa3-a713-bf6aebc5a166,C-074,Bodega del cliente DEMO Cuenca Norte 074,service_point,Cuenca,Cuenca / Norte,-2.893081,-79.03143,bodega_operativa,980,20,10:00:00,17:00:00,10,catalog,True
+273d794f-fb04-5dda-b135-ddd493020635,C-075,Oficina DEMO Cuenca Sur 075,service_point,Cuenca,Cuenca / Sur,-2.903855,-78.994745,oficina,720,25,08:00:00,16:00:00,15,catalog,True
+a312b3c6-0077-586b-afda-6ffef813df92,C-076,Local comercial DEMO Cuenca Este 076,service_point,Cuenca,Cuenca / Este,-2.898564,-79.003984,local_comercial,940,19,08:00:00,16:00:00,20,catalog,True
+4320f6fa-83f8-52ba-b86b-907b41cbd1ee,C-077,Centro educativo DEMO Cuenca Centro 077,service_point,Cuenca,Cuenca / Centro,-2.913623,-78.977981,centro_educativo,1040,4,10:00:00,17:00:00,10,catalog,True
+9e0940df-fc50-5947-b28e-3e8bbe7cb880,C-078,Bodega del cliente DEMO Cuenca Norte 078,service_point,Cuenca,Cuenca / Norte,-2.869743,-79.008297,bodega_operativa,660,3,08:00:00,16:00:00,15,catalog,True
+3e935b76-180e-51e8-87c9-15ec4dad0b48,C-079,Oficina DEMO Cuenca Sur 079,service_point,Cuenca,Cuenca / Sur,-2.889487,-78.990407,oficina,340,23,08:00:00,16:00:00,20,catalog,True
+272c0f9c-596b-5463-80f7-d74a2302ef6c,C-080,Local comercial DEMO Cuenca Este 080,service_point,Cuenca,Cuenca / Este,-2.931729,-78.974418,local_comercial,1760,12,10:00:00,17:00:00,10,catalog,True
+9bddf6e1-1ca3-5325-ad88-471eb9295a42,C-081,Centro educativo DEMO Cuenca Centro 081,service_point,Cuenca,Cuenca / Centro,-2.890597,-79.019789,centro_educativo,800,14,08:00:00,16:00:00,15,catalog,True
+c34eb666-e0e6-517a-a25d-643362b552f6,C-082,Bodega del cliente DEMO Cuenca Norte 082,service_point,Cuenca,Cuenca / Norte,-2.903403,-78.985407,bodega_operativa,640,16,08:00:00,16:00:00,20,catalog,True
+62d1ab3b-739e-50df-9ca6-8f93bfd1180e,C-083,Oficina DEMO Cuenca Sur 083,service_point,Cuenca,Cuenca / Sur,-2.925002,-78.983241,oficina,1540,13,10:00:00,17:00:00,10,catalog,True
+348ed389-f649-5d28-b29e-6da09d9a8759,C-084,Local comercial DEMO Cuenca Este 084,service_point,Cuenca,Cuenca / Este,-2.915103,-79.030785,local_comercial,1660,9,08:00:00,16:00:00,15,catalog,True
+003604ef-0789-5f9f-a78a-459a9e616376,C-085,Centro educativo DEMO Cuenca Centro 085,service_point,Cuenca,Cuenca / Centro,-2.895724,-79.029636,centro_educativo,660,27,08:00:00,16:00:00,20,catalog,True
+ce41cc62-564f-5b67-a276-0098e6b5cb19,C-086,Bodega del cliente DEMO Cuenca Norte 086,service_point,Cuenca,Cuenca / Norte,-2.921077,-78.975449,bodega_operativa,540,6,10:00:00,17:00:00,10,catalog,True
+d3dc3cb6-2123-55eb-8650-86009e39a955,C-087,Oficina DEMO Cuenca Sur 087,service_point,Cuenca,Cuenca / Sur,-2.916038,-79.011429,oficina,940,15,08:00:00,16:00:00,15,catalog,True
+8b974c8e-eba2-5383-a192-4de008b03ea5,C-088,Local comercial DEMO Cuenca Este 088,service_point,Cuenca,Cuenca / Este,-2.878644,-79.025358,local_comercial,2140,5,08:00:00,16:00:00,20,catalog,True
+7dc27d24-30ab-5a12-83c4-2a62ffd53028,C-089,Centro educativo DEMO Cuenca Centro 089,service_point,Cuenca,Cuenca / Centro,-2.915532,-78.972766,centro_educativo,360,21,10:00:00,17:00:00,10,catalog,True
+8dd2c914-2a3e-5af9-971c-7fd2cb5a04b9,C-090,Bodega del cliente DEMO Cuenca Norte 090,service_point,Cuenca,Cuenca / Norte,-2.914185,-79.000862,bodega_operativa,540,7,08:00:00,16:00:00,15,catalog,True
+a9e18314-d82c-542d-9f26-8742df77a876,C-091,Oficina DEMO Cuenca Sur 091,service_point,Cuenca,Cuenca / Sur,-2.929012,-78.97644,oficina,1820,17,08:00:00,16:00:00,20,catalog,True
+c11d9f83-d5fb-5bf3-9265-3628e6031730,C-092,Local comercial DEMO Cuenca Este 092,service_point,Cuenca,Cuenca / Este,-2.931114,-78.975141,local_comercial,1880,3,10:00:00,17:00:00,10,catalog,True
+76083737-e7a7-5cbd-8ade-40845f00f45c,C-093,Centro educativo DEMO Cuenca Centro 093,service_point,Cuenca,Cuenca / Centro,-2.866844,-79.001598,centro_educativo,2080,6,08:00:00,16:00:00,15,catalog,True
+0a04e426-22ae-5a3a-8a12-3a37347a1748,C-094,Bodega del cliente DEMO Cuenca Norte 094,service_point,Cuenca,Cuenca / Norte,-2.886563,-78.974538,bodega_operativa,840,15,08:00:00,16:00:00,20,catalog,True
+cb3fcef8-75d9-5473-9ba5-2ec6866246ed,C-095,Oficina DEMO Cuenca Sur 095,service_point,Cuenca,Cuenca / Sur,-2.926135,-78.998731,oficina,1740,25,10:00:00,17:00:00,10,catalog,True
+00d3c621-6678-55e1-83d9-c7a7bed1bea0,C-096,Local comercial DEMO Cuenca Este 096,service_point,Cuenca,Cuenca / Este,-2.930709,-78.997227,local_comercial,800,26,08:00:00,16:00:00,15,catalog,True
+f6b2e75b-02af-528f-b928-5ac467570d6f,C-097,Centro educativo DEMO Cuenca Centro 097,service_point,Cuenca,Cuenca / Centro,-2.920068,-78.9999,centro_educativo,500,20,08:00:00,16:00:00,20,catalog,True
+c11299dd-0cd7-5f31-a93c-169d12890c6e,C-098,Bodega del cliente DEMO Cuenca Norte 098,service_point,Cuenca,Cuenca / Norte,-2.87523,-78.990762,bodega_operativa,640,16,10:00:00,17:00:00,10,catalog,True
+893271e9-ab02-5951-a9bc-b19f27c107ff,C-099,Oficina DEMO Cuenca Sur 099,service_point,Cuenca,Cuenca / Sur,-2.911801,-79.024044,oficina,1320,14,08:00:00,16:00:00,15,catalog,True
+eb85b6b8-83ea-5f4e-aa85-fdfb1b8b8260,C-100,Local comercial DEMO Cuenca Este 100,service_point,Cuenca,Cuenca / Este,-2.878441,-78.976965,local_comercial,1620,13,08:00:00,16:00:00,20,catalog,True
+b2a521b9-a807-5a4c-9d2e-37d4eae284d3,C-101,Centro educativo DEMO Cuenca Centro 101,service_point,Cuenca,Cuenca / Centro,-2.908205,-78.988184,centro_educativo,220,8,10:00:00,17:00:00,10,catalog,True
+01e375da-1774-5d5f-8744-e0ecf7e5f50e,C-102,Bodega del cliente DEMO Cuenca Norte 102,service_point,Cuenca,Cuenca / Norte,-2.919975,-78.974669,bodega_operativa,840,11,08:00:00,16:00:00,15,catalog,True
+5adbf27e-c175-5be4-aa81-db959fac0f21,C-103,Oficina DEMO Cuenca Sur 103,service_point,Cuenca,Cuenca / Sur,-2.932783,-78.991086,oficina,620,9,08:00:00,16:00:00,20,catalog,True
+24a10b76-88a1-53d0-859e-fc66b40f2b54,C-104,Local comercial DEMO Cuenca Este 104,service_point,Cuenca,Cuenca / Este,-2.925668,-78.974852,local_comercial,1120,7,10:00:00,17:00:00,10,catalog,True
+68ed3bf5-2852-50f4-a2e4-4f8d4ba1abb4,C-105,Centro educativo DEMO Cuenca Centro 105,service_point,Cuenca,Cuenca / Centro,-2.875573,-79.015834,centro_educativo,560,5,08:00:00,16:00:00,15,catalog,True
+49e1b9d5-6c3c-50be-ad57-c774b413c54e,C-106,Bodega del cliente DEMO Cuenca Norte 106,service_point,Cuenca,Cuenca / Norte,-2.921704,-79.005819,bodega_operativa,1040,8,08:00:00,16:00:00,20,catalog,True
+b6a79154-b666-5cf2-afea-56c6e9a01fff,C-107,Oficina DEMO Cuenca Sur 107,service_point,Cuenca,Cuenca / Sur,-2.909881,-79.028585,oficina,320,13,10:00:00,17:00:00,10,catalog,True
+d2808b52-a7f4-5e48-a565-94dd3f4c3286,C-108,Local comercial DEMO Cuenca Este 108,service_point,Cuenca,Cuenca / Este,-2.899618,-79.034381,local_comercial,760,13,08:00:00,16:00:00,15,catalog,True
+d4ed89eb-795f-524f-a792-13438708bbc7,C-109,Centro educativo DEMO Cuenca Centro 109,service_point,Cuenca,Cuenca / Centro,-2.910926,-78.972679,centro_educativo,140,13,08:00:00,16:00:00,20,catalog,True
+bc3a4acc-9b57-572a-a836-2d4e29dfe1f4,C-110,Bodega del cliente DEMO Cuenca Norte 110,service_point,Cuenca,Cuenca / Norte,-2.908653,-79.000287,bodega_operativa,1120,30,10:00:00,17:00:00,10,catalog,True
+ca23068c-a141-54b2-b1e4-1695660caa6d,C-111,Oficina DEMO Cuenca Sur 111,service_point,Cuenca,Cuenca / Sur,-2.887716,-78.977534,oficina,1580,28,08:00:00,16:00:00,15,catalog,True
+3d0fa2b2-de30-545e-b485-7f4ece5898de,C-112,Local comercial DEMO Cuenca Este 112,service_point,Cuenca,Cuenca / Este,-2.877809,-79.010587,local_comercial,700,26,08:00:00,16:00:00,20,catalog,True
+3c1e3db3-a67f-5d21-8001-2c9ff717bdde,C-113,Centro educativo DEMO Cuenca Centro 113,service_point,Cuenca,Cuenca / Centro,-2.932944,-79.015136,centro_educativo,1200,6,10:00:00,17:00:00,10,catalog,True
+b4b07c9b-444e-5ce6-86d6-dd5cedd0b615,C-114,Bodega del cliente DEMO Cuenca Norte 114,service_point,Cuenca,Cuenca / Norte,-2.916665,-79.005428,bodega_operativa,1740,8,08:00:00,16:00:00,15,catalog,True
+85634a02-88d0-540f-a040-de69d2e68a73,C-115,Oficina DEMO Cuenca Sur 115,service_point,Cuenca,Cuenca / Sur,-2.924929,-79.016078,oficina,1840,5,08:00:00,16:00:00,20,catalog,True
+5d329a3c-2685-59f9-a95c-39ba618c42a0,C-116,Local comercial DEMO Cuenca Este 116,service_point,Cuenca,Cuenca / Este,-2.89945,-79.025077,local_comercial,220,25,10:00:00,17:00:00,10,catalog,True
+7822e296-b38d-50f8-b317-107597a36ea0,C-117,Centro educativo DEMO Cuenca Centro 117,service_point,Cuenca,Cuenca / Centro,-2.883935,-79.031594,centro_educativo,1840,14,08:00:00,16:00:00,15,catalog,True
+9ecf5752-ae83-5561-92ed-50c90f0b00eb,C-118,Bodega del cliente DEMO Cuenca Norte 118,service_point,Cuenca,Cuenca / Norte,-2.893469,-79.027562,bodega_operativa,980,17,08:00:00,16:00:00,20,catalog,True
+88c39683-215e-57a9-9d3e-c6f40b0f64f5,C-119,Oficina DEMO Cuenca Sur 119,service_point,Cuenca,Cuenca / Sur,-2.89509,-79.014844,oficina,360,12,10:00:00,17:00:00,10,catalog,True
+4398a0a3-c59e-5fbe-bca8-003342327ef9,C-120,Local comercial DEMO Cuenca Este 120,service_point,Cuenca,Cuenca / Este,-2.893882,-79.039526,local_comercial,620,5,08:00:00,16:00:00,15,catalog,True
+8e933481-93c9-50f4-b7eb-ea86a6c884e2,C-121,Centro educativo DEMO Cuenca Centro 121,service_point,Cuenca,Cuenca / Centro,-2.866599,-79.035092,centro_educativo,860,15,08:00:00,16:00:00,20,catalog,True
+01185757-aa62-537f-a852-62a9e145be0e,C-122,Bodega del cliente DEMO Cuenca Norte 122,service_point,Cuenca,Cuenca / Norte,-2.917254,-78.972095,bodega_operativa,1120,9,10:00:00,17:00:00,10,catalog,True
+81187166-0ffa-5ccf-b2c4-bf6a0a592232,C-123,Oficina DEMO Cuenca Sur 123,service_point,Cuenca,Cuenca / Sur,-2.933987,-78.971097,oficina,640,18,08:00:00,16:00:00,15,catalog,True
+905710f8-5e26-50ac-b8dc-5bafa7b7d6c5,C-124,Local comercial DEMO Cuenca Este 124,service_point,Cuenca,Cuenca / Este,-2.88893,-79.037025,local_comercial,1400,28,08:00:00,16:00:00,20,catalog,True
+b574f674-d762-5ba6-b4f2-738324865b4c,C-125,Centro educativo DEMO Cuenca Centro 125,service_point,Cuenca,Cuenca / Centro,-2.930381,-78.974846,centro_educativo,2200,14,10:00:00,17:00:00,10,catalog,True
+cb30ef80-deea-504d-b5eb-200972dfdcdb,C-126,Bodega del cliente DEMO Cuenca Norte 126,service_point,Cuenca,Cuenca / Norte,-2.932826,-78.986897,bodega_operativa,620,26,08:00:00,16:00:00,15,catalog,True
+d32e5753-499f-5829-9a7f-ac094874a329,C-127,Oficina DEMO Cuenca Sur 127,service_point,Cuenca,Cuenca / Sur,-2.91021,-79.031242,oficina,860,27,08:00:00,16:00:00,20,catalog,True
+b5c2dcde-e321-5753-b745-d72b1ba6a6f4,C-128,Local comercial DEMO Cuenca Este 128,service_point,Cuenca,Cuenca / Este,-2.891738,-79.032118,local_comercial,1100,20,10:00:00,17:00:00,10,catalog,True
+82ee6aa2-d719-548a-9633-5d82cad1a8d8,C-129,Centro educativo DEMO Cuenca Centro 129,service_point,Cuenca,Cuenca / Centro,-2.878432,-79.034868,centro_educativo,1700,11,08:00:00,16:00:00,15,catalog,True
+f12bbc4a-9092-510d-8ec3-c4bfbfca7809,C-130,Bodega del cliente DEMO Cuenca Norte 130,service_point,Cuenca,Cuenca / Norte,-2.929578,-78.983653,bodega_operativa,2040,25,08:00:00,16:00:00,20,catalog,True
+c48e702e-61ad-52ca-b56d-0ae511469b5e,C-131,Oficina DEMO Cuenca Sur 131,service_point,Cuenca,Cuenca / Sur,-2.914635,-79.021887,oficina,2120,28,10:00:00,17:00:00,10,catalog,True
+bb68f056-2f9f-58d6-93c1-d05ecaf5992d,C-132,Local comercial DEMO Cuenca Este 132,service_point,Cuenca,Cuenca / Este,-2.873449,-78.998305,local_comercial,1720,16,08:00:00,16:00:00,15,catalog,True
+6b186a1b-66ec-5617-b6e3-e23fe0ae7140,C-133,Centro educativo DEMO Cuenca Centro 133,service_point,Cuenca,Cuenca / Centro,-2.927105,-79.022201,centro_educativo,260,17,08:00:00,16:00:00,20,catalog,True
+499b8a86-294e-5e2f-9475-63c834bf7b29,C-134,Bodega del cliente DEMO Cuenca Norte 134,service_point,Cuenca,Cuenca / Norte,-2.885203,-78.994827,bodega_operativa,620,16,10:00:00,17:00:00,10,catalog,True
+d95815d8-2ec2-55f8-b792-62b4b735bd85,C-135,Oficina DEMO Cuenca Sur 135,service_point,Cuenca,Cuenca / Sur,-2.916024,-78.996175,oficina,220,19,08:00:00,16:00:00,15,catalog,True
+d9bf30e5-29ef-527d-9502-be312f3514d9,C-136,Local comercial DEMO Cuenca Este 136,service_point,Cuenca,Cuenca / Este,-2.896459,-79.000122,local_comercial,1980,4,08:00:00,16:00:00,20,catalog,True
+0c0e7b82-da2a-578d-ba51-27be2178992a,C-137,Centro educativo DEMO Cuenca Centro 137,service_point,Cuenca,Cuenca / Centro,-2.930048,-78.982891,centro_educativo,180,8,10:00:00,17:00:00,10,catalog,True
+5a29f54d-b513-5cc3-8315-069423ae59a8,C-138,Bodega del cliente DEMO Cuenca Norte 138,service_point,Cuenca,Cuenca / Norte,-2.926761,-79.007643,bodega_operativa,940,25,08:00:00,16:00:00,15,catalog,True
+1ee7b777-f48e-5353-9f57-ffcc60ac50a4,C-139,Oficina DEMO Cuenca Sur 139,service_point,Cuenca,Cuenca / Sur,-2.921999,-79.013776,oficina,1440,7,08:00:00,16:00:00,20,catalog,True
+84f48907-4435-5f8d-8fe7-70a5a61cdb79,C-140,Local comercial DEMO Cuenca Este 140,service_point,Cuenca,Cuenca / Este,-2.883179,-78.991266,local_comercial,1580,21,10:00:00,17:00:00,10,catalog,True
+5a44acc8-52ad-5492-926b-d07c27c023ec,C-141,Centro educativo DEMO Cuenca Centro 141,service_point,Cuenca,Cuenca / Centro,-2.898109,-79.023336,centro_educativo,840,17,08:00:00,16:00:00,15,catalog,True
+92116cd5-e3e1-599c-949c-4893b596dbe1,C-142,Bodega del cliente DEMO Cuenca Norte 142,service_point,Cuenca,Cuenca / Norte,-2.880358,-78.99456,bodega_operativa,760,9,08:00:00,16:00:00,20,catalog,True
+25b31e4a-65a0-532e-a510-b8bc49140ecc,C-143,Oficina DEMO Cuenca Sur 143,service_point,Cuenca,Cuenca / Sur,-2.871784,-79.01337,oficina,2040,13,10:00:00,17:00:00,10,catalog,True
+aa90bb42-057a-5b08-b850-8b8a117494dd,C-144,Local comercial DEMO Cuenca Este 144,service_point,Cuenca,Cuenca / Este,-2.898778,-79.016231,local_comercial,1220,3,08:00:00,16:00:00,15,catalog,True
+8359faa7-aef9-5427-8c7e-2db4f88c619f,C-145,Centro educativo DEMO Cuenca Centro 145,service_point,Cuenca,Cuenca / Centro,-2.901243,-78.987125,centro_educativo,460,20,08:00:00,16:00:00,20,catalog,True
+48958da8-19af-5e99-a10d-35181f8d28fc,C-146,Bodega del cliente DEMO Cuenca Norte 146,service_point,Cuenca,Cuenca / Norte,-2.867801,-78.980065,bodega_operativa,880,12,10:00:00,17:00:00,10,catalog,True
+759d67bc-44eb-538a-b4a2-b8e3cdd5d6f6,C-147,Oficina DEMO Cuenca Sur 147,service_point,Cuenca,Cuenca / Sur,-2.930208,-78.989203,oficina,2040,10,08:00:00,16:00:00,15,catalog,True
+be5c564b-35bd-585d-8c06-094700750b87,C-148,Local comercial DEMO Cuenca Este 148,service_point,Cuenca,Cuenca / Este,-2.925676,-78.985106,local_comercial,1240,12,08:00:00,16:00:00,20,catalog,True
+92b07c51-834d-5081-8a44-9ce5e6fab6b7,C-149,Centro educativo DEMO Cuenca Centro 149,service_point,Cuenca,Cuenca / Centro,-2.872116,-79.027538,centro_educativo,1940,28,10:00:00,17:00:00,10,catalog,True
+dec9e3a5-4150-5eb4-8d97-49ed82c15530,C-150,Bodega del cliente DEMO Cuenca Norte 150,service_point,Cuenca,Cuenca / Norte,-2.920427,-79.037924,bodega_operativa,820,17,08:00:00,16:00:00,15,catalog,True

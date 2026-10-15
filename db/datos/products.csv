@@ -1,0 +1,31 @@
+﻿id,sku,name,category,description,inventory_unit,content_quantity,content_unit,gross_weight_kg,package_volume_m3,lead_time_days,has_expiry,active,provenance
+75ac4254-6b55-5129-9486-858495711eb2,INS-001,Detergente neutro DEMO 1 L,quimico,Botella ficticia para limpieza general.,BOTELLA,1,L,1.08,0.0014,5,True,True,synthetic
+1578897a-a18a-5c6d-8103-3c9af2955dc2,INS-002,Desinfectante DEMO 1 L,quimico,Producto de catálogo ficticio para demostrar reposición; sin afirmaciones de eficacia.,BOTELLA,1,L,1.1,0.0014,5,True,True,synthetic
+57cb80a7-75c3-551a-b50b-3267e300eec1,INS-003,Limpiavidrios DEMO 1 L,quimico,Botella ficticia incluida en kits de abastecimiento.,BOTELLA,1,L,1.07,0.0014,4,True,True,synthetic
+844a77da-5b3c-582d-bbb6-14b4538753b6,INS-004,Desengrasante DEMO 1 L,quimico,Presentación comercial ficticia para modelar pedidos.,BOTELLA,1,L,1.14,0.0014,6,True,True,synthetic
+2069c53e-2c08-59ea-bb28-d3a8e59dfb87,INS-005,Limpiador de pisos DEMO 5 L,quimico,Envase ficticio de cinco litros para tareas generales.,ENVASE,5,L,5.3,0.0065,7,True,True,synthetic
+d791a1c7-4254-5eb9-a74a-aad6d7ed2af2,INS-006,Jabón de manos DEMO 1 L,quimico,Recarga ficticia; datos físicos y precio son supuestos.,BOTELLA,1,L,1.08,0.0014,4,True,True,synthetic
+34f6571f-baf2-5e09-9337-dfb9f7ed1c34,INS-007,Lavavajillas DEMO 750 mL,quimico,Botella ficticia de detergente para el catálogo demo.,BOTELLA,750,mL,0.82,0.0011,5,True,True,synthetic
+adcb7644-3b24-5b73-a989-9c29f8514d39,INS-008,Limpiador sanitario DEMO 1 L,quimico,Artículo ficticio para distinguir líneas del pedido.,BOTELLA,1,L,1.12,0.0014,6,True,True,synthetic
+7da0868d-863c-583f-8fe3-393f906a859a,INS-009,Cera para pisos DEMO 5 L,quimico,Envase ficticio sin ficha técnica ni dosificación real.,ENVASE,5,L,5.2,0.0065,8,True,True,synthetic
+f99bf69d-a515-560c-9139-2b5115d01aac,INS-010,Detergente para ropa DEMO 1 kg,quimico,Bolsa ficticia para simular una presentación en polvo.,BOLSA,1,kg,1.04,0.0022,5,True,True,synthetic
+229f5090-e2fa-5fa4-b28e-1b22c6c3d8de,INS-011,Papel higiénico DEMO paquete x12,papel,Una unidad de inventario representa un paquete completo de doce rollos.,PAQUETE,12,rollos,0.95,0.022,4,False,True,synthetic
+b97686fb-2528-572d-a5ee-fba37b426369,INS-012,Papel de manos DEMO x200,papel,Paquete ficticio de doscientas hojas; se cuentan paquetes.,PAQUETE,200,hojas,0.42,0.004,4,False,True,synthetic
+46421788-a9fa-5f43-8ef4-d52328727ca0,INS-013,Paños desechables DEMO x10,consumible,Paquete ficticio de diez paños.,PAQUETE,10,panos,0.15,0.0015,5,False,True,synthetic
+6f3f2d78-8f5c-5e7b-b24a-c454975f4646,INS-014,Servilletas DEMO x100,papel,Paquete ficticio de cien unidades.,PAQUETE,100,servilletas,0.2,0.0018,4,False,True,synthetic
+4499eaed-3134-5c64-a81d-562604b12d0c,INS-015,Bolsas de residuos DEMO 50 L x10,consumible,Paquete ficticio de diez bolsas; capacidad nominal de cincuenta litros por bolsa.,PAQUETE,10,bolsas,0.24,0.0012,4,False,True,synthetic
+e442d042-d0a9-54fa-b33f-9b9f077c7c12,INS-016,Bolsas de residuos DEMO 100 L x10,consumible,Paquete ficticio de diez bolsas grandes.,PAQUETE,10,bolsas,0.38,0.0018,5,False,True,synthetic
+979d014c-5cfc-576c-a851-71e9f747f0bb,INS-017,Guantes reutilizables DEMO par,proteccion,Par ficticio sin certificación ni recomendación de protección química.,PAR,2,guantes,0.09,0.0006,5,False,True,synthetic
+73af3db2-68a3-51b0-9321-c55f96d75e30,INS-018,Guantes desechables DEMO x100,proteccion,Caja ficticia de cien guantes; una unidad de inventario equivale a una caja.,CAJA,100,guantes,0.6,0.003,6,False,True,synthetic
+52d5c153-aee9-53f4-ab52-ab098c49270d,INS-019,Mascarillas DEMO x50,proteccion,Caja ficticia para demostrar un producto empaquetado; sin certificación.,CAJA,50,mascarillas,0.22,0.0028,6,False,True,synthetic
+0d7892fe-475d-5a97-a910-ec4fe3fbf168,INS-020,Esponjas DEMO x10,consumible,Paquete ficticio de diez esponjas.,PAQUETE,10,esponjas,0.12,0.003,4,False,True,synthetic
+c4c3ec28-38aa-5e03-ab0a-6c086bb04f10,INS-021,Fibras de limpieza DEMO x10,consumible,Paquete ficticio de diez fibras para el catálogo.,PAQUETE,10,fibras,0.18,0.002,5,False,True,synthetic
+8ad5eae1-dd09-56e2-b0ad-a2cad07c9764,INS-022,Microfibras DEMO x3,herramienta,Paquete ficticio de tres paños reutilizables.,PAQUETE,3,panos,0.2,0.002,5,False,True,synthetic
+0f4115d0-92a6-5e92-b062-4d9e18bff870,INS-023,Mopa DEMO unidad,herramienta,Herramienta ficticia; dimensiones de transporte aproximadas.,UNIDAD,1,unidad,0.6,0.012,7,False,True,synthetic
+d592cec6-c8b7-5c94-891e-350b4d98a63b,INS-024,Escoba DEMO unidad,herramienta,Escoba ficticia para modelar volumen transportado.,UNIDAD,1,unidad,0.45,0.01,5,False,True,synthetic
+1a6b5a62-f2cf-5351-915b-a8d551f07dff,INS-025,Recogedor DEMO unidad,herramienta,Recogedor ficticio de uso general.,UNIDAD,1,unidad,0.35,0.012,5,False,True,synthetic
+6e1b5558-89f1-5140-808c-40e6d45c2d38,INS-026,Balde DEMO 10 L vacío,herramienta,"Se inventaría el balde vacío, no diez litros de contenido.",UNIDAD,10,L_capacidad,0.65,0.025,6,False,True,synthetic
+67d398c2-e016-5b0d-94ef-aab372601bc7,INS-027,Atomizador DEMO 500 mL vacío,herramienta,Envase vacío ficticio para el catálogo.,UNIDAD,500,mL_capacidad,0.1,0.001,4,False,True,synthetic
+300c24b0-ca1c-5621-a939-cbf412159fb9,INS-028,Cepillo DEMO unidad,herramienta,Cepillo ficticio de limpieza general.,UNIDAD,1,unidad,0.18,0.0015,5,False,True,synthetic
+26e30c6f-ba35-5c2d-ad8c-b5b3a3a6bbee,INS-029,Dispensador DEMO unidad,herramienta,Dispensador ficticio para un equipo de punto de servicio.,UNIDAD,1,unidad,0.35,0.004,8,False,True,synthetic
+d1cdb729-38e2-5483-92a8-f4da7cc0c958,INS-030,Carro de limpieza DEMO unidad,equipo,Equipo ficticio con mayor volumen; útil para probar restricciones de vehículo.,UNIDAD,1,unidad,12.0,0.32,10,False,True,synthetic

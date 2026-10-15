@@ -1,0 +1,36 @@
+{
+  "provenance": "SIMULADO - NO ES UNA RESPUESTA REAL DE JEV",
+  "response": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "urgency": {
+        "type": "choice",
+        "choice": "urgent",
+        "probabilities": {
+          "routine": 0.04,
+          "urgent": 0.91,
+          "review": 0.05
+        },
+        "confidence": 0.865
+      },
+      "additional_reason": {
+        "type": "choice",
+        "choice": "review",
+        "probabilities": {
+          "supported": 0.2,
+          "possible_duplicate": 0.2,
+          "review": 0.6
+        },
+        "confidence": 0.4
+      },
+      "needs_human_review": {
+        "type": "noul",
+        "noul": 0.9
+      }
+    },
+    "usage": {
+      "input_tokens": 0,
+      "output_tokens": 0
+    }
+  }
+}

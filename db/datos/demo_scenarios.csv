@@ -1,0 +1,9 @@
+﻿code,title,steps,expected_result,is_synthetic
+DUPLICADO,Pedido duplicado,"[""Abrir registro DEMO"", ""Revisar alerta y evidencia"", ""Aplicar la acción según el rol autorizado""]","PED-DEMO-025 repite los 16 ítems de PED-DEMO-001, mismo punto y período.",True
+OMISION,Insumo omitido del kit,"[""Abrir registro DEMO"", ""Revisar alerta y evidencia"", ""Aplicar la acción según el rol autorizado""]",INS-016 figura en el kit ficticio y no aparece en el pedido.,True
+EMPAQUE,Cantidad preparada menor,"[""Abrir registro DEMO"", ""Revisar alerta y evidencia"", ""Aplicar la acción según el rol autorizado""]",Cantidades preparadas menores que las aprobadas; seguir en preparación.,True
+RECEPCION,Diferencia de recepción,"[""Abrir registro DEMO"", ""Revisar alerta y evidencia"", ""Aplicar la acción según el rol autorizado""]","INS-002: se enviaron 10, se contaron y aceptaron 8. Dos permanecen pendientes en tránsito.",True
+COURIER,Envío pendiente por courier,"[""Abrir registro DEMO"", ""Revisar alerta y evidencia"", ""Aplicar la acción según el rol autorizado""]",Envío ficticio Quito–Guayaquil: superó la fecha prometida sin entrega confirmada.,True
+EXCESO,Exceso de stock,"[""Abrir registro DEMO"", ""Revisar alerta y evidencia"", ""Aplicar la acción según el rol autorizado""]",Saldo DEMO alto respecto de la necesidad mensual supuesta.,True
+VENCIMIENTO,Lote vencido en bodega,"[""Abrir registro DEMO"", ""Revisar alerta y evidencia"", ""Aplicar la acción según el rol autorizado""]",Lotes ficticios vencidos excluidos de stock utilizable.,True
+CONTINGENCIA,Demanda +20% y vehículo no disponible,"[""Aumentar demanda por factor 1.2"", ""Excluir VEH-DEMO-2"", ""Recalcular cantidades y rutas"", ""Comparar resultados sin ejecutar despachos""]",Nueva propuesta con restricciones respetadas; todos los resultados son simulados.,True

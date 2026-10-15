@@ -1,0 +1,37 @@
+{
+  "model": "jev-1.13.0",
+  "state": {
+    "order_code": "PED-DEMO-001",
+    "point_code": "Q-001",
+    "observations": "Nos falta desinfectante y tenemos una jornada adicional mañana.",
+    "computed_by_code": {
+      "coverage_bucket": "critical",
+      "sku": "INS-002"
+    },
+    "provenance": "synthetic demo data"
+  },
+  "questions": {
+    "urgency": {
+      "type": "choice",
+      "instructions": "Classify the urgency expressed in the observations. Arithmetic and coverage have already been calculated by code. Return review if the reason is ambiguous.",
+      "criteria": {
+        "routine": "Routine monthly replenishment with no stated interruption.",
+        "urgent": "An explicit shortage or extra activity threatens the service.",
+        "review": "Missing or ambiguous information."
+      }
+    },
+    "additional_reason": {
+      "type": "choice",
+      "instructions": "Evaluate the stated reason for an additional order; do not approve orders.",
+      "criteria": {
+        "supported": "A new event or additional consumption is explicitly stated.",
+        "possible_duplicate": "A resend with no new reason.",
+        "review": "Not enough context."
+      }
+    },
+    "needs_human_review": {
+      "type": "noul",
+      "instructions": "Does the supplied state require human review because it is incomplete, contradictory, or an exception?"
+    }
+  }
+}
