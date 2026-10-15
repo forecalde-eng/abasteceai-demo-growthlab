@@ -7,8 +7,9 @@ Hackathon Expo Clean Ecuador 2026 · Reto 1: trazabilidad y abastecimiento de in
 
 1. `00-handoffs/01_CONTEXTO_PROYECTO.md`: el negocio, el modelo de datos, el flujo y los roles.
 2. `docs/04_SPEC_MAESTRA.md`: qué construimos y cómo se comprueba (historias, criterios, guion del pitch).
-3. `docs/05_PLAN_IMPLEMENTACION.md`: tareas por persona, cronograma y riesgos.
-4. `CONTRIBUTING.md`: cómo trabajamos con ramas y PRs.
+3. `docs/05_PLAN_IMPLEMENTACION.md`: decisiones técnicas, pruebas, cronograma y riesgos.
+4. `docs/06_PLAN_EQUIPO.md` y `docs/equipo/<tu-nombre>.md`: quién hace qué, por fases.
+5. `AGENTS.md`: reglas para tu IA. `CONTRIBUTING.md`: ramas y PRs.
 
 ## Estructura
 

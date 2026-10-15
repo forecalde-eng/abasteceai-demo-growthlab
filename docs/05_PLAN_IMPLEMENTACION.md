@@ -1,7 +1,7 @@
 # AbasteceAI — Plan de implementación
 
 > Versión 0.3 · 14-oct-2026 · Implementa `04_SPEC_MAESTRA.md` v0.3.
-> Reparto y reglas de GitHub: `02_PLAN_EQUIPO_SDD.md` (no se repiten aquí).
+> **El reparto por persona y las fases están en `06_PLAN_EQUIPO.md`** (Omar, David, Jorge, Bruno) y reemplazan los dueños A/B/C/D de §4. Este archivo conserva el estado de partida, decisiones D1–D12, pruebas, cronograma y riesgos.
 > Cada tarea tiene un **"hecho cuando"** verificable. Ninguna tarea dura más de ~2 h; si crece, se parte.
 > **Cambio clave (14-oct):** se permite traer código hecho. La demo llega **construida y ensayada**; en el evento solo se pule y se presenta.
 
@@ -29,7 +29,7 @@
 
 | Pieza | Tipo | Dónde en este plan |
 |---|---|---|
-| Repo GitHub, Spec Kit, constitución, `AGENTS.md` | Setup | T0.3 |
+| Proteger `main` (repo y `AGENTS.md` ya están) | Setup | T0.3 |
 | `uv` y `gh` en esta Mac (y verificar en las otras 3) | Setup | T0.2 |
 | Proyecto Supabase + 7 usuarios Auth vinculados | Setup | T0.4 |
 | Cuentas OpenAI, TypeSafe, HeiGIT con límite de gasto | Setup | T0.10 |
@@ -101,13 +101,13 @@ Si el jueves a las 22:00 falta algún MUST, el viernes por la mañana se trabaja
 
 ## 4. Tareas
 
-### Fase 0 — Setup (mié 14 noche) · dueño A salvo indicación
+### Fase 0 — Setup (mié 14 noche) · dueños en `06_PLAN_EQUIPO.md`
 
 | ID | Tarea | Depende | Hecho cuando |
 |---|---|---|---|
 | T0.1 | ✅ Paquete en `db/` y verificado | — | 61/61 OK |
 | T0.2 | Instalar `uv`, `gh` (faltan aquí), Node 20+, Python 3.11+ — **los 4** | — | `uv --version`, `gh auth status` OK en las 4 máquinas |
-| T0.3 | Repo, `main` protegida, invitar; mover los 5 `.md` a `docs/`; Spec Kit; constitución (10 reglas + I11 reloj de demo + I12); `AGENTS.md` + `CLAUDE.md` | T0.2 | Constitución aprobada por los 4 |
+| T0.3 | ✅ Repo creado y subido; `AGENTS.md` + `CLAUDE.md` (sustituyen Spec Kit y constitución). Falta proteger `main` | T0.2 | Los 4 leen `AGENTS.md` |
 | T0.4 | Supabase Free: SQL 01→03, exponer `abastece`, 7 usuarios Auth, vincular `auth_user_id`, guardar `DATABASE_URL` (pooler sesión) | — | Auxiliar ve 3 puntos, supervisor 24, admin 703 — **probado desde el cliente** |
 | T0.5 | `specs/000-contratos/`: `openapi.yaml` (13 endpoints, columnas reales), `estados.md`, `roles.md`; `db/07_proveedor_openai.sql` aplicada | T0.3 | PR aprobado; contrato **congelado** |
 | T0.6 | Scaffold backend: FastAPI, `/health`, routers vacíos, `rules/`, `db.py` (pool psycopg + `db_tx`), `clock.py`, `auth.py` con `get_current_staff()` y `require_role()` | T0.5 | `pytest` + `ruff` verdes; `/health` y `/me` responden con el JWT del auxiliar |
@@ -215,6 +215,6 @@ C2b es corto pero bloquea el despacho: C lo hace **primero** el jueves.
 
 ## 7. Próximos pasos inmediatos
 
-1. **Fausto (A):** confirmar Q7 (ciclo en vivo con PED-DEMO-001) y Q8 (migración 07); pasar usuarios GitHub de B, C, D.
+1. **Omar:** confirmar Q7 (ciclo en vivo con PED-DEMO-001) y Q8 (migración 07); pasar usuarios GitHub de David, Jorge y Bruno.
 2. Instalar `uv` y `gh` (T0.2) y crear el proyecto Supabase (T0.4).
-3. Arrancar T0.3 → T0.5: repo, Spec Kit, constitución y contrato congelado.
+3. Arrancar la Fase 0 de `06_PLAN_EQUIPO.md`: contrato congelado, Supabase y esqueletos.

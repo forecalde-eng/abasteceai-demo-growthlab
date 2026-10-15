@@ -1,33 +1,34 @@
 # Cómo trabajamos
 
+Quién hace qué: `docs/06_PLAN_EQUIPO.md`. Tu lista de tareas: `docs/equipo/<tu-nombre>.md`. Reglas para tu IA: `AGENTS.md`.
+
 ## Reglas
 
 - **Nadie sube directo a `main`.** Todo entra por pull request (PR).
-- Cada feature tiene su rama y su dueño:
+- Una rama por tarea, con tu prefijo:
 
-| Rama | Dueño | Alcance |
+| Persona | Prefijo de rama | Ejemplo |
 |---|---|---|
-| `001-pedidos` | A (Fausto) | Login, layout, pedidos, análisis, decisión admin |
-| `002-bodega-recepcion` | B | Preparar, despachar, entregar, recibir (QR) |
-| `003-logistica` | C | Rutas OR-Tools, confirmar plan (crea envíos), courier |
-| `004-ia` | D | Jev, asistente, tablero de cobertura |
+| Omar | `ai/omar/` | `ai/omar/auth-jwt` |
+| David | `back/david/` | `back/david/dispatch` |
+| Jorge | `front/jorge/` | `front/jorge/bandeja-admin` |
+| Bruno | `front/bruno/` | `front/bruno/recepcion-qr` |
 
-- Subtareas en ramas cortas: `002-bodega-recepcion/dispatch`.
-- Solo A toca `backend/app/main.py`, `frontend/src/App.tsx`, `specs/000-contratos/` y `db/`. Si necesitas un cambio ahí, pídelo con un PR pequeño.
-- **Secretos nunca en el repo.** `.env` está ignorado; las claves se pasan por canal privado.
+- Solo tocas las carpetas que son tuyas (`docs/06_PLAN_EQUIPO.md §2`). Para algo ajeno: PR pequeño avisando al dueño.
+- **Secretos nunca en el repo.** `.env` está ignorado; las claves se pasan por el canal privado.
 
 ## Flujo
 
 ```bash
 git checkout main && git pull
-git checkout -b 002-bodega-recepcion        # o tu rama
-# ... trabajar ...
-git add -A && git commit -m "bodega: preparar por lote con FEFO"
-git push -u origin 002-bodega-recepcion
-gh pr create --base main --fill             # o desde la web
+git checkout -b front/bruno/recepcion-qr
+# ... trabajar con tu IA, una tarea ...
+git add -A && git commit -m "recepción: lector QR y conteo por ítem (B-2.5)"
+git push -u origin front/bruno/recepcion-qr
+gh pr create --base main --fill          # o desde la web
 ```
 
-Antes de seguir trabajando, trae lo último de `main`:
+Mientras tu PR espera, o antes de seguir, trae lo último de `main`:
 
 ```bash
 git fetch origin && git rebase origin/main
@@ -35,6 +36,6 @@ git fetch origin && git rebase origin/main
 
 ## Revisión
 
-- Cada PR se revisa antes de entrar a `main`: que cumpla la spec (`docs/04_SPEC_MAESTRA.md`), que respete las invariantes I1–I12, que pasen las pruebas y que no haya secretos.
-- Si está bien → **squash merge** a `main`. Si no → comentarios en el PR con lo que hay que corregir.
-- PRs pequeños (idealmente ≤ 300 líneas): se revisan rápido.
+- Cada PR se revisa contra la spec, las invariantes I1–I12 y las pruebas, y que no tenga secretos.
+- Si está bien → **squash merge** a `main` y se borra la rama. Si no → comentarios en el PR.
+- PRs pequeños (idealmente ≤ 300 líneas): ninguno debería esperar más de 1 hora.

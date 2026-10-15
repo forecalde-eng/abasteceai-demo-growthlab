@@ -1,8 +1,9 @@
 # AbasteceAI — Especificación maestra (SPEC)
 
-> Versión 0.3 · 14-oct-2026 · Estado: **BORRADOR para revisión del equipo** · Alcance MoSCoW confirmado por A (Fausto)
+> Versión 0.3 · 14-oct-2026 · Estado: **BORRADOR para revisión del equipo** · Alcance MoSCoW confirmado por Omar (líder)
 > Fuentes: `01_CONTEXTO_PROYECTO.md`, `02_PLAN_EQUIPO_SDD.md`, `03_ARRANQUE_CLAUDE_CODE.md` y el paquete `db/` (DEMO-1.1), verificado: **61/61 pruebas OK**.
 > Esta spec define **qué** se construye y **cómo se comprueba**. El **cómo se construye** está en `05_PLAN_IMPLEMENTACION.md`.
+> **Dueños:** las historias F0–F5 se reparten por capa (front/back/IA) en `06_PLAN_EQUIPO.md`; los "dueño A/B/C/D" de §5 quedan solo como referencia.
 > Lo marcado **[Supuesto]** es una decisión razonable sin confirmar.
 
 ---
@@ -165,7 +166,7 @@ Formato: *Dado / Cuando / Entonces*. Cada **[PITCH-n]** reproduce un paso del gu
 | 10 | Asistente cita DEMO-1.1 | **En vivo** | HU-4.2 | F4 |
 | 11 | CONTINGENCIA | En vivo | F5 | COULD |
 
-### 6.2 Ciclo en vivo [Supuesto: a confirmar por A]
+### 6.2 Ciclo en vivo [Supuesto: a confirmar por Omar]
 
 Pedido **PED-DEMO-001** (Q-001, punto del auxiliar → la recepción se puede hacer desde el teléfono):
 
@@ -255,9 +256,9 @@ Deploy público · integración ERP · API de courier · predicción estadístic
 |---|---|---|
 | Q1 | Paquete `db/` | ✅ Resuelto 14-oct: en `db/`, 61/61 pruebas OK |
 | Q2 | ¿Código antes del 16? | ✅ Sí. La demo llega construida |
-| Q3 | Usuarios GitHub de B, C, D | Abierta — Fausto |
+| Q3 | Usuarios GitHub de David, Jorge, Bruno | Abierta — Omar |
 | Q4 | Idempotencia y `cancelled` en el esquema | ✅ `cancelled` existe; `orders.idempotency_key` existe; el resto es por estado |
 | Q5 | Escrituras | ✅ psycopg directo |
 | Q6 | ¿Quién toma F5 (simulador)? | Abierta — solo si sobra tiempo |
-| Q7 | ¿Ciclo en vivo con PED-DEMO-001 (§6.2)? | Abierta — A confirma |
-| Q8 | ¿Se acepta la migración 07 (`openai` en `decision_logs.provider`)? | Abierta — A confirma |
+| Q7 | ¿Ciclo en vivo con PED-DEMO-001 (§6.2)? | Abierta — Omar confirma |
+| Q8 | ¿Se acepta la migración 07 (`openai` en `decision_logs.provider`)? | Abierta — Omar confirma |
