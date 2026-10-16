@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { useSession, type Role } from "@/app/dev/session";
+import { useSession, type Role } from "@/data";
 import { SinAcceso } from "@/app/pages/SinAcceso";
 import { LoadingState } from "@/ui";
 

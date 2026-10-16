@@ -12,7 +12,7 @@ import {
   type NuevoPedido,
 } from "@/app/dev/apiDemo";
 import { MES_DEMO } from "@/app/dev/datosDemo";
-import { useSession } from "@/app/dev/session";
+import { useSession } from "@/data";
 import type { Product } from "@/mocks";
 import {
   Badge,

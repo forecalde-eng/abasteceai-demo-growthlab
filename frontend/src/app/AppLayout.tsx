@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { MenuIcon, PackageCheckIcon, XIcon } from "lucide-react";
 
+import { BotonSalir } from "@/app/BotonSalir";
 import { DevAccountSwitcher } from "@/app/DevAccountSwitcher";
 import { RoleMenu } from "@/app/RoleMenu";
-import { ROLES, useSession } from "@/app/dev/session";
+import { ROLES } from "@/app/dev/roles";
+import { useSession } from "@/data";
 import { Badge, TONO, cn } from "@/ui";
 import { Toaster } from "@/ui/sonner";
 
@@ -84,6 +86,7 @@ export function AppLayout() {
           <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
             <UsuarioYrol />
             <DevAccountSwitcher />
+            <BotonSalir />
           </div>
         </aside>
 
@@ -138,6 +141,7 @@ export function AppLayout() {
             <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
               <UsuarioYrol />
               <DevAccountSwitcher onNavigate={() => setMenuAbierto(false)} />
+              <BotonSalir />
             </div>
           </div>
         </div>
