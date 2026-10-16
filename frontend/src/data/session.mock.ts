@@ -56,7 +56,10 @@ const LOCATIONS_BY_ID = new Map(ALL_POINTS.map((point) => [point.id, point]));
 
 export function getMockSession(role: Role): Session {
   const source = MOCK_STAFF[role];
-  const ids = MOCK_ASSIGNMENTS[role] ?? ALL_POINTS.map(({ id }) => id);
+  const ids = role === "auxiliar" || role === "supervisor"
+    ? MOCK_ASSIGNMENTS[role]
+    : ALL_POINTS.map(({ id }) => id);
+  if (!ids) throw new Error(`Faltan asignaciones de prueba para ${role}`);
   const points: Point[] = ids.map((id) => {
     const location = LOCATIONS_BY_ID.get(id);
     if (!location) throw new Error(`Punto de prueba inexistente: ${id}`);
