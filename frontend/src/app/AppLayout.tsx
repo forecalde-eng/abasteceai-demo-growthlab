@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { MenuIcon, PackageCheckIcon, XIcon } from "lucide-react";
 
-import { DevRoleSwitcher } from "@/app/DevRoleSwitcher";
+import { DevAccountSwitcher } from "@/app/DevAccountSwitcher";
 import { RoleMenu } from "@/app/RoleMenu";
 import { ROLES, useSession } from "@/app/dev/session";
 import { Badge, TONO, cn } from "@/ui";
@@ -69,7 +69,7 @@ export function AppLayout() {
           </div>
           <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
             <UsuarioYrol />
-            <DevRoleSwitcher />
+            <DevAccountSwitcher />
           </div>
         </aside>
 
@@ -123,7 +123,7 @@ export function AppLayout() {
             </div>
             <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
               <UsuarioYrol />
-              <DevRoleSwitcher />
+              <DevAccountSwitcher onNavigate={() => setMenuAbierto(false)} />
             </div>
           </div>
         </div>

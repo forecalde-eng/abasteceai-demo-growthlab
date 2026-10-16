@@ -12,7 +12,8 @@ import { puntosAsignados, type PuntoAsignado } from "@/app/dev/datosDemo";
  * manda de verdad es la base (RLS + JWT, invariante I8); la UI nunca se fía de sí misma.
  *
  * Para pasar a datos reales (cuando David entregue `src/data/`):
- *   1. `USAR_SESION_TEMPORAL = false` (quita el selector de rol de la interfaz).
+ *   1. `USAR_SESION_TEMPORAL = false` (el cambio de cuenta pasa a `cambiarCuenta`, que
+ *      firma con Supabase; ver `@/app/dev/cuentasDemo`).
  *   2. Cambiar los imports de `@/app/dev/session` a `@/data` en las pantallas.
  */
 
