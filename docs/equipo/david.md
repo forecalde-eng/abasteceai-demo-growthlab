@@ -44,8 +44,8 @@ await check('PED-DEMO-005 faltan 2', `select shortage_qty value from abastece.v_
 
 | ID | Tarea | Hecho cuando |
 |---|---|---|
-| D-0.1 | `db/07_proveedor_openai.sql`: agrega `openai` al CHECK de `decision_logs.provider` | Prueba local: insertar `provider='openai'` pasa |
-| D-0.2 | Proyecto Supabase Free. SQL Editor: `01` → `02` → `03` → `07`. Exponer `abastece` en Data API | `select count(*) from abastece.locations` = 703 |
+| D-0.1 | `db/08_proveedor_openai.sql`: agrega `openai` al CHECK de `decision_logs.provider` | Prueba local: insertar `provider='openai'` pasa |
+| D-0.2 | Proyecto Supabase Free. SQL Editor: `01` → `02` → `07_integridad_preseed` → `03` → `08_proveedor_openai`. Exponer `abastece` en Data API después de verificar RLS | `select count(*) from abastece.locations` = 703 |
 | D-0.3 | 7 usuarios Auth (`*@abasteceai.example`, confirmados) y vincular `auth_user_id` | Auxiliar ve 3 puntos, supervisor 24, admin 703 **desde el cliente** |
 | D-0.4 | Pasar por el canal privado: `SUPABASE_URL`, publishable key, secret key, `DATABASE_URL` (pooler, modo sesión), contraseñas de las 7 cuentas | Los 4 tienen su `.env` |
 | D-0.5 | `supabase gen types typescript` → `frontend/src/data/database.types.ts` | En `main` |
@@ -56,7 +56,7 @@ await check('PED-DEMO-005 faltan 2', `select shortage_qty value from abastece.v_
 
 | ID | Tarea | Hecho cuando |
 |---|---|---|
-| D-1.1 | `08_fn_pedidos.sql`: `fn_crear_pedido` | Punto ajeno → P0403; misma clave → mismo pedido; adicional sin motivo → P0422 |
+| D-1.1 | `09_fn_pedidos.sql`: `fn_crear_pedido` | Punto ajeno → P0403; misma clave → mismo pedido; adicional sin motivo → P0422 |
 | D-1.2 | `fn_analizar_reglas` | 001/025 duplicado; 002 → INS-016; segunda llamada no duplica incidencias |
 | D-1.3 | `fn_decidir_pedido` | P0409 fuera de `submitted`; P0403 pedido propio; P0422 sin motivo; `audit_events` escrito |
 | D-1.4 | `frontend/src/data/`: cliente Supabase (`schema: 'abastece'`), React Query, hooks de C2, modo mocks | Jorge y Bruno ponen `VITE_USE_MOCKS=false` y sus pantallas siguen funcionando |
@@ -66,8 +66,8 @@ await check('PED-DEMO-005 faltan 2', `select shortage_qty value from abastece.v_
 
 | ID | Tarea | Hecho cuando |
 |---|---|---|
-| D-2.1 | `10_fn_envios.sql`: **`fn_confirmar_ruta` primero** | Crea plan, paradas y envío `created` con `qr_token` y `guide_code` |
-| D-2.2 | `09_fn_bodega.sql`: `fn_preparar` con FEFO y `dry_run` | Nunca elige DEMO-002-VENC; diferencia → `preparing` + incidencia; `dry_run` no escribe |
+| D-2.1 | `11_fn_envios.sql`: **`fn_confirmar_ruta` primero** | Crea plan, paradas y envío `created` con `qr_token` y `guide_code` |
+| D-2.2 | `10_fn_bodega.sql`: `fn_preparar` con FEFO y `dry_run` | Nunca elige DEMO-002-VENC; diferencia → `preparing` + incidencia; `dry_run` no escribe |
 | D-2.3 | `fn_despachar` | Segunda llamada no repite movimientos; BOD −qty y TRA +qty con el mismo `transfer_group` |
 | D-2.4 | `fn_marcar_entregado` | Stock del punto sin cambio |
 | D-2.5 | `fn_recibir` | Aceptadas → punto; dañadas → CUA-DEMO; faltantes quedan en TRA + incidencia; segunda recepción → P0409 |
@@ -77,7 +77,7 @@ await check('PED-DEMO-005 faltan 2', `select shortage_qty value from abastece.v_
 
 | ID | Tarea | Hecho cuando |
 |---|---|---|
-| D-3.1 | `11_reset_demo.sql` (TRUNCATE de las 27 tablas) + plantilla de re-vinculación de las 7 cuentas | Omar lo usa en `/admin/reset-demo` |
+| D-3.1 | `12_reset_demo.sql` (TRUNCATE de las 27 tablas) + plantilla de re-vinculación de las 7 cuentas | Omar lo usa en `/admin/reset-demo` |
 | D-3.2 | Ciclo PED-DEMO-001 completo en `verificar_funciones.mjs` | Las 6 escenas de la spec §6.2 pasan en local |
 | D-3.3 | Arreglos de I#3 | — |
 

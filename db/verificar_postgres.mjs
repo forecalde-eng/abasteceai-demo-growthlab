@@ -10,7 +10,7 @@ await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_
  'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
  GRANT USAGE ON SCHEMA auth TO authenticated;
  GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;`);
-for (const file of ['01_esquema.sql','02_reglas_y_accesos.sql','03_datos_ficticios.sql']) {
+for (const file of ['01_esquema.sql','02_reglas_y_accesos.sql','07_integridad_preseed.sql','03_datos_ficticios.sql']) {
  const sql=fs.readFileSync(root+'/'+file,'utf8');
  const start=Date.now(); await db.exec(sql);
  console.log(file+' loaded '+((Date.now()-start)/1000).toFixed(2)+'s');
