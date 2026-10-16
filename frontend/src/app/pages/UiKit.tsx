@@ -15,9 +15,12 @@ import {
   CardTitle,
   EmptyState,
   ErrorState,
+  Input,
+  Label,
   LoadingState,
   Modal,
   PageHeader,
+  Select,
   Skeleton,
   StatusBadge,
   TONO,
@@ -27,6 +30,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Textarea,
   cn,
   toast,
   type EstadoCobertura,
@@ -87,6 +91,7 @@ const TOKENS = [
 
 const SECCIONES = [
   { id: "botones", title: "Botones" },
+  { id: "formularios", title: "Formularios" },
   { id: "tarjetas", title: "Tarjetas" },
   { id: "tabla", title: "Tabla" },
   { id: "estados", title: "Estados de negocio" },
@@ -198,6 +203,38 @@ export function UiKit() {
               En recepción y despacho conviene <code>disabled</code> mientras la llamada está en
               curso (aunque el backend sea idempotente).
             </p>
+          </Seccion>
+
+          <Seccion
+            id="formularios"
+            title="Formularios"
+            desc="Campos nativos con los tokens del tema (sin dependencias nuevas): Input, Textarea, Label y Select. Se usan en «Crear pedido» (J-1.1)."
+          >
+            <Card>
+              <CardContent className="grid max-w-2xl gap-4 pt-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ui-punto">Punto de servicio</Label>
+                  <Select id="ui-punto" defaultValue="Q-001">
+                    <option value="Q-001">Q-001 · Oficina DEMO Quito Centro 001</option>
+                    <option value="Q-005">Q-005 · Oficina DEMO Quito Centro 005</option>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ui-cantidad">Cantidad</Label>
+                  <Input
+                    id="ui-cantidad"
+                    type="number"
+                    min={0}
+                    defaultValue={6}
+                    className="text-right tabular-nums"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="ui-obs">Observaciones</Label>
+                  <Textarea id="ui-obs" placeholder="Nota para quien revisa el pedido…" />
+                </div>
+              </CardContent>
+            </Card>
           </Seccion>
 
           <Seccion

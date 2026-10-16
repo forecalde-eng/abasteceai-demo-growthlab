@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { puntosAsignados, type PuntoAsignado } from "@/app/dev/datosDemo";
+
 /**
  * ⚠️ SESIÓN TEMPORAL — NO ES EL LOGIN REAL.
  *
@@ -31,7 +33,10 @@ export type RoleMeta = {
   /** Identidades del seed (spec §2). */
   name: string;
   email: string;
-  /** Puntos visibles por RLS, tal como los describe la spec §2. */
+  /**
+   * Texto de pantalla de la demo (spec §2). **No** forma parte de `GET /me`: con la capa
+   * real se calculará en el componente a partir de `points`.
+   */
   pointsLabel: string;
 };
 
@@ -91,11 +96,33 @@ export const ROLE_ORDER: Role[] = [
   "gerencia",
 ];
 
+/**
+ * `staff_members.id` de cada rol del seed (`db/datos/staff_members.csv`).
+ * Es lo que en la app real llega firmado en el JWT, nunca desde el cliente.
+ */
+export const STAFF_ID_POR_ROL: Record<Role, string> = {
+  auxiliar: "054ae798-96a3-56e2-b309-336a4f88b772",
+  supervisor: "aca13b82-3dc4-538e-8e99-f7760d016163",
+  administrador: "a5b961f0-21b2-5119-b94a-139b47f39828",
+  bodega: "ede103ca-2997-55af-82cc-547d545c75f2",
+  logistica: "e3f6611a-a9f0-5f0d-ad3d-2e02e3bebdcc",
+  compras: "d888c5be-d088-58b5-bf2d-17ae33c5bc1a",
+  gerencia: "24e3adc4-68d1-5a5e-8a54-7d2929198729",
+};
+
+/**
+ * Forma de `GET /me` (`schemas.Me`), con los **mismos nombres snake_case** que el backend
+ * (`staff_id`, `full_name`, `points`). Así, cuando David entregue `src/data/useSession`,
+ * las pantallas no cambian. `pointsLabel` ya no vive aquí: es texto de pantalla.
+ */
 export type Session = {
-  name: string;
+  /** `staff_members.id` del seed. */
+  staff_id: string;
+  full_name: string;
   email: string;
   role: Role;
-  pointsLabel: string;
+  /** Puntos asignados (`point_assignments`): el auxiliar 3, el supervisor 24, el resto 0. */
+  points: PuntoAsignado[];
 };
 
 const STORAGE_KEY = "abasteceai.dev.role";
@@ -127,6 +154,14 @@ export function setDevRole(role: Role): void {
 }
 
 /**
+ * Rol actual **sin hook** (para funciones fuera de React, como el mock `createOrder`).
+ * En la app real esto no existe: el rol sale del JWT en el backend.
+ */
+export function rolActual(): Role {
+  return leerRol();
+}
+
+/**
  * Forma provisional: imita el resultado de React Query (`data`/`isLoading`/`isError`)
  * para que el cambio a `src/data/useSession` no obligue a reescribir pantallas.
  */
@@ -148,12 +183,14 @@ export function useSession(): {
   }, []);
 
   const meta = ROLES[role];
+  const staffId = STAFF_ID_POR_ROL[role];
   return {
     data: {
-      name: meta.name,
+      staff_id: staffId,
+      full_name: meta.name,
       email: meta.email,
       role,
-      pointsLabel: meta.pointsLabel,
+      points: puntosAsignados(staffId),
     },
     isLoading: false,
     isError: false,

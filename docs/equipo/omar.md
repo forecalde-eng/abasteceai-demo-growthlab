@@ -34,7 +34,7 @@ def dispatch(shipment_id: UUID, staff: Staff = Depends(require_role("bodega", "l
 | ID | Tarea | Hecho cuando |
 |---|---|---|
 | O-0.1 | ✅ `gh` con sesión; `main` protegida (PR obligatorio, squash, sin force push) | — |
-| O-0.2 | `specs/000-contratos/openapi.yaml` (13 endpoints + `/me`, `dry_run`, `reset-demo`), `estados.md`, `roles.md` | Contrato mergeado |
+| O-0.2 | ✅ `specs/000-contratos/openapi.yaml` (13 endpoints + `/me`, `dry_run`, `reset-demo`), `estados.md`, `roles.md` | Contrato mergeado |
 | O-0.3 | ✅ `AGENTS.md` y `CODEOWNERS` en `main` | — |
 | O-0.4 | Revisar con David `funciones.md` (C3) | Mergeado |
 | O-0.5 | Esqueleto `backend/`: `uv`, FastAPI, `/health`, `db.py` (pool psycopg ≤ 5 + `call_fn`), `errors.py`, ruff + pytest, `.env.example` desde `db/config_backend.env.example` + `DATABASE_URL` | `uv run pytest` verde; `/health` OK |

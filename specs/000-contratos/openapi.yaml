@@ -1,0 +1,815 @@
+openapi: 3.1.0
+info:
+  title: AbasteceAI API (DEMO FICTICIA)
+  version: 1.0.0
+  description: |
+    Contrato C1 (docs/06_PLAN_EQUIPO.md §3). Fuente: docs/04_SPEC_MAESTRA.md §7–§8 y db/01_esquema.sql.
+    Queda **congelado** al hacer merge: cambiarlo = PR nuevo a specs/000-contratos.
+
+    - Solo las **escrituras** pasan por FastAPI. Las lecturas van directo a Supabase con el JWT (RLS).
+    - FastAPI valida JWT, rol y punto, y llama **una** función SQL `abastece.fn_*` (contrato C3).
+    - Las escrituras responden un resumen (`id`, `code`, `status`). La pantalla vuelve a leer el detalle por Supabase.
+    - Rol y puntos se leen de la base con el JWT; nunca del cuerpo (invariante I8).
+    - Fechas de negocio nuevas = `demo_metadata.reference_at` (I11).
+    - `operationId` = nombre de la función en `frontend/src/data/api.ts` (C2).
+    - `x-roles` = valores de `staff_members.role` que pueden llamar el endpoint. Otro rol → 403.
+    - `x-checks` = controles extra sobre la fila (autoría, punto asignado). Los hace la función SQL y FastAPI.
+servers:
+  - url: http://localhost:8000
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Estado del backend
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, const: ok }
+
+  /me:
+    get:
+      operationId: getMe
+      summary: Perfil del usuario del JWT (rol y puntos desde la base)
+      x-roles: [auxiliar, supervisor, administrador, bodega, logistica, compras, gerencia]
+      responses:
+        "200":
+          description: Perfil operativo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Usuario Auth sin `staff_members` vinculado ("Cuenta sin perfil operativo", HU-0.1)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Crear pedido (HU-1.1) → `fn_crear_pedido`
+      x-roles: [auxiliar, supervisor]
+      x-checks: [location_id entre los puntos asignados del usuario]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Se guarda en `orders.idempotency_key` (UNIQUE). Repetir la clave devuelve el pedido existente.
+          schema: { type: string, minLength: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateOrderRequest" }
+      responses:
+        "201":
+          description: Pedido creado en `submitted`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderResult" }
+        "200":
+          description: Misma `Idempotency-Key` → pedido ya existente, sin crear otro
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /orders/{id}/analyze:
+    post:
+      operationId: analyzeOrder
+      summary: Analizar pedido (HU-1.2) → `fn_analizar_reglas` + propuesta Jev
+      description: |
+        Las alertas son de revisión: no cancelan ni bloquean. Registra `incidents`
+        (`possible_duplicate`, `missing_from_kit`) solo si no hay una abierta para el pedido,
+        y guarda el análisis en `decision_logs` (provider `rules` + `mock`/`typesafe`).
+        Volver a llamarlo no duplica incidencias.
+      x-roles: [administrador, auxiliar, supervisor]
+      x-checks: [auxiliar y supervisor solo si son el autor del pedido]
+      parameters: [{ $ref: "#/components/parameters/OrderId" }]
+      responses:
+        "200":
+          description: Resultado del análisis
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnalysisResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/UpstreamAi" }
+
+  /orders/{id}/decision:
+    post:
+      operationId: decideOrder
+      summary: Aprobar, devolver o cancelar (HU-1.3) → `fn_decidir_pedido`
+      description: |
+        Solo desde `submitted` (otro estado → 409). Pedido propio → 403.
+        Devolver, cancelar o aprobar con `approved_qty` distinta de `requested_qty` sin `reason` → 422.
+        Todo queda en `audit_events`.
+      x-roles: [administrador]
+      x-checks: [no puede ser el autor del pedido]
+      parameters: [{ $ref: "#/components/parameters/OrderId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DecisionRequest" }
+      responses:
+        "200":
+          description: Nuevo estado (`approved` | `draft` | `cancelled`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /orders/{id}/prepare:
+    post:
+      operationId: prepareOrder
+      summary: Preparar por lote en BOD-DEMO (HU-2.1) → `fn_preparar`
+      description: |
+        FEFO dentro de la función: excluye lotes vencidos y usa primero el vencimiento más próximo.
+        Crea `inventory_reservations` (`active`): reduce el disponible, no el físico.
+        Todo preparado = aprobado → `ready`; si no → `preparing` + incidencia `packing_difference`.
+        Con `dry_run=true` devuelve la sugerencia de lotes **sin escribir nada**.
+      x-roles: [bodega]
+      parameters:
+        - { $ref: "#/components/parameters/OrderId" }
+        - name: dry_run
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PrepareRequest" }
+      responses:
+        "200":
+          description: Resultado (o sugerencia si `dry_run`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrepareResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /routes/plan:
+    post:
+      operationId: planRoutes
+      summary: Proponer rutas con OR-Tools (HU-3.1). No escribe nada.
+      x-roles: [logistica]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RoutePlanRequest" }
+      responses:
+        "200":
+          description: Propuesta en memoria; los pedidos que no caben salen en `unassigned` con su motivo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutePlanResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /routes/confirm:
+    post:
+      operationId: confirmRoutes
+      summary: Confirmar plan (HU-3.2) → `fn_confirmar_ruta`
+      description: |
+        Crea `route_plans` (`approved`), `route_stops` y un `shipments` `created` por pedido
+        (`mode=own`, `guide_code`, `qr_token`).
+      x-roles: [logistica]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RouteConfirmRequest" }
+      responses:
+        "201":
+          description: Plan confirmado y envíos creados
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RouteConfirmResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /shipments/courier:
+    post:
+      operationId: createCourier
+      summary: Registrar envío por courier (HU-3.3) → `fn_envio_courier`
+      x-roles: [logistica]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourierRequest" }
+      responses:
+        "201":
+          description: Envío `created` con `mode=courier`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShipmentResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /shipments/{id}/dispatch:
+    post:
+      operationId: dispatchShipment
+      summary: Despachar (HU-2.2) → `fn_despachar`
+      description: |
+        Una transacción: reservas → `fulfilled`; movimientos `dispatch` BOD-DEMO → TRA-DEMO con el mismo
+        `transfer_group`; envío `dispatched`; pedido `shipped`; `audit_events`. Falla → rollback total.
+        Idempotente por estado: si ya está `dispatched` devuelve el estado actual sin repetir movimientos.
+      x-roles: [bodega, logistica]
+      parameters: [{ $ref: "#/components/parameters/ShipmentId" }]
+      responses:
+        "200":
+          description: Envío despachado (o estado actual si ya lo estaba)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShipmentResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+
+  /shipments/{id}/delivered:
+    post:
+      operationId: markDelivered
+      summary: Marcar entregado sin conteo (HU-2.3) → `fn_marcar_entregado`
+      description: Envío y pedido → `delivered_unchecked`. **No** aumenta el stock del punto (I9).
+      x-roles: [supervisor]
+      x-checks: [punto del envío asignado al supervisor]
+      parameters: [{ $ref: "#/components/parameters/ShipmentId" }]
+      responses:
+        "200":
+          description: Envío en `delivered_unchecked` (o estado actual si ya lo estaba)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShipmentResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+
+  /shipments/{id}/receipt:
+    post:
+      operationId: submitReceipt
+      summary: Recibir con conteo (HU-2.4) → `fn_recibir`
+      description: |
+        El QR (`shipments.qr_token`) solo identifica el envío; la pantalla lo resuelve con
+        `useShipmentByQr` y llama aquí con el `id`. Requiere sesión y asignación al punto.
+        Una transacción: aceptadas TRA-DEMO → punto; dañadas (contadas − aceptadas) → CUA-DEMO;
+        faltantes (enviadas − contadas) se quedan en tránsito con incidencia `receipt_shortage`.
+        Todo aceptado → `reconciled`; si no → `with_difference`. Ya existe recepción → 409.
+      x-roles: [auxiliar]
+      x-checks: [punto del envío asignado al auxiliar]
+      parameters: [{ $ref: "#/components/parameters/ShipmentId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReceiptRequest" }
+      responses:
+        "201":
+          description: Recepción registrada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ShipmentResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /purchases:
+    post:
+      operationId: createPurchase
+      summary: Proponer compra (COULD). Queda en `draft`; registrar una compra no crea stock (I9).
+      x-roles: [compras]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PurchaseRequest" }
+      responses:
+        "201":
+          description: Orden de compra en `draft` (la aprobación es aparte)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CodeResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Validation" }
+
+  /assistant:
+    post:
+      operationId: askAssistant
+      summary: Asistente con fuentes (HU-4.2). Solo lee; nunca escribe en la operación.
+      description: |
+        Responde con funciones de lectura (con el JWT del usuario) y documentos que su rol puede ver
+        (`documents.allowed_roles`), citando título y versión. Sin documento relevante →
+        "no tengo una fuente para eso" y `citations` vacío. Queda en `decision_logs`.
+      x-roles: [auxiliar, supervisor, administrador, bodega, logistica, compras, gerencia]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question: { type: string, minLength: 1 }
+      responses:
+        "200":
+          description: Respuesta redactada por IA con su origen
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AssistantResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Validation" }
+        "502": { $ref: "#/components/responses/UpstreamAi" }
+
+  /scenarios/run:
+    post:
+      operationId: runScenario
+      summary: Simular escenario (COULD, PITCH-11). Recalcula en memoria; no escribe en la operación.
+      x-roles: [administrador, logistica, gerencia]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [scenario_code]
+              properties:
+                scenario_code:
+                  type: string
+                  description: "`demo_scenarios.code` (p. ej. el escenario CONTINGENCIA)"
+      responses:
+        "200":
+          description: Resultado del escenario
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [scenario_code, result]
+                properties:
+                  scenario_code: { type: string }
+                  result:
+                    type: object
+                    description: "[Supuesto] Forma libre hasta que se diseñe el simulador (COULD)."
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /admin/reset-demo:
+    post:
+      operationId: resetDemo
+      summary: Volver al seed y re-vincular las 7 cuentas (HU-0.3)
+      description: Corre `db/11_reset_demo.sql` + `db/03_datos_ficticios.sql` y re-vincula `auth_user_id`.
+      x-roles: [administrador]
+      responses:
+        "200":
+          description: Demo restaurada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, reference_at]
+                properties:
+                  ok: { type: boolean, const: true }
+                  reference_at: { type: string, format: date-time }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT de Supabase Auth
+
+  parameters:
+    OrderId:
+      name: id
+      in: path
+      required: true
+      description: "`orders.id`"
+      schema: { type: string, format: uuid }
+    ShipmentId:
+      name: id
+      in: path
+      required: true
+      description: "`shipments.id`"
+      schema: { type: string, format: uuid }
+
+  responses:
+    Unauthorized:
+      description: Sin JWT o JWT inválido
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Rol no permitido, punto no asignado o pedido propio
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: No existe o el usuario no lo puede ver
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    InvalidState:
+      description: Transición no permitida (`INVALID_STATE`) o registro ya existente (`CONFLICT`)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Validation:
+      description: Datos inválidos (`VALIDATION`); `details` señala el campo o ítem
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    UpstreamAi:
+      description: Falló el proveedor de IA (`UPSTREAM_AI`). En `/analyze` la propuesta queda en `human_review`, nunca como decisión.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [UNAUTHORIZED, FORBIDDEN, NOT_FOUND, INVALID_STATE, VALIDATION, CONFLICT, UPSTREAM_AI]
+            message: { type: string }
+            details: { type: object }
+
+    Role:
+      type: string
+      enum: [auxiliar, supervisor, administrador, bodega, logistica, compras, gerencia]
+
+    OrderStatus:
+      type: string
+      enum: [draft, submitted, approved, preparing, ready, shipped, delivered_unchecked, reconciled, with_difference, cancelled]
+
+    ShipmentStatus:
+      type: string
+      enum: [created, dispatched, delivered_unchecked, reconciled, with_difference]
+
+    Qty:
+      type: number
+      description: "`numeric(12,3)` en la base. Nunca la calcula un LLM (I1)."
+
+    AiSource:
+      type: string
+      enum: [SIMULADO, API_REAL]
+      description: "`decision_logs.provider`: `mock` → SIMULADO; `typesafe`/`openai` → API_REAL."
+
+    Me:
+      type: object
+      required: [staff_id, full_name, email, role, points]
+      properties:
+        staff_id: { type: string, format: uuid }
+        full_name: { type: string }
+        email: { type: string, description: "`staff_members.demo_email`" }
+        role: { $ref: "#/components/schemas/Role" }
+        points:
+          type: array
+          description: Puntos asignados (`point_assignments`). Roles con alcance total reciben los 703.
+          items:
+            type: object
+            required: [id, code, name, city, demo_scope]
+            properties:
+              id: { type: string, format: uuid }
+              code: { type: string, examples: [Q-001] }
+              name: { type: string }
+              city: { type: string }
+              demo_scope: { type: string, enum: [detailed, catalog, internal] }
+
+    CreateOrderRequest:
+      type: object
+      required: [location_id, cycle_month, order_type, items]
+      properties:
+        location_id: { type: string, format: uuid, description: "Debe estar entre los puntos asignados (si no → 403)" }
+        cycle_month: { type: string, format: date, description: "Primer día del mes, p. ej. 2026-10-01" }
+        order_type: { type: string, enum: [regular, additional] }
+        related_order_id: { type: string, format: uuid, description: "Obligatorio si `order_type=additional`" }
+        reason: { type: string, description: "Obligatorio (no vacío) si `order_type=additional`" }
+        observations: { type: string, default: "" }
+        items:
+          type: array
+          minItems: 1
+          description: Sin productos repetidos; producto inexistente o inactivo → 422 con el ítem señalado
+          items:
+            type: object
+            required: [product_id, requested_qty]
+            properties:
+              product_id: { type: string, format: uuid }
+              requested_qty: { allOf: [{ $ref: "#/components/schemas/Qty" }], exclusiveMinimum: 0 }
+
+    OrderResult:
+      type: object
+      required: [id, code, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, examples: [PED-DEMO-001] }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+
+    AnalysisResult:
+      type: object
+      required: [order_id, duplicates, missing_kit, incidents, proposal]
+      properties:
+        order_id: { type: string, format: uuid }
+        duplicates:
+          type: array
+          description: Pedidos del mismo punto y `cycle_month` con los mismos ítems (PITCH-1)
+          items:
+            type: object
+            required: [order_id, order_code]
+            properties:
+              order_id: { type: string, format: uuid }
+              order_code: { type: string, examples: [PED-DEMO-025] }
+        missing_kit:
+          type: array
+          description: Productos con `required_in_kit=true` que faltan (PITCH-2)
+          items:
+            type: object
+            required: [product_id, sku]
+            properties:
+              product_id: { type: string, format: uuid }
+              sku: { type: string, examples: [INS-016] }
+        incidents:
+          type: array
+          description: Incidencias abiertas de este análisis (no se duplican al repetir)
+          items:
+            type: object
+            required: [id, code, kind]
+            properties:
+              id: { type: string, format: uuid }
+              code: { type: string }
+              kind: { type: string, enum: [possible_duplicate, missing_from_kit] }
+        proposal: { $ref: "#/components/schemas/AiProposal" }
+
+    AiProposal:
+      type: object
+      description: |
+        Propuesta de Jev (HU-4.1). Solo propone (I2). `confidence < 0.80` o error → `human_review`.
+        Las alertas de código tienen prioridad sobre esta etiqueta.
+      required: [source, model, status, answers, decision_log_id]
+      properties:
+        source: { $ref: "#/components/schemas/AiSource" }
+        model: { type: string, examples: [jev-1.13.0] }
+        status: { type: string, enum: [proposed, human_review] }
+        answers:
+          type: object
+          description: "Respuestas a `urgency`, `additional_reason`, `needs_human_review` (forma de db/jev_respuesta_SIMULADA.json → response.answers)"
+        decision_log_id: { type: string, format: uuid }
+
+    DecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approve, return, cancel] }
+        reason: { type: string, description: "Obligatorio para `return`, `cancel` y para aprobar con cantidades corregidas" }
+        items:
+          type: array
+          description: Solo con `approve`. `approved_qty` por producto; puede diferir de `requested_qty`.
+          items:
+            type: object
+            required: [product_id, approved_qty]
+            properties:
+              product_id: { type: string, format: uuid }
+              approved_qty: { allOf: [{ $ref: "#/components/schemas/Qty" }], minimum: 0 }
+
+    PrepareRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: Cantidad preparada por producto; la función elige los lotes (FEFO). No puede superar `approved_qty`.
+          items:
+            type: object
+            required: [product_id, prepared_qty]
+            properties:
+              product_id: { type: string, format: uuid }
+              prepared_qty: { allOf: [{ $ref: "#/components/schemas/Qty" }], minimum: 0 }
+
+    PrepareResult:
+      type: object
+      required: [order_id, code, status, dry_run, lines]
+      properties:
+        order_id: { type: string, format: uuid }
+        code: { type: string }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        dry_run: { type: boolean }
+        incident_code: { type: [string, "null"], description: "Incidencia `packing_difference` si quedó en `preparing`" }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [product_id, sku, approved_qty, prepared_qty, lots]
+            properties:
+              product_id: { type: string, format: uuid }
+              sku: { type: string }
+              approved_qty: { $ref: "#/components/schemas/Qty" }
+              prepared_qty: { $ref: "#/components/schemas/Qty" }
+              lots:
+                type: array
+                items:
+                  type: object
+                  required: [lot_id, batch_code, qty]
+                  properties:
+                    lot_id: { type: string, format: uuid }
+                    batch_code: { type: string }
+                    expires_on: { type: [string, "null"], format: date }
+                    qty: { $ref: "#/components/schemas/Qty" }
+
+    RoutePlanRequest:
+      type: object
+      required: [dispatch_date, order_ids]
+      properties:
+        dispatch_date: { type: string, format: date }
+        order_ids:
+          type: array
+          minItems: 1
+          description: Pedidos `ready` de Quito
+          items: { type: string, format: uuid }
+
+    RouteStop:
+      type: object
+      required: [location_id, sequence, order_ids]
+      properties:
+        location_id: { type: string, format: uuid }
+        location_code: { type: string, examples: [Q-006] }
+        sequence: { type: integer, minimum: 1 }
+        planned_arrival: { type: [string, "null"], format: date-time }
+        order_ids:
+          type: array
+          items: { type: string, format: uuid }
+
+    RoutePlanResult:
+      type: object
+      required: [matrix_source, planning_method, routes, unassigned]
+      properties:
+        matrix_source: { type: string, enum: [synthetic, openrouteservice] }
+        planning_method: { type: string, examples: [ortools_vrptw] }
+        routes:
+          type: array
+          items:
+            type: object
+            required: [vehicle_id, vehicle_code, stops, estimated_km, estimated_minutes]
+            properties:
+              vehicle_id: { type: string, format: uuid }
+              vehicle_code: { type: string }
+              stops:
+                type: array
+                items: { $ref: "#/components/schemas/RouteStop" }
+              estimated_km: { type: number, description: "Etiquetar en pantalla como \"estimado haversine\" si `matrix_source=synthetic`" }
+              estimated_minutes: { type: number }
+        unassigned:
+          type: array
+          items:
+            type: object
+            required: [order_id, order_code, reason]
+            properties:
+              order_id: { type: string, format: uuid }
+              order_code: { type: string }
+              reason: { type: string, enum: [capacity, window, no_vehicle] }
+
+    RouteConfirmRequest:
+      type: object
+      description: "El plan confirmado se guarda con `matrix_source=synthetic` (HU-3.2); no viaja en el cuerpo porque `fn_confirmar_ruta` no lo recibe."
+      required: [vehicle_id, dispatch_date, stops, estimated_km, estimated_minutes, planning_method]
+      properties:
+        vehicle_id: { type: string, format: uuid }
+        dispatch_date: { type: string, format: date }
+        stops:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/RouteStop" }
+        estimated_km: { type: number }
+        estimated_minutes: { type: number }
+        planning_method: { type: string }
+
+    RouteConfirmResult:
+      type: object
+      required: [route_plan_id, code, status, shipments]
+      properties:
+        route_plan_id: { type: string, format: uuid }
+        code: { type: string }
+        status: { type: string, const: approved }
+        shipments:
+          type: array
+          items: { $ref: "#/components/schemas/ShipmentResult" }
+
+    CourierRequest:
+      type: object
+      required: [order_id, carrier_name, guide_code]
+      properties:
+        order_id: { type: string, format: uuid }
+        carrier_name: { type: string, minLength: 1 }
+        guide_code: { type: string, minLength: 1 }
+        promised_delivery_at: { type: string, format: date-time }
+
+    ShipmentResult:
+      type: object
+      required: [id, code, status, order_id, order_status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, examples: [ENV-DEMO-008] }
+        status: { $ref: "#/components/schemas/ShipmentStatus" }
+        order_id: { type: string, format: uuid }
+        order_status: { $ref: "#/components/schemas/OrderStatus" }
+        guide_code: { type: string }
+
+    ReceiptRequest:
+      type: object
+      required: [items]
+      properties:
+        notes: { type: string, default: "" }
+        items:
+          type: array
+          minItems: 1
+          description: Una línea por `shipment_items`. `accepted_qty <= counted_qty`.
+          items:
+            type: object
+            required: [shipment_item_id, counted_qty, accepted_qty]
+            properties:
+              shipment_item_id: { type: string, format: uuid }
+              counted_qty: { allOf: [{ $ref: "#/components/schemas/Qty" }], minimum: 0 }
+              accepted_qty: { allOf: [{ $ref: "#/components/schemas/Qty" }], minimum: 0 }
+
+    PurchaseRequest:
+      type: object
+      required: [supplier_name, items]
+      properties:
+        supplier_name: { type: string, minLength: 1 }
+        expected_at: { type: string, format: date-time }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product_id, ordered_qty, unit_cost_usd]
+            properties:
+              product_id: { type: string, format: uuid }
+              ordered_qty: { allOf: [{ $ref: "#/components/schemas/Qty" }], exclusiveMinimum: 0 }
+              unit_cost_usd: { type: number, minimum: 0 }
+
+    CodeResult:
+      type: object
+      required: [id, code, status]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        status: { type: string }
+
+    AssistantResult:
+      type: object
+      required: [answer, source, model, citations, decision_log_id]
+      properties:
+        answer: { type: string }
+        source: { $ref: "#/components/schemas/AiSource" }
+        model: { type: string }
+        citations:
+          type: array
+          description: Documentos citados (título + versión). Vacío si no hay fuente.
+          items:
+            type: object
+            required: [document_id, title, version]
+            properties:
+              document_id: { type: string, format: uuid }
+              title: { type: string, examples: [Recepción con diferencias DEMO] }
+              version: { type: string, examples: [DEMO-1.1] }
+        decision_log_id: { type: string, format: uuid }
