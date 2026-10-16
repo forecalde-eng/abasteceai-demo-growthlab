@@ -193,3 +193,14 @@ export interface OrderTrace {
   accepted_qty: number | null
   shortage_qty: number | null
 }
+
+export interface CourierDelay {
+  code: string
+  city: string
+  promised_delivery_at: string
+  status: Shipment['status']
+}
+
+export interface DemoMetadata {
+  reference_at: string
+}

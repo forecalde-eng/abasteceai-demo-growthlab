@@ -93,6 +93,12 @@ const views = [
     prepared_qty: 'number', shipped_qty: 'number', counted_qty: 'number | null',
     accepted_qty: 'number | null', shortage_qty: 'number | null',
   } },
+  { name: 'courierDelays', type: 'CourierDelay', columns: {
+    code: 'string', city: 'string', promised_delivery_at: 'string', status: "Shipment['status']",
+  } },
+  { name: 'demoMetadata', type: 'DemoMetadata', columns: {
+    reference_at: 'string',
+  } },
 ]
 
 // Soporta comas, saltos de línea y comillas escapadas dentro de campos CSV.

@@ -92,7 +92,16 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
   const courier = fixtures.shipments.find((row) => row.code === 'ENV-DEMO-008')
   assert.equal(courier.mode, 'courier')
   assert.equal(courier.status, 'dispatched')
+  assert.deepEqual(fixtures.courierDelays.map((row) => row.code), ['ENV-DEMO-008'], 'PITCH-9: retraso calculado por SQL oficial')
+  const delay = fixtures.courierDelays[0]
+  assert.equal(delay.city, 'Guayaquil')
+  assert.equal(delay.status, courier.status)
+  assert.equal(new Date(delay.promised_delivery_at).toISOString(), new Date(courier.promised_delivery_at).toISOString())
+  assert.equal(fixtures.demoMetadata.length, 1)
+  const metadata = (await readSource('demo_metadata'))[0]
+  assert.equal(new Date(fixtures.demoMetadata[0].reference_at).toISOString(), new Date(metadata.reference_at).toISOString())
   for (const [name, content] of Object.entries(renderFiles(fixtures))) {
-    assert.equal(await readFile(new URL(name, import.meta.url), 'utf8'), content, `${name}: regenerar con generate.mjs`)
+    const actual = await readFile(new URL(name, import.meta.url), 'utf8')
+    assert.equal(actual.replace(/\r\n/g, '\n'), content, `${name}: regenerar con generate.mjs`)
   }
 })

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import type { Role } from "@/data";
+import { Courier } from "@/features/logistica/Courier";
 import { Despacho } from "@/features/despacho/Despacho";
 import { InventarioBodega } from "@/features/bodega/InventarioBodega";
 import { ColaBodega } from "@/features/bodega/ColaBodega";
@@ -236,14 +237,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-4.3",
     desc: "Envíos por courier con fecha prometida y aviso de retraso.",
-    element: (
-      <Placeholder
-        title="Courier"
-        task="B-4.3"
-        owner="Bruno"
-        desc="Envíos por courier con fecha prometida y aviso de retraso."
-      />
-    ),
+    element: <Courier />,
   },
 
   // --- Campo (Bruno) ---

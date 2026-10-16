@@ -37,6 +37,8 @@ No editar los fixtures a mano: actualizar desde la fuente y regenerar. La prueba
 | `inventory` | `v_inventory`, solo BOD-DEMO |
 | `replenishment` | `v_replenishment` completa |
 | `orderTrace` | `v_order_trace` completa |
+| `courierDelays` | Consulta oficial de retrasos de `db/04_consultas_demo.sql`, ejecutada en PGlite |
+| `demoMetadata` | `demo_metadata.reference_at`, leído del seed SQL |
 | `decisionLogs` | `decision_logs.csv`; `input_state` y `response` se convierten a objetos JSON |
 
 `DecisionLog` mantiene `provider = mock | typesafe | rules` según el esquema vigente, sin anticipar la migración de OpenAI. `input_state` y `response` se tipan como objetos JSON de contenido desconocido (`Record<string, unknown>`); el consumidor debe validar/narrowear su contenido antes de acceder a campos anidados. La fila del seed es de PED-DEMO-001: provider `mock`, model_version `SIMULATED/jev-1.13.0` y confianza de urgencia `0.865`. La etiqueta visible SIMULADO se obtiene con `fuenteDesdeProvider(provider)` en la UI, sin cambiar el proveedor del fixture.
