@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui";
-import { useLocations, useOrders } from "@/features/pedidos/apiTemp";
+import { useLocations, useOrders } from "@/app/dev/apiDemo";
 
 /**
  * J-1.2 · Mis pedidos (auxiliar / supervisor).
@@ -29,8 +29,9 @@ import { useLocations, useOrders } from "@/features/pedidos/apiTemp";
  * trazabilidad (componente de Bruno, B-1.1). La UI no calcula nada: muestra lo que
  * devuelven los hooks (docs/07_GUIA_DISENO.md §9.10 para fechas).
  *
- * // temporal: los datos vienen de `@/features/pedidos/apiTemp`, que envuelve `@/mocks`.
- * // temporal: al llegar `@/data`, se cambia solo el import de los hooks.
+ * // temporal: los datos vienen de `@/app/dev/apiDemo` (la capa temporal única), que envuelve
+ * // temporal: `@/mocks` y filtra por los puntos de `useSession().points`. Al llegar `@/data`,
+ * // temporal: solo cambia el import de los hooks.
  */
 
 /** `15 oct 2026, 14:30` — docs/07_GUIA_DISENO.md §9.10 (es-EC, America/Guayaquil). */
