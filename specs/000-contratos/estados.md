@@ -54,6 +54,6 @@ Despacho, entrega y recepción son idempotentes por estado: repetir devuelve el 
 | `incidents.kind` | `possible_duplicate` · `missing_from_kit` · `packing_difference` · `receipt_shortage` · `delay` · `excess_stock` · `expiry` |
 | `incidents.severity` | `low` · `medium` · `high` |
 | `incidents.status` | `open` · `under_review` · `resolved` |
-| `decision_logs.provider` | `mock` → **SIMULADO** · `typesafe`, `openai` (migración 07) → **API_REAL** · `rules` → **REGLAS** (no es IA) |
+| `decision_logs.provider` | `mock` → **SIMULADO** · `typesafe`, `openai` (migración del proveedor OpenAI, D-0.1) → **API_REAL** · `rules` → **REGLAS** (no es IA) |
 | `decision_logs.status` | `proposed` · `human_review` · `accepted` · `rejected` |
 | `v_replenishment.coverage_status` | `critical` · `attention` · `covered` · `excess` (lo calcula la vista; la app no lo recalcula) |
