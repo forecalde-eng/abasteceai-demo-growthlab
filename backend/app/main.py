@@ -10,6 +10,7 @@ from app.auth import Me, get_me
 from app.config import get_settings
 from app.db import cerrar_pool
 from app.errors import ApiError
+from app.orders import router as orders_router
 
 
 @asynccontextmanager
@@ -43,6 +44,8 @@ def create_app() -> FastAPI:
     @app.get("/health", operation_id="getHealth", tags=["sistema"])
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    app.include_router(orders_router)
 
     @app.get("/me", operation_id="getMe", tags=["sistema"])
     def me(actual: Annotated[Me, Depends(get_me)]) -> dict[str, Any]:
