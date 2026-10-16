@@ -20,6 +20,7 @@ import {
 import type { Role } from "@/app/dev/session";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
+import { DetalleAdmin } from "@/app/pages/DetalleAdmin";
 import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
@@ -155,14 +156,7 @@ export const NAV: NavItem[] = [
     task: "J-1.4",
     desc: "Detalle del pedido con la propuesta de la IA, la evidencia y quién decidió.",
     inMenu: false,
-    element: (
-      <Placeholder
-        title="Detalle de pedido"
-        task="J-1.4"
-        owner="Jorge"
-        desc="Detalle del pedido con la propuesta de la IA (SIMULADO/API_REAL), la evidencia y quién decidió."
-      />
-    ),
+    element: <DetalleAdmin />,
   },
 
   // --- Bodega y despacho (Bruno) ---
