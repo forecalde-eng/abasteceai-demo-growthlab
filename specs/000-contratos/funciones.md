@@ -193,11 +193,12 @@ Se bloquea la fila del pedido con `FOR UPDATE` y se exige estado
 `return` pasa a `draft`; `cancel` pasa a `cancelled`. Se escribe un
 `audit_events` con `actor_id=p_staff`, `location_id` del pedido,
 `entity_type`/`entity_id`, estado anterior y posterior, acción y
-`occurred_at=reference_at`. El motivo de la decisión se conserva en
-`after_state` como `{decision, reason, items}` (acuerdo 8); **no** se
-sobrescribe `orders.reason`, que pertenece a la justificación de un pedido
-adicional, ni se toca `decision_logs.status`. La propuesta IA nunca ejecuta la
-decisión.
+`occurred_at=reference_at`. El estado resultante se conserva en `after_state`
+como `{status, decision, reason, items}`, donde `status` es el estado final del
+pedido (`approved` | `draft` | `cancelled`), `reason` el motivo e `items` las
+cantidades aprobadas (acuerdo 8); **no** se sobrescribe `orders.reason`, que
+pertenece a la justificación de un pedido adicional, ni se toca
+`decision_logs.status`. La propuesta IA nunca ejecuta la decisión.
 
 **Salida JSONB:** exactamente `OrderResult`: `id` UUID, `code` texto y
 `status="approved" | "draft" | "cancelled"`, según `p_decision`. FastAPI
@@ -244,9 +245,10 @@ el mismo pedido dos veces.
 7. **Cantidades al aprobar — acordado.** Sin `items`, aprobado =
    `requested_qty`; con lista parcial, las líneas ausentes quedan en
    `requested_qty`; `approved_qty > requested_qty` → `P0422`.
-8. **Motivo y auditoría — acordado.** El motivo se audita en
-   `audit_events.after_state` como `{decision, reason, items}`; **no** se toca
-   `orders.reason` ni `decision_logs.status`.
+8. **Motivo y auditoría — acordado.** El estado resultante se audita en
+   `audit_events.after_state` como `{status, decision, reason, items}`, con
+   `status` = estado final del pedido; **no** se toca `orders.reason` ni
+   `decision_logs.status`.
 9. **Pedido relacionado — acordado.** `additional` exige un pedido existente
    del mismo punto y ciclo y un motivo no vacío. `regular` con enlace o motivo
    relleno → `P0422`.
