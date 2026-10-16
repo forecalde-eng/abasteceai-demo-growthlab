@@ -1,4 +1,4 @@
-// DEMO FICTICIA · Generado desde db/datos/*.csv por generate.mjs. No editar a mano.
+// DEMO FICTICIA · Generado desde CSV y vistas SQL oficiales por generate.mjs. No editar a mano.
 import type { Location } from './types'
 
 export const locations: Location[] = [
