@@ -21,7 +21,7 @@ router = APIRouter(tags=["pedidos"])
 
 class ItemIn(BaseModel):
     product_id: UUID
-    requested_qty: float = Field(gt=0)
+    requested_qty: float = Field(gt=0, allow_inf_nan=False)
 
 
 class CreateOrderIn(BaseModel):

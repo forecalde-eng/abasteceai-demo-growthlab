@@ -82,6 +82,18 @@ def test_cuerpo_invalido_es_422(monkeypatch, llamadas, cambio):
     assert llamadas == []
 
 
+@pytest.mark.parametrize("cantidad", ["Infinity", "NaN", "1e999"])
+def test_cantidad_no_finita_es_422(monkeypatch, llamadas, cantidad):
+    crudo = (
+        f'{{"location_id":"{LOC}","cycle_month":"2026-10-01","order_type":"regular",'
+        f'"items":[{{"product_id":"{PROD}","requested_qty":{cantidad}}}]}}'
+    )
+    h = {**H, "Content-Type": "application/json"}
+    r = cliente(monkeypatch).post("/orders", content=crudo, headers=h)
+    assert r.status_code == 422 and r.json()["error"]["code"] == "VALIDATION"
+    assert llamadas == []
+
+
 def test_sin_idempotency_key_es_422(monkeypatch, llamadas):
     r = cliente(monkeypatch).post("/orders", json=CUERPO, headers={"Authorization": "Bearer x"})
     assert r.status_code == 422 and llamadas == []
