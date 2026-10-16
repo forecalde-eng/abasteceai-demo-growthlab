@@ -21,6 +21,7 @@ import type { Role } from "@/app/dev/session";
 import { Despacho } from "@/features/despacho/Despacho";
 import { InventarioBodega } from "@/features/bodega/InventarioBodega";
 import { ColaBodega } from "@/features/bodega/ColaBodega";
+import { PlanRutas } from "@/features/logistica/PlanRutas";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { DetalleAdmin } from "@/app/pages/DetalleAdmin";
@@ -223,14 +224,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-4.2",
     desc: "Propuesta de rutas calculada frente a la precargada, con kilómetros y no asignados.",
-    element: (
-      <Placeholder
-        title="Plan de rutas"
-        task="B-4.2"
-        owner="Bruno"
-        desc="Propuesta de rutas calculada frente a la precargada, con kilómetros y no asignados."
-      />
-    ),
+    element: <PlanRutas />,
   },
   {
     path: "/logistica/courier",
