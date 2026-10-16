@@ -5,6 +5,7 @@ Tablas generadas desde `db/datos/*.csv` y vistas desde el SQL oficial en PGlite 
 ```ts
 import { orders, orderItems, products, locations } from '@/mocks'
 import { shipments, shipmentItems, incidents, inventory, replenishment, orderTrace, purchases, purchaseItems } from '@/mocks'
+import { decisionLogs, type DecisionLog } from '@/mocks'
 import type { Order, OrderItem, Product, Location } from '@/mocks'
 ```
 
@@ -36,5 +37,8 @@ No editar los fixtures a mano: actualizar desde la fuente y regenerar. La prueba
 | `inventory` | `v_inventory`, solo BOD-DEMO |
 | `replenishment` | `v_replenishment` completa |
 | `orderTrace` | `v_order_trace` completa |
+| `decisionLogs` | `decision_logs.csv`; `input_state` y `response` se convierten a objetos JSON |
+
+`DecisionLog` mantiene `provider = mock | typesafe | rules` según el esquema vigente, sin anticipar la migración de OpenAI. `input_state` y `response` se tipan como objetos JSON de contenido desconocido (`Record<string, unknown>`); el consumidor debe validar/narrowear su contenido antes de acceder a campos anidados. La fila del seed es de PED-DEMO-001: provider `mock`, model_version `SIMULATED/jev-1.13.0` y confianza de urgencia `0.865`. La etiqueta visible SIMULADO se obtiene con `fuenteDesdeProvider(provider)` en la UI, sin cambiar el proveedor del fixture.
 
 La generación corre con privilegios locales para obtener todos los datos ficticios: estos fixtures **no implementan permisos ni RLS**. Los hooks/pantallas deben respetar su alcance por usuario. `purchaseItems` contiene `unit_cost_usd`, visible solo a los roles autorizados por el contrato (administrador, compras y gerencia); no mostrar costos a bodega. PGlite solo se importa desde el script `.mjs`, nunca desde `index.ts` ni desde componentes.

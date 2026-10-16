@@ -15,6 +15,7 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
     ['orders', 'orders'], ['orderItems', 'order_items'], ['products', 'products'], ['locations', 'locations'],
     ['shipments', 'shipments'], ['shipmentItems', 'shipment_items'], ['incidents', 'incidents'],
     ['purchases', 'purchase_orders'], ['purchaseItems', 'purchase_order_items'],
+    ['decisionLogs', 'decision_logs'],
   ]) {
     const source = await readSource(csv)
     const expected = name === 'locations'
@@ -56,6 +57,21 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
     assert.ok(purchases.has(item.purchase_id))
     assert.ok(productIds.has(item.product_id))
   }
+  assert.equal(fixtures.decisionLogs.length, 1)
+  const log = fixtures.decisionLogs[0]
+  const sourceLog = (await readSource('decision_logs'))[0]
+  const logOrder = fixtures.orders.find((row) => row.id === log.order_id)
+  assert.equal(logOrder?.code, 'PED-DEMO-001')
+  assert.equal(log.location_id, logOrder.location_id)
+  assert.equal(log.provider, 'mock')
+  assert.equal(log.model_version, 'SIMULATED/jev-1.13.0')
+  assert.equal(log.response.answers.urgency.confidence, 0.865)
+  assert.deepEqual(log.input_state, JSON.parse(sourceLog.input_state))
+  assert.deepEqual(log.response, JSON.parse(sourceLog.response))
+  assert.equal(typeof log.input_tokens, 'number')
+  assert.equal(typeof log.estimated_cost_usd, 'number')
+  assert.equal(log.input_tokens, 0)
+  assert.equal(log.estimated_cost_usd, 0)
 
   // Casos del pitch, calculados por las vistas SQL con reference_at del seed.
   const warehouse = fixtures.locations.find((row) => row.code === 'BOD-DEMO')
