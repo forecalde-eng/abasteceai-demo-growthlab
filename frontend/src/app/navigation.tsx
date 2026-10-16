@@ -19,6 +19,7 @@ import {
 
 import type { Role } from "@/app/dev/session";
 import { InventarioBodega } from "@/features/bodega/InventarioBodega";
+import { ColaBodega } from "@/features/bodega/ColaBodega";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { DetalleAdmin } from "@/app/pages/DetalleAdmin";
@@ -179,14 +180,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-2.2",
     desc: "Cola de pedidos aprobados y preparación por producto y lote con sugerencia FEFO.",
-    element: (
-      <Placeholder
-        title="Preparación por lote"
-        task="B-2.2"
-        owner="Bruno"
-        desc="Cola de pedidos aprobados y preparación por producto y lote con sugerencia FEFO."
-      />
-    ),
+    element: <ColaBodega />,
   },
   {
     path: "/despacho",
