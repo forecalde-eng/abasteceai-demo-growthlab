@@ -26,6 +26,7 @@ import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
+import { Incidencias } from "@/features/incidencias/Incidencias";
 import { Tablero } from "@/features/tablero/Tablero";
 import { Trazabilidad } from "@/features/trazabilidad/Trazabilidad";
 
@@ -319,14 +320,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-2.3",
     desc: "Incidencias con tipo, severidad y el pedido o envío al que pertenecen.",
-    element: (
-      <Placeholder
-        title="Incidencias"
-        task="J-2.3"
-        owner="Jorge"
-        desc="Incidencias con tipo, severidad y el pedido o envío al que pertenecen."
-      />
-    ),
+    element: <Incidencias />,
   },
   {
     path: "/asistente",
