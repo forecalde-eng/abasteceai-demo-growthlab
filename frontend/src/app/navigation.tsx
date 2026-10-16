@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import type { Role } from "@/app/dev/session";
+import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
@@ -142,14 +143,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-1.3",
     desc: "Bandeja de revisión y aprobación de pedidos enviados.",
-    element: (
-      <Placeholder
-        title="Bandeja de aprobación"
-        task="J-1.3"
-        owner="Jorge"
-        desc="Bandeja de revisión y aprobación de pedidos enviados."
-      />
-    ),
+    element: <BandejaAdmin />,
   },
   {
     path: "/admin/:code",
