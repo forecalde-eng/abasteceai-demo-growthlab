@@ -24,6 +24,9 @@
 
 ## FASE 0 · Supabase vivo (D-0.2, D-0.3, D-0.4) — lo más urgente
 
+> Procedimiento detallado (respaldo restaurable *antes* y *después*, verificación
+> paso a paso, exposición con RLS y vuelta atrás): `docs/equipo/fase0_despliegue_y_respaldo.md`.
+
 ### 0.1 Revisar qué hay ya aplicado
 En *SQL Editor*:
 
