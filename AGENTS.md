@@ -9,6 +9,8 @@ Hackathon Expo Clean Ecuador 2026, Reto 1. Abastecimiento de insumos de limpieza
 3. **Frontend:** sigue `docs/07_GUIA_DISENO.md` (paleta, 6 familias de color de estado, layout y patrones). No inventes colores ni estilos.
 4. Solo toca las carpetas de tu persona (`docs/06_PLAN_EQUIPO.md §2`). Si necesitas cambiar algo ajeno, dilo y propón un PR aparte.
 5. Si algo no está en la spec, el contrato o `db/`, **pregunta**. No inventes endpoints, columnas, datos ni métricas.
+6. **No esperes a nadie.** Si tu ticket necesita algo de otra persona que aún no existe (mocks, hooks, tipos, un endpoint), crea un reemplazo temporal **en tu propia carpeta**, con el nombre exacto del contrato (`specs/000-contratos/`, `docs/06_PLAN_EQUIPO.md §3`) y datos copiados de `db/datos/*.csv`. Márcalo con `// temporal: reemplazar por <lo real>` y sigue. Cuando el dueño lo entregue, cambias el import y lo borras.
+7. Cada tarea en una rama nueva desde `main` actualizado. **No encadenes PRs** (el repo solo admite squash).
 
 ## Stack
 
