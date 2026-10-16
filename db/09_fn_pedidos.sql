@@ -241,20 +241,18 @@ BEGIN
    IF pg_catalog.jsonb_typeof(v_item) <> 'object' OR
       pg_catalog.jsonb_typeof(v_item->'product_id') <> 'string' THEN
     RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'product_id inválido',
-     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
-      'index', v_index)::text;
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index))::text;
    END IF;
    BEGIN
     v_product := (v_item->>'product_id')::uuid;
    EXCEPTION WHEN invalid_text_representation THEN
     RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'product_id inválido',
-     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
-      'index', v_index)::text;
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index))::text;
    END;
    IF v_product = ANY(v_seen) THEN
     RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Producto repetido',
      DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
-      'index', v_index, 'product_id', v_product)::text;
+      'product_id', v_product)::text;
    END IF;
    v_seen := pg_catalog.array_append(v_seen, v_product);
    SELECT requested_qty INTO v_requested FROM abastece.order_items
@@ -262,19 +260,19 @@ BEGIN
    IF NOT FOUND THEN
     RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Producto ajeno al pedido',
      DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
-      'index', v_index, 'product_id', v_product)::text;
+      'product_id', v_product)::text;
    END IF;
    IF pg_catalog.jsonb_typeof(v_item->'approved_qty') <> 'number' THEN
     RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'approved_qty inválida',
      DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].approved_qty', v_index),
-      'index', v_index, 'product_id', v_product)::text;
+      'product_id', v_product)::text;
    END IF;
    v_approved := (v_item->>'approved_qty')::numeric;
    IF v_approved < 0 OR v_approved > v_requested OR
       v_approved <> pg_catalog.round(v_approved, 3) THEN
     RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'approved_qty fuera de rango',
      DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].approved_qty', v_index),
-      'index', v_index, 'product_id', v_product)::text;
+      'product_id', v_product)::text;
    END IF;
    v_corrected := v_corrected OR v_approved <> v_requested;
   END LOOP;
@@ -315,6 +313,7 @@ BEGIN
     ORDER BY product_id), '[]'::jsonb)
   INTO v_after_items FROM abastece.order_items WHERE order_id = p_order;
  ELSE
+  -- No se aprueban cantidades al devolver o cancelar: after_state.items = [].
   UPDATE abastece.orders
   SET status = v_status, approved_by = NULL, approved_at = NULL
   WHERE id = p_order;
