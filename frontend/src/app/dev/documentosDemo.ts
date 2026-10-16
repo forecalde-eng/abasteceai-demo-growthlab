@@ -1,4 +1,4 @@
-import type { Role } from "@/app/dev/session";
+import type { Role } from "@/data";
 
 /**
  * Corpus temporal del asistente (J-4.1).

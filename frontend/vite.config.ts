@@ -4,8 +4,12 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { configDefaults, defineConfig } from "vitest/config";
 
+import { devCredentials } from "./vite-plugins/devCredentials";
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  // `devCredentials` sirve `GET /__dev/credentials` SOLO con `vite dev` (`apply: "serve"`),
+  // desde un fichero fuera del repo: las contraseñas demo nunca entran en el bundle (J-0.3).
+  plugins: [react(), tailwindcss(), devCredentials()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

@@ -17,7 +17,7 @@ import {
   WarehouseIcon,
 } from "lucide-react";
 
-import type { Role } from "@/app/dev/session";
+import type { Role } from "@/data";
 import { Despacho } from "@/features/despacho/Despacho";
 import { InventarioBodega } from "@/features/bodega/InventarioBodega";
 import { ColaBodega } from "@/features/bodega/ColaBodega";

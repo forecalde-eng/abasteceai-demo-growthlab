@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 
 import { RUTAS_PREFIJO, gruposDeRol } from "@/app/navigation";
-import { useSession } from "@/app/dev/session";
+import { useSession } from "@/data";
 import { cn } from "@/ui";
 
 /**

@@ -1,22 +1,24 @@
-import { ROLES, setDevRole, USAR_SESION_TEMPORAL, type Role } from "@/app/dev/session";
+import { credencialDeRol } from "@/app/dev/credencialesDev";
+import { setDevRole } from "@/app/dev/roles";
+import { useMocks, type Role } from "@/data";
 
 /**
- * Cambio de cuenta de la demo (J-3.2) — **solo modo dev**.
+ * Cambio de cuenta de la demo (J-3.2) - **solo modo dev**.
  *
  * Un único punto de entrada, `cambiarCuenta(rol)`, para el pitch: pasar de una cuenta
  * demo a otra sin escribir credenciales. El menú de la barra lateral
  * (`DevAccountSwitcher`) lo resuelve en dos clics (abrir y elegir).
  *
- * Hoy no hay login real (J-0.3 / D-0.3), así que cambiar de cuenta es cambiar el rol de
- * la sesión temporal. Cuando el login exista, **solo hay que usar la rama de abajo**: firma
- * con Supabase (`signInWithPassword`) usando la contraseña de `frontend/.env.local`.
+ * - **Modo mocks** (`VITE_USE_MOCKS=true`): no hay login real; basta con guardar el rol,
+ *   que leen `src/data/useSession` y `src/app/dev/apiDemo`.
+ * - **Modo real** (J-0.3): firma con Supabase (`signInWithPassword`). La contraseña
+ *   **nunca sale del bundle**: la trae `credencialDeRol`, que la lee del endpoint local
+ *   `GET /__dev/credentials` (plugin `vite-plugins/devCredentials.ts`, solo `vite dev`).
+ *   En una build de producción esa ruta no existe, y el login pide las credenciales a mano.
  *
- * NO ES SEGURIDAD. Las contraseñas viven solo en `frontend/.env.local` (ignorado por git);
- * nunca se versionan. Ver `frontend/.env.example` para los nombres de las claves (vacías).
+ * NO ES SEGURIDAD: ni el rol ni las contraseñas protegen los datos. Quien manda de verdad
+ * es la base (RLS + JWT, invariante I8).
  */
-
-/** Mismo criterio que `src/data/supabase.ts` (`VITE_USE_MOCKS`). */
-const USAR_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
 
 /**
  * Pantalla principal de cada rol (`docs/04_SPEC_MAESTRA.md §2`). Al cambiar de cuenta se
@@ -33,36 +35,24 @@ export const PANTALLA_PRINCIPAL: Record<Role, string> = {
 };
 
 /**
- * Credenciales de una cuenta demo: `staff_members.demo_email` (+ override) y la contraseña
- * de `.env.local`. Devuelve `null` si no hay contraseña configurada.
- */
-export function credencialesDemo(rol: Role): { email: string; password: string } | null {
-  const env = import.meta.env as unknown as Record<string, string | undefined>;
-  const sufijo = rol.toUpperCase();
-  const email = env[`VITE_DEMO_EMAIL_${sufijo}`] || ROLES[rol].email;
-  const password = env[`VITE_DEMO_PASSWORD_${sufijo}`];
-  return password ? { email, password } : null;
-}
-
-/**
- * Cambia la cuenta activa. Con sesión temporal o mocks, guarda el rol en el mismo almacén
- * que leen `@/app/dev/session` y `src/data/useSession` (`abasteceai.dev.role`).
+ * Cambia la cuenta activa.
  *
- * ⚠️ La firma real (`signInWithPassword`) se activa cuando se apaguen la sesión temporal y
- * los mocks; hasta entonces no se ejecuta ni se importa Supabase.
+ * En modo mocks es el mismo almacén de siempre (`abasteceai.dev.role`); en modo real,
+ * cambia la sesión de Supabase Auth. Lanza `Error` con un mensaje legible si no hay
+ * credenciales o si el servidor rechaza la entrada.
  */
 export async function cambiarCuenta(rol: Role): Promise<void> {
-  if (USAR_SESION_TEMPORAL || USAR_MOCKS) {
+  if (useMocks) {
     setDevRole(rol);
     return;
   }
 
-  // --- Login real (J-0.3): cuando la sesión temporal y los mocks estén apagados ---
-  const cred = credencialesDemo(rol);
+  // --- Login real (J-0.3): Supabase Auth, contraseñas FUERA del bundle ---
+  const cred = await credencialDeRol(rol);
   if (!cred) {
     throw new Error(
-      `Falta la contraseña de la cuenta demo "${rol}". ` +
-        `Agrega VITE_DEMO_PASSWORD_${rol.toUpperCase()} en frontend/.env.local.`,
+      `No hay credenciales locales para la cuenta "${rol}". ` +
+        `Crea el fichero del endpoint dev (vite-plugins/devCredentials.ts) o entra desde /login.`,
     );
   }
   const { getSupabaseClient } = await import("@/data/supabase");

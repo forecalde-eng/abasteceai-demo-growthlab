@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 // temporal: reemplazar por @/data
-import { useSession } from "@/app/dev/session";
+import { useSession } from "@/data";
 import type { OrderTrace } from "@/mocks";
 
 // temporal: reemplazar por @/data
