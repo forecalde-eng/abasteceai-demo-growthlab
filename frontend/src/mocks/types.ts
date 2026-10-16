@@ -125,6 +125,22 @@ export interface PurchaseItem {
   unit_cost_usd: number
 }
 
+export interface DecisionLog {
+  id: string
+  location_id: string | null
+  order_id: string | null
+  task: string
+  provider: 'mock' | 'typesafe' | 'rules'
+  model_version: string
+  input_state: Record<string, unknown>
+  response: Record<string, unknown>
+  proposed_action: string
+  status: 'proposed' | 'human_review' | 'accepted' | 'rejected'
+  input_tokens: number
+  estimated_cost_usd: number
+  created_at: string
+}
+
 export interface Inventory {
   location_id: string
   product_id: string

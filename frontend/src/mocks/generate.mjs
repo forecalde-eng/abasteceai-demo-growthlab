@@ -63,6 +63,13 @@ const tables = [
   { csv: 'purchase_order_items', name: 'purchaseItems', type: 'PurchaseItem', columns: {
     id: 'string', purchase_id: 'string', product_id: 'string', ordered_qty: 'number', unit_cost_usd: 'number',
   } },
+  { csv: 'decision_logs', name: 'decisionLogs', type: 'DecisionLog', columns: {
+    id: 'string', location_id: 'string | null', order_id: 'string | null', task: 'string',
+    provider: "'mock' | 'typesafe' | 'rules'", model_version: 'string',
+    input_state: 'Record<string, unknown>', response: 'Record<string, unknown>',
+    proposed_action: 'string', status: "'proposed' | 'human_review' | 'accepted' | 'rejected'",
+    input_tokens: 'number', estimated_cost_usd: 'number', created_at: 'string',
+  } },
 ]
 
 const views = [
@@ -112,6 +119,13 @@ export function parseCsv(text) {
 
 function convert(value, type) {
   if (value === '' && type.includes('null')) return null
+  if (type === 'Record<string, unknown>') {
+    const parsed = JSON.parse(value)
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Se esperaba un objeto JSON')
+    }
+    return parsed
+  }
   if (type.startsWith('number')) {
     const number = Number(value)
     if (value === '' || !Number.isFinite(number)) throw new Error(`Número inválido: ${value}`)
