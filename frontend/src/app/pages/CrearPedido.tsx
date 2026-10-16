@@ -11,8 +11,9 @@ import {
   useProducts,
   type NuevoPedido,
 } from "@/app/dev/apiDemo";
-import { MES_DEMO, type PuntoAsignado } from "@/app/dev/datosDemo";
+import { MES_DEMO } from "@/app/dev/datosDemo";
 import { useSession } from "@/app/dev/session";
+import type { Location, Product } from "@/mocks";
 import {
   Badge,
   Button,
@@ -72,6 +73,12 @@ function fechaCorta(iso: string): string {
   return FORMATO_DIA.format(new Date(iso));
 }
 
+/** Presentación legible del contenido, tal cual viene de la base ("1 L", "12 rollos"). */
+function contenido(producto: Product): string {
+  if (producto.content_quantity === null || producto.content_unit === null) return "";
+  return `${producto.content_quantity} ${producto.content_unit}`;
+}
+
 export function CrearPedido() {
   const navegar = useNavigate();
   const sesion = useSession();
@@ -97,7 +104,7 @@ export function CrearPedido() {
       : `demo-${Date.now()}`,
   );
 
-  const puntos: PuntoAsignado[] = sesion.data?.puntos ?? [];
+  const puntos: Location[] = sesion.data?.puntos ?? [];
   // Si cambia el rol, el punto elegido puede dejar de estar asignado: se cae al primero.
   const punto = puntos.find((p) => p.id === puntoId) ?? puntos[0];
   const puntoElegido = punto?.id ?? "";
@@ -114,7 +121,7 @@ export function CrearPedido() {
     const q = busqueda.trim().toLowerCase();
     if (q === "") return productos;
     return productos.filter(
-      (p) => p.sku.toLowerCase().includes(q) || p.nombre.toLowerCase().includes(q),
+      (p) => p.sku.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
     );
   }, [productos, busqueda]);
 
@@ -222,7 +229,7 @@ export function CrearPedido() {
               >
                 {puntos.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.code} · {p.nombre}
+                    {p.code} · {p.name}
                   </option>
                 ))}
               </Select>
@@ -323,10 +330,10 @@ export function CrearPedido() {
                   <TableRow key={producto.id}>
                     <TableCell className="font-mono text-sm">{producto.sku}</TableCell>
                     <TableCell>
-                      {producto.nombre}
-                      <span className="block text-xs text-muted-foreground">{producto.contenido}</span>
+                      {producto.name}
+                      <span className="block text-xs text-muted-foreground">{contenido(producto)}</span>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{producto.unidad}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{producto.inventory_unit}</TableCell>
                     <TableCell className="text-right">
                       <Input
                         type="number"

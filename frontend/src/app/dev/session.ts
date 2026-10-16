@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { PUNTOS_POR_STAFF, type PuntoAsignado } from "@/app/dev/datosDemo";
+import { puntosAsignados } from "@/app/dev/datosDemo";
+import type { Location } from "@/mocks";
 
 /**
  * ⚠️ SESIÓN TEMPORAL — NO ES EL LOGIN REAL.
@@ -115,7 +116,7 @@ export type Session = {
   role: Role;
   pointsLabel: string;
   /** Puntos asignados (`point_assignments`): el auxiliar 3, el supervisor 24, el resto 0. */
-  puntos: PuntoAsignado[];
+  puntos: Location[];
 };
 
 const STORAGE_KEY = "abasteceai.dev.role";
@@ -184,7 +185,7 @@ export function useSession(): {
       email: meta.email,
       role,
       pointsLabel: meta.pointsLabel,
-      puntos: PUNTOS_POR_STAFF[staffId] ?? [],
+      puntos: puntosAsignados(staffId),
     },
     isLoading: false,
     isError: false,
