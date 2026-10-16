@@ -118,15 +118,16 @@ Para producción serán necesarios contratos transaccionales completos, validaci
 1. Crear un proyecto nuevo para la demo y elegir una región disponible. Mantener la etiqueta DEMO FICTICIA en la aplicación.
 2. Ejecutar `01_esquema.sql` en SQL Editor, una sola vez. Usa el esquema aislado `abastece`; no borra tablas de un proyecto existente.
 3. Ejecutar `02_reglas_y_accesos.sql` para integridad, vistas y RLS.
-4. Ejecutar `03_datos_ficticios.sql` para el seed. Los CSV son copias legibles/exportables: no cargarlos además del seed, porque duplicarían los registros.
-5. Ejecutar las consultas de `04_consultas_demo.sql`. Desde SQL Editor se consulta como administrador de base; eso no prueba por sí solo los permisos de los usuarios.
-6. Si se usará Data API, añadir `abastece` a Exposed schemas. El SQL del paquete ya establece los permisos mínimos: no copiar permisos generales `GRANT ALL` a visitantes. Inicializar el cliente con `db: { schema: 'abastece' }`.
-7. Crear siete cuentas de prueba mediante Supabase Auth con contraseñas independientes. Las identidades del CSV usan dominios ficticios y no deben recibir correos reales. Configurar su confirmación para la prueba desde los mecanismos administrativos de Auth. No insertar manualmente filas en `auth.users`.
-8. En SQL Editor, vincular cada identidad a su UUID Auth, sustituyendo el placeholder: `UPDATE abastece.staff_members SET auth_user_id='UUID_AUTH_REAL'::uuid WHERE demo_email='auxiliar@abasteceai.example';`. Repetir por rol. Los UUID no son contraseñas ni claves API.
-9. Probar lectura con sesión de auxiliar y de administrador: auxiliar solo ve Q-001, Q-005 y Q-008; administrador ve todos los puntos. Ningún usuario del cliente modifica rol/inventario directamente.
-10. Conectar el backend y desarrollar las acciones del flujo con validaciones. Las lecturas se pueden usar inmediatamente tras enlazar Auth; las escrituras necesitan esos endpoints/RPC.
-11. Para RAG semántico, ejecutar `05_rag_vector_opcional.sql`, verificar que pgvector esté en `extensions` y generar embeddings reales una vez para los ocho chunks. No hay vectores falsos en el seed. La búsqueda textual ya funciona sin este paso.
-12. Guardar claves en variables del backend, cargar un límite de gasto y ensayar los ocho escenarios. Nunca incluir claves en el repositorio ni en el frontend.
+4. Ejecutar `07_integridad_preseed.sql` para completar las restricciones de ubicación, el acceso de bodega a cantidades, el alcance de rutas y el índice por lote.
+5. Ejecutar `03_datos_ficticios.sql` para el seed. Los CSV son copias legibles/exportables: no cargarlos además del seed, porque duplicarían los registros.
+6. Ejecutar las consultas de `04_consultas_demo.sql` y `06_control_espacio.sql`. Desde SQL Editor se consulta como administrador de base; eso no prueba por sí solo los permisos de los usuarios.
+7. Si se usará Data API, añadir `abastece` a Exposed schemas **después de verificar RLS**. El SQL del paquete ya establece los permisos mínimos: no copiar permisos generales `GRANT ALL` a visitantes. Inicializar el cliente con `db: { schema: 'abastece' }`.
+8. Crear siete cuentas de prueba mediante Supabase Auth con contraseñas independientes. Las identidades del CSV usan dominios ficticios y no deben recibir correos reales. Configurar su confirmación para la prueba desde los mecanismos administrativos de Auth. No insertar manualmente filas en `auth.users`.
+9. En SQL Editor, vincular cada identidad a su UUID Auth, sustituyendo el placeholder: `UPDATE abastece.staff_members SET auth_user_id='UUID_AUTH_REAL'::uuid WHERE demo_email='auxiliar@abasteceai.example';`. Repetir por rol. Los UUID no son contraseñas ni claves API.
+10. Probar lectura con sesión de auxiliar y de administrador: auxiliar solo ve Q-001, Q-005 y Q-008; administrador ve todos los puntos. Ningún usuario del cliente modifica rol/inventario directamente.
+11. Conectar el backend y desarrollar las acciones del flujo con validaciones. Las lecturas se pueden usar inmediatamente tras enlazar Auth; las escrituras necesitan `09_fn_pedidos.sql`, `10_fn_bodega.sql`, `11_fn_envios.sql` y sus endpoints.
+12. Si se activará el asistente OpenAI, ejecutar `08_proveedor_openai.sql` una vez creado. Para RAG semántico opcional, ejecutar `05_rag_vector_opcional.sql`, verificar que pgvector esté en `extensions` y generar embeddings reales una vez para los ocho chunks. La búsqueda textual funciona sin este paso.
+13. Guardar claves en variables del backend, cargar un límite de gasto y ensayar los ocho escenarios. Nunca incluir claves en el repositorio ni en el frontend.
 
 No se creó un proyecto de Supabase ni cuentas externas al preparar este paquete. Las tablas y políticas se verificaron en PostgreSQL embebido local con un sustituto de Auth para las pruebas. La configuración y permisos del proyecto real se deben comprobar al conectarlo. `verificacion.json` registra los resultados. Para repetir las pruebas, instalar `@electric-sql/pglite` con npm y ejecutar `node verificar_postgres.mjs`; las pruebas usan una base temporal independiente, sin tocar Supabase.
 

@@ -65,7 +65,7 @@
 | # | Decisión | Por qué |
 |---|---|---|
 | D1 | **Lecturas** del frontend directo a Supabase con el JWT; tablero con `v_replenishment`, bodega con `v_inventory`, trazabilidad con `v_order_trace` | El SQL ya trae RLS y los cálculos; no se duplica lógica |
-| D2 | ✅ (rev. 14-oct) **Escrituras**: FastAPI (Omar) valida JWT, rol y punto y llama por **psycopg** a una **función SQL** `abastece.fn_*` (David, `db/08+`), que es la transacción. Variable nueva `DATABASE_URL` | Cada uno en lo que domina; la lógica queda junto a los triggers y se prueba en local con PGlite |
+| D2 | ✅ (rev. 14-oct) **Escrituras**: FastAPI (Omar) valida JWT, rol y punto y llama por **psycopg** a una **función SQL** `abastece.fn_*` (David, `db/09+`), que es la transacción. Variable nueva `DATABASE_URL` | Cada uno en lo que domina; la lógica queda junto a los triggers y se prueba en local con PGlite |
 | D3 | JWT con `supabase.auth.get_user(token)`; rol y puntos con `SELECT` a `staff_members`/`point_assignments` | Simple y correcto |
 | D4 | Reglas como **funciones puras** en `backend/app/rules/` | Se testean sin base |
 | D5 | `SELECT … FOR UPDATE` sobre el pedido/envío al inicio de cada escritura | Evita doble despacho; los triggers de la base ya usan advisory locks por lote |
@@ -74,7 +74,7 @@
 | D8 | Asistente: `websearch_to_tsquery('spanish', …)` sobre `document_chunks` **con el JWT del usuario** (RLS filtra `allowed_roles`) + funciones de lectura | Sin embeddings; respeta permisos |
 | D9 | QR = `shipments.qr_token`; lector con cámara [Supuesto: `html5-qrcode`] + tipeo de `guide_code`; `vite --https` con certificado local | La cámara exige HTTPS |
 | D10 | **Reloj de demo:** `occurred_at`, `created_at`, `approved_at`, `dispatched_at`, etc. = `demo_metadata.reference_at` (+ segundos crecientes para ordenar) | Las vistas y triggers solo cuentan movimientos `≤ reference_at`; con `now()` lo nuevo no aparecería |
-| D11 | Migración `db/07_proveedor_openai.sql`: agrega `openai` al CHECK de `decision_logs.provider` | Registrar el asistente (I6) |
+| D11 | Migración `db/08_proveedor_openai.sql`: agrega `openai` al CHECK de `decision_logs.provider` | Registrar el asistente (I6) |
 | D12 | **Reset:** `TRUNCATE` de las 27 tablas → `03_datos_ficticios.sql` → `UPDATE staff_members SET auth_user_id` para los 7 emails (mapa en `backend/.env`) | Repetir el guion idéntico, sin recrear usuarios |
 
 ## 2. Estrategia de pruebas
@@ -109,8 +109,8 @@ Si el jueves a las 22:00 falta algún MUST, el viernes por la mañana se trabaja
 | T0.1 | ✅ Paquete en `db/` y verificado | — | 61/61 OK |
 | T0.2 | Instalar `uv`, `gh` (faltan aquí), Node 20+, Python 3.11+ — **los 4** | — | `uv --version`, `gh auth status` OK en las 4 máquinas |
 | T0.3 | ✅ Repo creado y subido; `AGENTS.md` + `CLAUDE.md` (sustituyen Spec Kit y constitución). Falta proteger `main` | T0.2 | Los 4 leen `AGENTS.md` |
-| T0.4 | Supabase Free: SQL 01→03, exponer `abastece`, 7 usuarios Auth, vincular `auth_user_id`, guardar `DATABASE_URL` (pooler sesión) | — | Auxiliar ve 3 puntos, supervisor 24, admin 703 — **probado desde el cliente** |
-| T0.5 | `specs/000-contratos/`: `openapi.yaml` (13 endpoints, columnas reales), `estados.md`, `roles.md`; `db/07_proveedor_openai.sql` aplicada | T0.3 | PR aprobado; contrato **congelado** |
+| T0.4 | Supabase Free: SQL 01→02→07→03, exponer `abastece`, 7 usuarios Auth, vincular `auth_user_id`, guardar `DATABASE_URL` (pooler sesión) | — | Auxiliar ve 3 puntos, supervisor 24, admin 703 — **probado desde el cliente** |
+| T0.5 | `specs/000-contratos/`: `openapi.yaml` (13 endpoints, columnas reales), `estados.md`, `roles.md`; `db/08_proveedor_openai.sql` aplicada | T0.3 | PR aprobado; contrato **congelado** |
 | T0.6 | Scaffold backend: FastAPI, `/health`, routers vacíos, `rules/`, `db.py` (pool psycopg + `db_tx`), `clock.py`, `auth.py` con `get_current_staff()` y `require_role()` | T0.5 | `pytest` + `ruff` verdes; `/health` y `/me` responden con el JWT del auxiliar |
 | T0.7 | Scaffold frontend: Vite + React + TS, Supabase `schema: 'abastece'`, login, layout por rol, banner DEMO FICTICIA, una ruta vacía por feature, cliente `api.ts` con JWT | T0.5 | Login con las 7 cuentas muestra el menú correcto |
 | T0.8 | CI, CODEOWNERS, plantilla de PR, `.gitignore`, README de 5 comandos | T0.6, T0.7 | CI verde en `main` |

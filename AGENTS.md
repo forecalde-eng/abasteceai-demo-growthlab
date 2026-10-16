@@ -6,13 +6,16 @@ Hackathon Expo Clean Ecuador 2026, Reto 1. Abastecimiento de insumos de limpieza
 
 1. Lee `docs/04_SPEC_MAESTRA.md` (qué se construye), `docs/06_PLAN_EQUIPO.md` (quién hace qué y los contratos) y la hoja de tu persona en `docs/equipo/` (omar, david, jorge, bruno).
 2. Trabaja **una tarea por sesión**, por su ID (ej. `B-2.5`). Antes de escribir código, di qué archivos vas a crear o tocar.
-3. Solo toca las carpetas de tu persona (`docs/06_PLAN_EQUIPO.md §2`). Si necesitas cambiar algo ajeno, dilo y propón un PR aparte.
-4. Si algo no está en la spec, el contrato o `db/`, **pregunta**. No inventes endpoints, columnas, datos ni métricas.
+3. **Frontend:** sigue `docs/07_GUIA_DISENO.md` (paleta, 6 familias de color de estado, layout y patrones). No inventes colores ni estilos.
+4. Solo toca las carpetas de tu persona (`docs/06_PLAN_EQUIPO.md §2`). Si necesitas cambiar algo ajeno, dilo y propón un PR aparte.
+5. Si algo no está en la spec, el contrato o `db/`, **pregunta**. No inventes endpoints, columnas, datos ni métricas.
+6. **No esperes a nadie.** Si tu ticket necesita algo de otra persona que aún no existe (mocks, hooks, tipos, un endpoint), crea un reemplazo temporal **en tu propia carpeta**, con el nombre exacto del contrato (`specs/000-contratos/`, `docs/06_PLAN_EQUIPO.md §3`) y datos copiados de `db/datos/*.csv`. Márcalo con `// temporal: reemplazar por <lo real>` y sigue. Cuando el dueño lo entregue, cambias el import y lo borras.
+7. Cada tarea en una rama nueva desde `main` actualizado. **No encadenes PRs** (el repo solo admite squash).
 
 ## Stack
 
 - Backend: Python 3.11+ · FastAPI **delgado** (valida JWT, rol y punto; llama a una función SQL) · `uv` · psycopg · pytest · ruff. Carpeta `backend/`.
-- Lógica de escritura: **funciones SQL** `abastece.fn_*` en `db/08+` (contrato en `docs/06_PLAN_EQUIPO.md §3 C3`), probadas con `node db/verificar_funciones.mjs`.
+- Lógica de escritura: **funciones SQL** `abastece.fn_*` en `db/09+` (contrato en `docs/06_PLAN_EQUIPO.md §3 C3`), probadas con `node db/verificar_funciones.mjs`.
 - Frontend: React + TypeScript + Vite + Tailwind + React Router + React Query · Leaflet. Carpeta `frontend/`.
 - Datos: Supabase (Postgres + Auth + RLS), esquema `abastece`. `db/*.sql` es la fuente de verdad.
 - Contrato API: `specs/000-contratos/openapi.yaml` (congelado).

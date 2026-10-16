@@ -1,7 +1,7 @@
 # Bruno — Frontend: operación, recepción móvil y logística
 
 > IA: **OpenCode Go** (lee `AGENTS.md` sola). IDE: VS Code o Antigravity.
-> Lee primero: `AGENTS.md`, `docs/04_SPEC_MAESTRA.md` (§5 F2, F3, §6), `docs/06_PLAN_EQUIPO.md` (§2, §3 C2).
+> Lee primero: `AGENTS.md`, `docs/04_SPEC_MAESTRA.md` (§5 F2, F3, §6), `docs/06_PLAN_EQUIPO.md` (§2, §3 C2), **`docs/07_GUIA_DISENO.md` (colores, patrones de pantalla, móvil y mapa)**.
 > Ramas: `front/bruno/<tarea>`.
 
 ## Tu misión
@@ -69,7 +69,7 @@ Muestras las **escenas 3, 5 y 6**: bodega prepara (el lote vencido se salta solo
 ## Prompt de arranque para tu IA
 
 ```text
-Lee AGENTS.md, docs/04_SPEC_MAESTRA.md, docs/06_PLAN_EQUIPO.md y docs/equipo/bruno.md.
+Lee AGENTS.md, docs/04_SPEC_MAESTRA.md, docs/06_PLAN_EQUIPO.md, docs/07_GUIA_DISENO.md y docs/equipo/bruno.md.
 Vamos a hacer la tarea B-0.1. No llames a Supabase directo: todo pasa por frontend/src/data/.
 Los datos salen de db/datos/*.csv; no inventes registros.
 Antes de escribir código dime qué archivos vas a crear.

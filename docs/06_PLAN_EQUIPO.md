@@ -85,16 +85,16 @@ FastAPI valida JWT, rol y punto, y luego llama **una** función. Cada función e
 
 | Función (esquema `abastece`) | Archivo | La llama |
 |---|---|---|
-| `fn_crear_pedido(staff, location, cycle_month, order_type, related_order, reason, observations, items jsonb, idempotency_key)` | `08_fn_pedidos.sql` | `POST /orders` |
-| `fn_analizar_reglas(order)` → `{duplicates, missing_kit}` + incidencias sin duplicar | `08_fn_pedidos.sql` | `POST /orders/{id}/analyze` |
-| `fn_decidir_pedido(staff, order, decision, items jsonb, reason)` — `approve` \| `return` \| `cancel` | `08_fn_pedidos.sql` | `POST /orders/{id}/decision` |
-| `fn_preparar(staff, order, items jsonb, dry_run)` — FEFO adentro | `09_fn_bodega.sql` | `POST /orders/{id}/prepare` |
-| `fn_confirmar_ruta(staff, vehicle, dispatch_date, stops jsonb, km, minutes, method)` → crea plan, paradas y envíos | `10_fn_envios.sql` | `POST /routes/confirm` |
-| `fn_envio_courier(staff, order, carrier, guide, promised_at)` | `10_fn_envios.sql` | `POST /shipments/courier` |
-| `fn_despachar(staff, shipment)` | `10_fn_envios.sql` | `POST /shipments/{id}/dispatch` |
-| `fn_marcar_entregado(staff, shipment)` | `10_fn_envios.sql` | `POST /shipments/{id}/delivered` |
-| `fn_recibir(staff, shipment, items jsonb, notes)` | `10_fn_envios.sql` | `POST /shipments/{id}/receipt` |
-| `11_reset_demo.sql` (TRUNCATE de las 27 tablas) + plantilla de re-vinculación | `11_reset_demo.sql` | `POST /admin/reset-demo` (corre este archivo + `03`) |
+| `fn_crear_pedido(staff, location, cycle_month, order_type, related_order, reason, observations, items jsonb, idempotency_key)` | `09_fn_pedidos.sql` | `POST /orders` |
+| `fn_analizar_reglas(order)` → `{duplicates, missing_kit}` + incidencias sin duplicar | `09_fn_pedidos.sql` | `POST /orders/{id}/analyze` |
+| `fn_decidir_pedido(staff, order, decision, items jsonb, reason)` — `approve` \| `return` \| `cancel` | `09_fn_pedidos.sql` | `POST /orders/{id}/decision` |
+| `fn_preparar(staff, order, items jsonb, dry_run)` — FEFO adentro | `10_fn_bodega.sql` | `POST /orders/{id}/prepare` |
+| `fn_confirmar_ruta(staff, vehicle, dispatch_date, stops jsonb, km, minutes, method)` → crea plan, paradas y envíos | `11_fn_envios.sql` | `POST /routes/confirm` |
+| `fn_envio_courier(staff, order, carrier, guide, promised_at)` | `11_fn_envios.sql` | `POST /shipments/courier` |
+| `fn_despachar(staff, shipment)` | `11_fn_envios.sql` | `POST /shipments/{id}/dispatch` |
+| `fn_marcar_entregado(staff, shipment)` | `11_fn_envios.sql` | `POST /shipments/{id}/delivered` |
+| `fn_recibir(staff, shipment, items jsonb, notes)` | `11_fn_envios.sql` | `POST /shipments/{id}/receipt` |
+| `12_reset_demo.sql` (TRUNCATE de las 27 tablas) + plantilla de re-vinculación | `12_reset_demo.sql` | `POST /admin/reset-demo` (corre este archivo + `03`) |
 
 Reglas de todas las funciones:
 - Devuelven `jsonb` con el resultado (lo que FastAPI responde tal cual).
@@ -122,7 +122,7 @@ Horario Ecuador. Cada fase termina en una **integración**: todos mergean, reset
 | Quién | Entrega |
 |---|---|
 | Omar | `auth.py` + `/me`; endpoints `/orders`, `/analyze` (función + Jev SIMULADO + `decision_logs`), `/decision` |
-| David | `08_fn_pedidos.sql` + pruebas; hooks de lectura reales y `api.ts` |
+| David | `09_fn_pedidos.sql` + pruebas; hooks de lectura reales y `api.ts` |
 | Jorge | Crear pedido, mis pedidos, bandeja admin (alertas, evidencia lado a lado, propuesta Jev, decidir) |
 | Bruno | Trazabilidad (6 etapas), inventario de bodega (INS-005) |
 
@@ -133,7 +133,7 @@ Horario Ecuador. Cada fase termina en una **integración**: todos mergean, reset
 | Quién | Entrega |
 |---|---|
 | Omar | Endpoints de preparar, confirmar ruta, courier, despachar, entregar, recibir; solver OR-Tools + `/routes/plan` |
-| David | `09_fn_bodega.sql`, `10_fn_envios.sql` (**`fn_confirmar_ruta` primero**) + pruebas de PITCH 4, 5, 7, 8, 9 |
+| David | `10_fn_bodega.sql`, `11_fn_envios.sql` (**`fn_confirmar_ruta` primero**) + pruebas de PITCH 4, 5, 7, 8, 9 |
 | Jorge | Supervisor (marcar entregado), tablero, incidencias |
 | Bruno | Preparación (vista previa FEFO), confirmar ruta mínima, despacho con QR, recepción móvil |
 
@@ -144,7 +144,7 @@ Horario Ecuador. Cada fase termina en una **integración**: todos mergean, reset
 | Quién | Entrega |
 |---|---|
 | Omar | `/admin/reset-demo`; corre el ciclo PED-DEMO-001 dos veces; bugs con dueño |
-| David | `11_reset_demo.sql`; arreglos en funciones; prueba local del ciclo completo |
+| David | `12_reset_demo.sql`; arreglos en funciones; prueba local del ciclo completo |
 | Jorge | Arreglos en pedidos/admin/tablero |
 | Bruno | Recepción **en el teléfono** por IP LAN con HTTPS |
 
