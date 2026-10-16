@@ -1,16 +1,18 @@
 # C3 · Contratos SQL de pedidos (D-0.6) — borrador para Jorge y Omar
 
-Estado: **propuesta, no congelada** para las funciones pendientes. Las
-convenciones de `fn_crear_pedido` registran decisiones ya acordadas por Jorge y
-Omar en el PR #93; Omar confirmará la redacción al regresar. Este documento no
-crea funciones. El cambio de `openapi.yaml` en este PR solo declara el 404 ya
-acordado para `POST /orders`. Fuentes: `openapi.yaml` (`POST /orders`,
+Estado: **acuerdos de C3 cerrados** para las tres funciones de pedidos. Las
+convenciones de `fn_crear_pedido` registran decisiones de los PR #93 y #114; los
+pendientes 3–8 y 10 los decidió Omar en el PR #113 y David confirmó su
+incorporación a este documento. Este documento no crea funciones. El cambio de
+`openapi.yaml` del PR #93 declara el 404 ya acordado para `POST /orders`.
+Fuentes: `openapi.yaml` (`POST /orders`,
 `/orders/{id}/analyze`, `/orders/{id}/decision` y sus schemas),
 `docs/06_PLAN_EQUIPO.md §3 C3`,
 `docs/04_SPEC_MAESTRA.md §5 F1 y §8`, `db/01_esquema.sql`,
 `db/02_reglas_y_accesos.sql`, `db/07_integridad_preseed.sql` y
-`db/04_consultas_demo.sql`. Las decisiones que esas fuentes no cierran se
-enumeran al final; **no se deben implementar como supuestos silenciosos**.
+`db/04_consultas_demo.sql`. El *Registro de acuerdos* del final recoge las
+decisiones ya cerradas; **no se deben implementar como supuestos silenciosos**
+distintos.
 
 ## Convenciones de las tres funciones
 
@@ -31,14 +33,15 @@ enumeran al final; **no se deben implementar como supuestos silenciosos**.
   `FORBIDDEN`, `P0404` → 404 `NOT_FOUND`, `P0409` → 409 `INVALID_STATE` o
   `CONFLICT`, y `P0422` → 422 `VALIDATION`. FastAPI convierte la excepción al
   schema `Error` de OpenAPI. El 401 `UNAUTHORIZED` por JWT ausente/inválido y el
-  502 `UPSTREAM_AI` pertenecen a FastAPI, no a estas funciones. El formato
-  concreto de `Error.error.details` para señalar un ítem queda pendiente.
+  502 `UPSTREAM_AI` pertenecen a FastAPI, no a estas funciones. El formato de
+  `Error.error.details` para señalar un ítem es
+  `{field, index?, product_id?, message?}` (acuerdo 10).
 - No se agregan campos de respuesta HTTP a los schemas congelados. Los nombres
   `p_*` son parámetros internos SQL, no claves nuevas de la API.
 
 ## 1. `fn_crear_pedido`
 
-**Firma SQL propuesta** (coincide en orden y tipos conceptuales con C3):
+**Firma SQL acordada** (coincide en orden y tipos conceptuales con C3):
 
 ```sql
 abastece.fn_crear_pedido(
@@ -85,10 +88,10 @@ FastAPI responde 201 si `created=true` y 200 si `created=false`, retirando
 **Errores:** `P0403` para perfil/rol no permitido o punto no asignado;
 `P0422` para mes, tipo, adicional sin motivo/enlace, enlace inexistente,
 ítems vacíos/repetidos, producto inexistente/inactivo o cantidad inválida.
-FastAPI señala el ítem inválido en `Error.error.details`, conforme a OpenAPI;
-el formato exacto de ese detalle se acuerda con Omar. Si otro actor reutiliza
-una `Idempotency-Key`, `P0404` se traduce a HTTP 404 con `NotFound` porque el
-pedido no es visible. `POST /orders` no anuncia 409.
+FastAPI señala el ítem inválido en `Error.error.details` con
+`{field, index?, product_id?, message?}` (acuerdo 10), conforme a OpenAPI. Si
+otro actor reutiliza una `Idempotency-Key`, `P0404` se traduce a HTTP 404 con
+`NotFound` porque el pedido no es visible. `POST /orders` no anuncia 409.
 
 **Transacción:** comprobar autorización e idempotencia, insertar pedido e ítems
 en una misma llamada. Cualquier error revierte la inserción completa. La clave
@@ -96,21 +99,25 @@ en una misma llamada. Cualquier error revierte la inserción completa. La clave
 
 ## 2. `fn_analizar_reglas`
 
-**Firma SQL propuesta para poder comprobar permisos dentro de SQL:**
+**Firma SQL acordada** (acuerdos 3 y 4; sustituye a `fn_analizar_reglas(order)`
+de C3, cuya fila se actualiza en `docs/06_PLAN_EQUIPO.md`):
 
 ```sql
-abastece.fn_analizar_reglas(p_staff uuid, p_order uuid) RETURNS jsonb
+abastece.fn_analizar_reglas(
+  p_staff uuid, p_order uuid, p_proposal jsonb
+) RETURNS jsonb
 ```
 
-C3 escribe `fn_analizar_reglas(order)`; añadir `p_staff` es una **modificación
-propuesta pendiente de acuerdo** (3). Con la conexión privilegiada del backend,
-`p_order` solo no identifica al actor y no permite aplicar la regla de autoría
-de OpenAPI dentro de la función. No se aceptará un `staff` enviado por el cliente.
+Con la conexión privilegiada del backend, `p_order` solo no identifica al actor
+y no permite aplicar la regla de autoría de OpenAPI dentro de la función; por
+eso se añade `p_staff`. No se aceptará un `staff` enviado por el cliente.
 
 **Entrada:** `p_order` UUID obligatorio, tomado de `{id}`; `p_staff` UUID
-obligatorio e interno, resuelto del JWT. **No hay parámetro JSONB** en esta
-versión: el endpoint no tiene cuerpo. El resultado de Jev se obtiene fuera de
-esta función; la integración transaccional sigue pendiente (4).
+obligatorio e interno, resuelto del JWT; `p_proposal` JSONB obligatorio con la
+propuesta de IA ya obtenida por FastAPI dentro del endpoint. El endpoint no
+tiene cuerpo: `p_proposal` no es una clave de la API, sino el parámetro interno
+con el que el backend entrega a SQL el log de IA (`mock`/`typesafe`), **nunca**
+el log de `rules`. La llamada externa a Jev ocurre fuera de la transacción.
 
 **Validaciones y permisos:** perfil activo con rol `administrador`, `auxiliar`
 o `supervisor`; para los dos últimos, `orders.requested_by=p_staff`. Pedido
@@ -129,33 +136,36 @@ bloquea el pedido y lee sus ítems. Reutiliza las reglas de
   kind: "possible_duplicate" | "missing_from_kit"}`. Toda nueva incidencia
   lleva `location_id=orders.location_id`, `order_id=p_order`,
   `created_by=p_staff` y `created_at=reference_at`; el FK compuesto de `07`
-  impide mezclar pedido y punto. El criterio exacto de «abierta» y la
-  granularidad de deduplicación quedan pendientes (5).
+  impide mezclar pedido y punto. «Abierta» = `open` o `under_review`; la
+  deduplicación es por `(order_id, kind)`; `code` es `INC-NNN` siguiente al
+  máximo, conforme a `db/08` (acuerdo 5).
 
-**Salida JSONB propuesta para la parte SQL:** objeto con `order_id` UUID y
-los tres arreglos `duplicates`, `missing_kit`, `incidents` anteriores, incluso
-si están vacíos. Este objeto es el fragmento de reglas de `AnalysisResult`,
-**no** una respuesta HTTP completa: `AnalysisResult` también exige `proposal`
-con `source`, `model`, `status`, `answers` y `decision_log_id`. FastAPI no debe
-presentar este fragmento como si cumpliera por sí solo el schema de OpenAPI.
+**Salida JSONB acordada:** el `AnalysisResult` completo (acuerdo 4). La función
+devuelve `order_id`, los tres arreglos `duplicates`, `missing_kit` e
+`incidents` (vacíos si no hay nada) y `proposal` con `source`, `model`,
+`status`, `answers` y `decision_log_id`, a partir del log de IA recibido en
+`p_proposal`. El backend presenta este objeto como respuesta de
+`POST /orders/{id}/analyze`; ya no compone la `proposal` fuera de SQL.
 
-**Persistencia y transacción:** las incidencias nuevas y el registro
-`decision_logs` de proveedor `rules` (no IA) deben quedar junto al análisis de
-reglas en la misma transacción, sin duplicarse indebidamente. La propuesta de
-Jev `mock`/`typesafe` y su `decision_log_id` también deben persistirse según
-HU-1.2, pero C3 no define cómo pasarla a esta única llamada SQL. La forma de
-lograr la respuesta completa y el rollback coherente se decide en el pendiente
-4. Si Jev falla, OpenAPI anuncia 502 `UPSTREAM_AI` y estado
-`human_review`; la secuencia exacta de persistencia también forma parte de ese
-acuerdo. La función de reglas no transforma alertas en decisiones humanas.
+**Persistencia y transacción:** las incidencias nuevas, el registro
+`decision_logs` de proveedor `rules` (no IA) y el log de IA `mock`/`typesafe`
+tomado de `p_proposal` (con su `decision_log_id`) se escriben junto al análisis
+en la misma transacción, sin duplicarse indebidamente. Si Jev falla, el backend
+pasa un `p_proposal` de fallo; la función **no lanza error**: guarda
+`provider='typesafe'`, `status='human_review'`, `response {"error":"timeout"}`,
+las reglas y las incidencias, y devuelve el resultado. Qué HTTP se responde lo
+decide FastAPI, no el SQL: `openapi.yaml` (congelado) declara 502
+`UPSTREAM_AI` para `/analyze` con la propuesta ya guardada en `human_review`.
+La función de reglas no transforma alertas en decisiones humanas.
 
 **Errores:** `P0403` → 403, `P0404` → 404; 502 lo emite FastAPI ante el
-proveedor externo. OpenAPI no anuncia 409 ni 422 para este endpoint. El
-comportamiento al analizar un pedido en otro estado queda pendiente (6).
+proveedor externo. OpenAPI no anuncia 409 ni 422 para este endpoint. Analizar
+un pedido que no está en `submitted` no es un error (acuerdo 6): devuelve 200
+con los tres arreglos vacíos, sin llamar a Jev.
 
 ## 3. `fn_decidir_pedido`
 
-**Firma SQL propuesta** (C3):
+**Firma SQL acordada** (C3):
 
 ```sql
 abastece.fn_decidir_pedido(
@@ -171,7 +181,7 @@ abastece.fn_decidir_pedido(
 |---|---|---|
 | `p_decision` | Obligatorio, texto (`decision`) | `approve`, `return` o `cancel`. |
 | `p_reason` | Condicional, texto (`reason`) | Obligatorio y no vacío tras `btrim` para `return`, `cancel` y `approve` con alguna cantidad corregida. |
-| `p_items` | Opcional; solo para `approve`, arreglo JSONB (`items`) | Cada objeto exige `product_id` UUID y `approved_qty` numérico `>= 0`, representable en `numeric(12,3)`; pertenece al pedido y no se repite. El significado de omitir la lista o alguna línea queda pendiente (7). |
+| `p_items` | Opcional; solo para `approve`, arreglo JSONB (`items`) | Cada objeto exige `product_id` UUID y `approved_qty` numérico `>= 0`, representable en `numeric(12,3)`; pertenece al pedido y no se repite. Sin la lista se aprueba `requested_qty`; con lista parcial, las líneas ausentes se aprueban por `requested_qty`; `approved_qty > requested_qty` → `P0422` (acuerdo 7). |
 
 Forma del JSONB `p_items` si está presente:
 `Array<{ product_id: uuid; approved_qty: numeric(12,3) >= 0 }>`.
@@ -183,10 +193,11 @@ Se bloquea la fila del pedido con `FOR UPDATE` y se exige estado
 `return` pasa a `draft`; `cancel` pasa a `cancelled`. Se escribe un
 `audit_events` con `actor_id=p_staff`, `location_id` del pedido,
 `entity_type`/`entity_id`, estado anterior y posterior, acción y
-`occurred_at=reference_at`. El motivo de la decisión debe quedar auditable;
-**no debe sobrescribir** `orders.reason`, que pertenece a la justificación de
-un pedido adicional. La estructura interna exacta del evento queda pendiente
-(8). La propuesta IA nunca ejecuta la decisión.
+`occurred_at=reference_at`. El motivo de la decisión se conserva en
+`after_state` como `{decision, reason, items}` (acuerdo 8); **no** se
+sobrescribe `orders.reason`, que pertenece a la justificación de un pedido
+adicional, ni se toca `decision_logs.status`. La propuesta IA nunca ejecuta la
+decisión.
 
 **Salida JSONB:** exactamente `OrderResult`: `id` UUID, `code` texto y
 `status="approved" | "draft" | "cancelled"`, según `p_decision`. FastAPI
@@ -196,15 +207,15 @@ responde 200 con ese objeto.
 su propio pedido; `P0404` → 404 si el pedido no existe/no es visible;
 `P0409` → 409 `INVALID_STATE` si no está en `submitted`;
 `P0422` → 422 por decisión, motivo, lista, producto o cantidad inválidos.
-El 401 por JWT inválido lo devuelve FastAPI. El detalle de qué ítem falló
-debe conservar el schema `Error`, con formato interno aún por acordar.
+El 401 por JWT inválido lo devuelve FastAPI. El detalle de qué ítem falló usa
+`Error.error.details` con `{field, index?, product_id?, message?}` (acuerdo 10).
 
 **Transacción:** autorización, bloqueo, validaciones, actualización de
 `order_items`/`orders` y `audit_events` en una sola llamada. Cualquier error
 revierte todas las escrituras; dos decisiones concurrentes no pueden aprobar
 el mismo pedido dos veces.
 
-## Registro de acuerdos y pendientes de C3
+## Registro de acuerdos de C3
 
 1. **Código nuevo de pedido — acordado para la demo.** `PED-DEMO-NNN` siguiente
    al máximo, protegido por un advisory lock transaccional global. La
@@ -213,37 +224,39 @@ el mismo pedido dos veces.
    incluso con otro cuerpo: devuelve el pedido original e ignora el cuerpo
    nuevo. Otro actor: `P0404` → 404, sin revelar el pedido. El booleano interno
    `created` distingue HTTP 201 de 200 y FastAPI lo retira de `OrderResult`.
-3. **Identidad en análisis.** Confirmar `p_staff` en
-   `fn_analizar_reglas`; C3 enumera solo `order`, pero sus permisos no pueden
-   verificarse de forma segura con ese dato bajo la conexión privilegiada.
-4. **Jev, `proposal` y atomicidad.** Definir qué datos internos entrega Omar a
-   SQL, cuándo llama a Jev, cómo se guardan los logs `rules` y
-   `mock`/`typesafe`, cómo se obtiene `decision_log_id`, y cómo se compone el
-   `AnalysisResult` completo en **una** llamada SQL de escritura. Definir
-   también la persistencia de `human_review` cuando el proveedor falla y el
-   endpoint responde 502, sin fingir que una transacción SQL cubre la red.
-5. **Incidencias repetidas.** Acordar si «abierta» incluye `under_review`,
-   si se deduplica por `(order_id, kind)` o por cada evidencia/producto, y
-   cómo generar `code`, `severity` y `description` de una incidencia nueva.
-   El schema solo fija el arreglo devuelto y la ausencia de duplicados al repetir.
-6. **Estado en análisis.** OpenAPI no especifica si un pedido distinto de
-   `submitted` se analiza, se devuelve con arreglos vacíos o se rechaza; 409
-   no aparece entre las respuestas de ese endpoint.
-7. **Cantidades al aprobar.** `DecisionRequest.items` es opcional y no exige
-   cubrir todas las líneas. Acordar si ausencia implica `requested_qty`, si
-   una lista parcial deja las demás en su cantidad solicitada y si una
-   `approved_qty` puede superar la solicitada (OpenAPI solo fija el mínimo 0).
-8. **Motivo y auditoría.** Definir el JSON interno de `audit_events` para
-   conservar el motivo de decisión sin pisar `orders.reason`, y si aceptar o
-   rechazar una propuesta actualiza también su `decision_logs.status`.
+3. **Identidad en análisis — acordado.** `fn_analizar_reglas` recibe `p_staff`
+   además de `p_order`: con la conexión privilegiada del backend, `p_order`
+   solo no identifica al actor. Se actualiza la fila de C3 en
+   `docs/06_PLAN_EQUIPO.md`.
+4. **Jev, `proposal` y atomicidad — acordado.** FastAPI llama a Jev fuera de la
+   transacción y entrega el log de IA en `p_proposal` (`mock`/`typesafe`,
+   **nunca** el de `rules`). La función escribe en la misma transacción las
+   incidencias, el log `rules` y la propuesta de IA, y devuelve el
+   `AnalysisResult` completo con su `decision_log_id`. Si Jev falla, `p_proposal`
+   llega como fallo y la función guarda `provider='typesafe'`,
+   `status='human_review'` y `response {"error":"timeout"}`, devuelve el
+   resultado sin lanzar error; el 502 lo emite FastAPI (OpenAPI congelado).
+5. **Incidencias repetidas — acordado.** «Abierta» = `open` o `under_review`;
+   se deduplica por `(order_id, kind)`; `code` es `INC-NNN` siguiente al máximo,
+   conforme a `db/08`.
+6. **Estado en análisis — acordado.** Un pedido que no está en `submitted` se
+   analiza igual: 200 con los arreglos vacíos, sin llamar a Jev y sin 409.
+7. **Cantidades al aprobar — acordado.** Sin `items`, aprobado =
+   `requested_qty`; con lista parcial, las líneas ausentes quedan en
+   `requested_qty`; `approved_qty > requested_qty` → `P0422`.
+8. **Motivo y auditoría — acordado.** El motivo se audita en
+   `audit_events.after_state` como `{decision, reason, items}`; **no** se toca
+   `orders.reason` ni `decision_logs.status`.
 9. **Pedido relacionado — acordado.** `additional` exige un pedido existente
    del mismo punto y ciclo y un motivo no vacío. `regular` con enlace o motivo
    relleno → `P0422`.
-10. **Detalles de validación.** Acordar cómo traducir `P0422` a
-    `Error.error.details` para señalar campo, índice de ítem y producto sin
+10. **Detalles de validación — acordado.** `P0422` se traduce a
+    `Error.error.details` como `{field, index?, product_id?, message?}`, sin
     cambiar OpenAPI.
 
-Las decisiones de `fn_crear_pedido` anteriores documentan acuerdos de los PR
-#93 y #114; Omar confirmará la redacción al regresar. Los contratos de análisis
-y decisión siguen en revisión. `09_fn_pedidos.sql` se revisa por separado en
-el PR #114.
+Los acuerdos 1–2 y 9 documentan los PR #93 y #114; los acuerdos 3–8 y 10
+quedaron decididos por Omar en el PR #113 y confirmados por David para este
+documento. Con esto, los contratos de `fn_analizar_reglas` y `fn_decidir_pedido`
+quedan cerrados y son la base de D-1.2 (#29) y D-1.3 (#30). `09_fn_pedidos.sql`
+(D-1.1) ya está en `main`; las funciones de análisis y decisión se añaden por
+separado.

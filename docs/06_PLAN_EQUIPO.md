@@ -86,7 +86,7 @@ FastAPI valida JWT, rol y punto, y luego llama **una** función. Cada función e
 | Función (esquema `abastece`) | Archivo | La llama |
 |---|---|---|
 | `fn_crear_pedido(staff, location, cycle_month, order_type, related_order, reason, observations, items jsonb, idempotency_key)` | `09_fn_pedidos.sql` | `POST /orders` |
-| `fn_analizar_reglas(order)` → `{duplicates, missing_kit}` + incidencias sin duplicar | `09_fn_pedidos.sql` | `POST /orders/{id}/analyze` |
+| `fn_analizar_reglas(staff, order, proposal jsonb)` → `AnalysisResult` completo + incidencias sin duplicar | `09_fn_pedidos.sql` | `POST /orders/{id}/analyze` |
 | `fn_decidir_pedido(staff, order, decision, items jsonb, reason)` — `approve` \| `return` \| `cancel` | `09_fn_pedidos.sql` | `POST /orders/{id}/decision` |
 | `fn_preparar(staff, order, items jsonb, dry_run)` — FEFO adentro | `10_fn_bodega.sql` | `POST /orders/{id}/prepare` |
 | `fn_confirmar_ruta(staff, vehicle, dispatch_date, stops jsonb, km, minutes, method)` → crea plan, paradas y envíos | `11_fn_envios.sql` | `POST /routes/confirm` |
