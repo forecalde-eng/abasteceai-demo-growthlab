@@ -25,9 +25,17 @@ frontend/      React + Vite (pendiente, T0.7)
 
 ## Verificar la base localmente
 
+Se necesita Node.js y npm. Las pruebas usan PGlite `0.5.10` en una carpeta temporal: no se conectan a Supabase ni modifican la base remota. Desde la raíz del repositorio:
+
 ```bash
-mkdir -p /tmp/abastece-verify && cp db/verificar_postgres.mjs db/verificar_07_integridad.mjs db/0[1-4]_*.sql db/07_integridad_preseed.sql /tmp/abastece-verify/
-cd /tmp/abastece-verify && npm init -y && npm i @electric-sql/pglite@0.5.10 && node verificar_postgres.mjs && node verificar_07_integridad.mjs
+mkdir -p /tmp/abastece-verify
+cp db/verificar_postgres.mjs db/verificar_07_integridad.mjs db/verificar_funciones.mjs db/0[1-4]_*.sql db/07_integridad_preseed.sql db/08_proveedor_openai.sql /tmp/abastece-verify/
+cd /tmp/abastece-verify
+npm init -y
+npm install --save-exact @electric-sql/pglite@0.5.10
+node verificar_postgres.mjs
+node verificar_07_integridad.mjs
+node verificar_funciones.mjs
 ```
 
-Resultados esperados: `{"tests_passed":61}` y `{"tests_passed":29,"remote_calls":0}`.
+Resultados esperados: `{"tests_passed":61}`, `{"tests_passed":29,"remote_calls":0}` y 13 pruebas TAP aprobadas para D-0.1 (12 casos y su prueba contenedora). El último verificador carga 01 → 02 → 07 → 03 → 08 y prueba el proveedor OpenAI y las restricciones existentes.

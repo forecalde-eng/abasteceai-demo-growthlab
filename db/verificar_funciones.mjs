@@ -1,5 +1,5 @@
 // Pruebas locales con datos ficticios; no requieren Supabase ni APIs de IA.
-// Desde la raíz del repositorio: node db/verificar_funciones.mjs
+// Con PGlite instalado en la carpeta temporal del README: node verificar_funciones.mjs
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {test} from 'node:test';
@@ -24,7 +24,7 @@ test('D-0.1: proveedor OpenAI y restricciones de decision_logs', async t => {
    GRANT USAGE ON SCHEMA auth TO authenticated;
    GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
   `);
-  for (const file of ['01_esquema.sql', '02_reglas_y_accesos.sql', '03_datos_ficticios.sql']) {
+  for (const file of ['01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql', '03_datos_ficticios.sql']) {
    await db.exec(readSql(file));
   }
 
@@ -41,7 +41,7 @@ test('D-0.1: proveedor OpenAI y restricciones de decision_logs', async t => {
    ) AS uses_demo_clock
   `, [provider, tokens, cost]);
 
-  await t.test('OpenAI se rechaza antes de aplicar 07', async () => {
+  await t.test('OpenAI se rechaza antes de aplicar 08', async () => {
    await assert.rejects(() => insertLog('openai'), {
     code: '23514', constraint: 'decision_logs_provider_check',
    });
@@ -49,7 +49,7 @@ test('D-0.1: proveedor OpenAI y restricciones de decision_logs', async t => {
 
   const existingLogs = (await db.query('SELECT * FROM abastece.decision_logs ORDER BY id')).rows;
   assert.ok(existingLogs.length > 0, 'El seed debe contener decisiones');
-  await db.exec(readSql('07_proveedor_openai.sql'));
+  await db.exec(readSql('08_proveedor_openai.sql'));
 
   await t.test('La migración conserva todos los registros del seed', async () => {
    assert.deepEqual(
@@ -81,7 +81,7 @@ test('D-0.1: proveedor OpenAI y restricciones de decision_logs', async t => {
   }
 
   await t.test('La migración se puede ejecutar de nuevo', async () => {
-   await db.exec(readSql('07_proveedor_openai.sql'));
+   await db.exec(readSql('08_proveedor_openai.sql'));
    assert.equal((await insertLog('openai')).rows.length, 1);
    await assert.rejects(() => insertLog('invalid'), {
     code: '23514', constraint: 'decision_logs_provider_check',
