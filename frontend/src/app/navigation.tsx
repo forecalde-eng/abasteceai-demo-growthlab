@@ -20,6 +20,7 @@ import {
 import type { Role } from "@/app/dev/session";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { Inicio } from "@/app/pages/Inicio";
+import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
 
@@ -110,14 +111,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-1.2",
     desc: "Pedidos del usuario con su estado actual y acceso al detalle.",
-    element: (
-      <Placeholder
-        title="Mis pedidos"
-        task="J-1.2"
-        owner="Jorge"
-        desc="Pedidos del usuario con su estado actual y acceso al detalle."
-      />
-    ),
+    element: <MisPedidos />,
   },
   {
     path: "/supervisor",

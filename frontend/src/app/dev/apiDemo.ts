@@ -3,7 +3,7 @@
  *
  * Imita el contrato C2 (`docs/06_PLAN_EQUIPO.md` §3) con las **mismas firmas**, para que
  * las pantallas no cambien cuando llegue lo real:
- *   - lecturas  → `useProducts()`, `useOrders(filtro)`   (hoy devuelven `@/mocks`, B-0.1)
+ *   - lecturas  → `useProducts()`, `useOrders(filtro)`, `useLocations(scope)`  (hoy `@/mocks`, B-0.1)
  *   - escritura → `createOrder(datos)`                    (hoy valida y guarda en memoria)
  *
  * Los componentes NUNCA llaman a Supabase ni a `fetch` directamente (AGENTS.md §12): usan
@@ -17,10 +17,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { orders, products, type Order, type Product } from "@/mocks";
+import { locations, orders, products, type Location, type Order, type Product } from "@/mocks";
 
 import { FECHA_REFERENCIA, PUNTOS_POR_STAFF } from "@/app/dev/datosDemo";
-import { STAFF_ID_POR_ROL, rolActual } from "@/app/dev/session";
+import { STAFF_ID_POR_ROL, rolActual, useSession } from "@/app/dev/session";
 
 /** Latencia simulada, para que se vean los estados de carga. */
 const esperar = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -67,19 +67,57 @@ export function useProducts() {
   });
 }
 
-/** Lista de lectura: pedidos, con filtro opcional por punto y mes. */
+/**
+ * Lista de lectura: pedidos visibles, con filtro opcional por punto y mes.
+ *
+ * Visibilidad = mímica de RLS (invariante I8): quien tiene puntos asignados solo ve los suyos
+ * (`useSession().points`); los roles de alcance total (sin asignaciones explícitas) ven todo.
+ * Incluye los pedidos creados en esta sesión de demo, con el más reciente primero.
+ */
 export function useOrders(filtro?: FiltroPedidos) {
+  const { data: sesion } = useSession();
+  const puntos = sesion?.points ?? [];
+  const verTodos = puntos.length === 0;
+  const ids = puntos.map((punto) => punto.id);
+
   return useQuery<Order[]>({
-    queryKey: ["demo", "pedidos", filtro?.locationId ?? null, filtro?.cycleMonth ?? null],
+    queryKey: [
+      "demo",
+      "pedidos",
+      verTodos ? "todos" : ids,
+      filtro?.locationId ?? null,
+      filtro?.cycleMonth ?? null,
+    ],
     // Sin caché: así una pantalla abierta después ve los pedidos creados en esta sesión.
     staleTime: 0,
     queryFn: async () => {
       await esperar(200);
-      return [...orders, ...creados].filter(
-        (pedido) =>
-          (!filtro?.locationId || pedido.location_id === filtro.locationId) &&
-          (!filtro?.cycleMonth || pedido.cycle_month === filtro.cycleMonth),
-      );
+      return [...orders, ...creados]
+        .filter((pedido) => verTodos || ids.includes(pedido.location_id))
+        .filter((pedido) => (!filtro?.locationId || pedido.location_id === filtro.locationId))
+        .filter((pedido) => (!filtro?.cycleMonth || pedido.cycle_month === filtro.cycleMonth))
+        .sort((a, b) => b.code.localeCompare(a.code));
+    },
+  });
+}
+
+/**
+ * Lista de lectura: puntos de servicio (`useLocations(scope)`, contrato C2).
+ * `"asignados"` respeta la misma visibilidad que `useOrders`; `"todos"` da el catálogo entero.
+ */
+export function useLocations(scope: "asignados" | "todos" = "asignados") {
+  const { data: sesion } = useSession();
+  const puntos = sesion?.points ?? [];
+  const verTodos = puntos.length === 0;
+  const ids = puntos.map((punto) => punto.id);
+
+  return useQuery<Location[]>({
+    queryKey: ["demo", "locations", scope, verTodos ? "todos" : ids],
+    staleTime: Infinity,
+    queryFn: async () => {
+      await esperar(100);
+      if (scope === "todos" || verTodos) return locations;
+      return locations.filter((punto) => ids.includes(punto.id));
     },
   });
 }
