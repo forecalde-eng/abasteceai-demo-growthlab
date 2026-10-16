@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
-import { ROLES, useSession } from "@/app/dev/session";
+import { ROLES } from "@/app/dev/roles";
+import { useSession } from "@/data";
 import { Button, EmptyState } from "@/ui";
 
 /** Se muestra cuando el rol de la sesión no tiene permiso para la ruta (lo decide `RequireRole`). */

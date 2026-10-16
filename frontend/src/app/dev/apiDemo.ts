@@ -41,7 +41,8 @@ import {
 
 import { FECHA_REFERENCIA, PUNTOS_POR_STAFF } from "@/app/dev/datosDemo";
 import { DOCUMENTOS_DEMO, type DocumentoDemo } from "@/app/dev/documentosDemo";
-import { STAFF_ID_POR_ROL, rolActual, useSession } from "@/app/dev/session";
+import { STAFF_ID_POR_ROL, rolActual } from "@/app/dev/roles";
+import { useSession } from "@/data";
 
 /** Latencia simulada, para que se vean los estados de carga. */
 const esperar = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

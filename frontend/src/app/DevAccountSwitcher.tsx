@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { CheckIcon, ChevronDownIcon, Loader2Icon, UserRoundIcon } from "lucide-react";
 
 import { PANTALLA_PRINCIPAL, cambiarCuenta } from "@/app/dev/cuentasDemo";
-import { ROLES, ROLE_ORDER, useSession, type Role } from "@/app/dev/session";
+import { ROLE_ORDER, ROLES } from "@/app/dev/roles";
+import { useSession, type Role } from "@/data";
 import { toast } from "@/ui";
 
 /**

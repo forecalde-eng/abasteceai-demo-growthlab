@@ -2,7 +2,8 @@
 import { Link } from "react-router-dom";
 
 import { gruposDeRol } from "@/app/navigation";
-import { ROLES, USAR_SESION_TEMPORAL, useSession } from "@/app/dev/session";
+import { ROLES } from "@/app/dev/roles";
+import { useMocks, useSession } from "@/data";
 import {
   Badge,
   Button,
@@ -120,7 +121,7 @@ export function Inicio() {
         </CardContent>
       </Card>
 
-      {USAR_SESION_TEMPORAL ? (
+      {useMocks ? (
         <p className="text-xs text-muted-foreground">
           El rol se elige con «Cambiar de cuenta» (solo en modo dev), que abre el menú de las 7 cuentas de la demo para cambiar entre ellas en dos clics.
           Desaparecerá cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
