@@ -13,9 +13,8 @@ from fastapi import APIRouter, Depends, Header
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.auth import Me, require_roles
+from app.auth import Me, ensure_point, require_roles
 from app.db import call_fn
-from app.errors import ApiError
 
 router = APIRouter(tags=["pedidos"])
 
@@ -41,8 +40,7 @@ def create_order(
     idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=1)],
     me: Annotated[Me, Depends(require_roles("auxiliar", "supervisor"))],
 ) -> JSONResponse:
-    if str(body.location_id) not in {p["id"] for p in me.points}:
-        raise ApiError(403, "FORBIDDEN", "Punto no asignado.")
+    ensure_point(me, body.location_id)
     resultado = call_fn(
         "fn_crear_pedido",
         me.staff_id,
