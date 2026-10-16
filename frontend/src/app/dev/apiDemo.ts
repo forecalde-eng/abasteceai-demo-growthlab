@@ -4,8 +4,9 @@
  * Imita el contrato C2 (`docs/06_PLAN_EQUIPO.md` §3) con las **mismas firmas**, para que
  * las pantallas no cambien cuando llegue lo real:
  *   - lecturas  → `useProducts()`, `useOrders(filtro)`, `useOrder(id)`, `useLocations(scope)`,
- *                 `useIncidents(filtro)`, `useAnalysis(orderId)`   (hoy `@/mocks`, B-0.1)
- *   - escrituras → `createOrder(datos)`, `analyzeOrder(id)`, `decideOrder(id, datos)` (J-1.4)
+ *                 `useIncidents(filtro)`, `useAnalysis(orderId)`, `useShipments(filtro)`
+ *   - escrituras → `createOrder(datos)`, `analyzeOrder(id)`, `decideOrder(id, datos)` (J-1.4),
+ *                  `markDelivered(id)` (J-2.1)
  *
  * Los componentes NUNCA llaman a Supabase ni a `fetch` directamente (AGENTS.md §12): usan
  * estas funciones. `createOrder` es una función, no un hook: se envuelve con `useMutation`,
@@ -25,12 +26,14 @@ import {
   orderItems,
   orders,
   products,
+  shipments,
   type DecisionLog,
   type Incident,
   type Location,
   type Order,
   type OrderItem,
   type Product,
+  type Shipment,
 } from "@/mocks";
 
 import { FECHA_REFERENCIA, PUNTOS_POR_STAFF } from "@/app/dev/datosDemo";
@@ -53,8 +56,8 @@ let siguienteNumero = orders.length + 1; // 27 → PED-DEMO-027
 const incidenciasAnalisis: Incident[] = [];
 /** Último análisis por pedido (`useAnalysis(orderId)`); la base lo guarda en `decision_logs`. */
 const analisisPorPedido = new Map<string, AnalysisResult>();
-/** Estado nuevo de los pedidos decididos en esta sesión (`id` → estado). */
-const estadosDecididos = new Map<string, Order["status"]>();
+/** Estado nuevo de los pedidos cambiado en esta sesión (`id` → estado); lo real lo manda la base. */
+const estadosPedidoSesion = new Map<string, Order["status"]>();
 let siguienteIncidenciaDemo = 1;
 
 /** Los dos tipos de alerta que produce el análisis (`fn_analizar_reglas`). */
@@ -123,7 +126,7 @@ export function useOrders(filtro?: FiltroPedidos) {
       await esperar(200);
       return [...orders, ...creados]
         // Refleja las decisiones tomadas en esta sesión (el estado real lo manda la base).
-        .map((pedido) => ({ ...pedido, status: estadosDecididos.get(pedido.id) ?? pedido.status }))
+        .map((pedido) => ({ ...pedido, status: estadosPedidoSesion.get(pedido.id) ?? pedido.status }))
         .filter((pedido) => verTodos || ids.includes(pedido.location_id))
         .filter((pedido) => (!filtro?.locationId || pedido.location_id === filtro.locationId))
         .filter((pedido) => (!filtro?.cycleMonth || pedido.cycle_month === filtro.cycleMonth))
@@ -353,7 +356,7 @@ function pedidoPorId(orderId: string): Order | undefined {
 
 /** Aplica el estado decidido en esta sesión (el real vive en la base). */
 function conEstadoActual(pedido: Order): Order {
-  return { ...pedido, status: estadosDecididos.get(pedido.id) ?? pedido.status };
+  return { ...pedido, status: estadosPedidoSesion.get(pedido.id) ?? pedido.status };
 }
 
 /** `order_items` del pedido con su `product`, sin duplicar tablas. */
@@ -572,7 +575,7 @@ export async function decideOrder(orderId: string, datos: DecisionInput): Promis
   const pedido = pedidoPorId(orderId);
   if (!pedido) throw new ErrorApi(404, "NOT_FOUND", "El pedido no existe.");
 
-  const estadoActual = estadosDecididos.get(pedido.id) ?? pedido.status;
+  const estadoActual = estadosPedidoSesion.get(pedido.id) ?? pedido.status;
   if (estadoActual !== "submitted") {
     throw new ErrorApi(409, "INVALID_STATE", "Solo se puede decidir un pedido enviado.");
   }
@@ -611,6 +614,144 @@ export async function decideOrder(orderId: string, datos: DecisionInput): Promis
       : datos.decision === "return"
         ? "draft"
         : "cancelled";
-  estadosDecididos.set(pedido.id, nuevoEstado);
+  estadosPedidoSesion.set(pedido.id, nuevoEstado);
   return { id: pedido.id, code: pedido.code, status: nuevoEstado };
+}
+
+// --- J-2.1 · envíos del supervisor (contrato C2, capa temporal) -------------------------
+
+/** Filtro de envíos (`useShipments(filtro)`, contrato C2). */
+export type FiltroEnvios = {
+  locationId?: string;
+  orderId?: string;
+  status?: Shipment["status"];
+};
+
+/** Envío con su pedido y su punto resueltos (la UI muestra códigos, nunca UUID). */
+export type EnvioDetalle = Shipment & { order: Order; location: Location };
+
+/** Lo que devuelve `POST /shipments/{id}/delivered` (`schemas.ShipmentResult`). */
+export type ShipmentResult = {
+  id: string;
+  code: string;
+  status: Shipment["status"];
+  order_id: string;
+  order_status: Order["status"];
+  guide_code: string;
+};
+
+/** Entregas sin conteo de esta sesión de demo (`shipment.id` → estado y fecha). */
+const entregasSinConteo = new Map<string, Pick<Shipment, "status" | "delivered_at">>();
+
+/** Aplica el cambio de esta sesión al envío (el real vive en la base). */
+function envioConEstadoActual(envio: Shipment): Shipment {
+  const cambio = entregasSinConteo.get(envio.id);
+  return cambio ? { ...envio, ...cambio } : envio;
+}
+
+/**
+ * Lista de lectura: envíos visibles con su pedido y su punto (`useShipments`, contrato C2).
+ *
+ * Misma visibilidad que `useOrders` (RLS, invariante I8): quien tiene puntos asignados solo
+ * ve los envíos de esos puntos; los roles de alcance total ven todos. Ordenados por código
+ * descendente, igual que los pedidos.
+ */
+export function useShipments(filtro?: FiltroEnvios) {
+  const { data: sesion } = useSession();
+  const puntos = sesion?.points ?? [];
+  const verTodos = puntos.length === 0;
+  const ids = puntos.map((punto) => punto.id);
+
+  return useQuery<EnvioDetalle[]>({
+    queryKey: [
+      "demo",
+      "envios",
+      verTodos ? "todos" : ids,
+      filtro?.locationId ?? null,
+      filtro?.orderId ?? null,
+      filtro?.status ?? null,
+    ],
+    // Sin caché: así una pantalla abierta después ve las entregas marcadas en esta sesión.
+    staleTime: 0,
+    queryFn: async () => {
+      await esperar(150);
+      return shipments
+        .map(envioConEstadoActual)
+        .filter((envio) => verTodos || ids.includes(envio.location_id))
+        .filter((envio) => !filtro?.locationId || envio.location_id === filtro.locationId)
+        .filter((envio) => !filtro?.orderId || envio.order_id === filtro.orderId)
+        .filter((envio) => !filtro?.status || envio.status === filtro.status)
+        .map((envio) => {
+          const pedido = pedidoPorId(envio.order_id);
+          return {
+            ...envio,
+            order: pedido ? conEstadoActual(pedido) : undefined,
+            location: locations.find((punto) => punto.id === envio.location_id),
+          };
+        })
+        .filter(
+          (envio): envio is EnvioDetalle =>
+            envio.order !== undefined && envio.location !== undefined,
+        )
+        .sort((a, b) => b.code.localeCompare(a.code));
+    },
+  });
+}
+
+/**
+ * `markDelivered(id)` (POST `/shipments/{id}/delivered`, contrato C2 · HU-2.3).
+ *
+ * // temporal: reemplazar por `fn_marcar_entregado` (D-2.x) vía la Data API.
+ * El envío y su pedido pasan a `delivered_unchecked` y **no** aumenta el stock del punto
+ * (invariante I9): es una entrega sin conteo; el conteo y la conciliación llegan después,
+ * en la recepción (B-2.5). Punto no asignado al usuario → 403. Idempotente por estado: si
+ * ya estaba `delivered_unchecked` devuelve el estado actual; desde `created` o un estado
+ * terminal → 409.
+ */
+export async function markDelivered(shipmentId: string): Promise<ShipmentResult> {
+  await esperar(400);
+  const base = shipments.find((envio) => envio.id === shipmentId);
+  if (!base) throw new ErrorApi(404, "NOT_FOUND", "El envío no existe.");
+  const envio = envioConEstadoActual(base);
+
+  const staffId = STAFF_ID_POR_ROL[rolActual()];
+  const asignados = PUNTOS_POR_STAFF[staffId] ?? [];
+  if (!asignados.includes(envio.location_id)) {
+    throw new ErrorApi(403, "FORBIDDEN", "Ese punto no está entre los que tienes asignados.");
+  }
+
+  const actual = pedidoPorId(envio.order_id);
+  const orderStatus =
+    estadosPedidoSesion.get(envio.order_id) ?? actual?.status ?? "delivered_unchecked";
+
+  // Idempotente por estado: si ya estaba entregado sin conteo, devuelve el estado actual.
+  if (envio.status === "delivered_unchecked") {
+    return {
+      id: envio.id,
+      code: envio.code,
+      status: envio.status,
+      order_id: envio.order_id,
+      order_status: orderStatus,
+      guide_code: envio.guide_code,
+    };
+  }
+  if (envio.status !== "dispatched") {
+    throw new ErrorApi(409, "INVALID_STATE", "Solo se puede marcar entregado un envío despachado.");
+  }
+
+  // El reloj de la demo es fijo (regla 11): nunca `now()`.
+  entregasSinConteo.set(envio.id, {
+    status: "delivered_unchecked",
+    delivered_at: FECHA_REFERENCIA,
+  });
+  // Envío y pedido al mismo estado; el stock del punto NO cambia (I9).
+  estadosPedidoSesion.set(envio.order_id, "delivered_unchecked");
+  return {
+    id: envio.id,
+    code: envio.code,
+    status: "delivered_unchecked",
+    order_id: envio.order_id,
+    order_status: "delivered_unchecked",
+    guide_code: envio.guide_code,
+  };
 }
