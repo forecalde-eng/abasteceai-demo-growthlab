@@ -21,6 +21,7 @@ import type { Role } from "@/app/dev/session";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { DetalleAdmin } from "@/app/pages/DetalleAdmin";
+import { EnviosSupervisor } from "@/app/pages/EnviosSupervisor";
 import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
@@ -124,14 +125,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-2.1",
     desc: "Envíos de los puntos del supervisor y marcado de entrega.",
-    element: (
-      <Placeholder
-        title="Envíos de mis puntos"
-        task="J-2.1"
-        owner="Jorge"
-        desc="Envíos de los puntos del supervisor y marcado de entrega."
-      />
-    ),
+    element: <EnviosSupervisor />,
   },
 
   // --- Revisión (Jorge) ---
