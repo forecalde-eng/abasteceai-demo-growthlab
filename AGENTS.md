@@ -13,7 +13,7 @@ Hackathon Expo Clean Ecuador 2026, Reto 1. Abastecimiento de insumos de limpieza
 ## Stack
 
 - Backend: Python 3.11+ · FastAPI **delgado** (valida JWT, rol y punto; llama a una función SQL) · `uv` · psycopg · pytest · ruff. Carpeta `backend/`.
-- Lógica de escritura: **funciones SQL** `abastece.fn_*` en `db/08+` (contrato en `docs/06_PLAN_EQUIPO.md §3 C3`), probadas con `node db/verificar_funciones.mjs`.
+- Lógica de escritura: **funciones SQL** `abastece.fn_*` en `db/09+` (contrato en `docs/06_PLAN_EQUIPO.md §3 C3`), probadas con `node db/verificar_funciones.mjs`.
 - Frontend: React + TypeScript + Vite + Tailwind + React Router + React Query · Leaflet. Carpeta `frontend/`.
 - Datos: Supabase (Postgres + Auth + RLS), esquema `abastece`. `db/*.sql` es la fuente de verdad.
 - Contrato API: `specs/000-contratos/openapi.yaml` (congelado).

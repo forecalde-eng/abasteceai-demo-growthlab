@@ -63,7 +63,7 @@ def dispatch(shipment_id: UUID, staff: Staff = Depends(require_role("bodega", "l
 
 | ID | Tarea | Hecho cuando |
 |---|---|---|
-| O-3.1 | `POST /admin/reset-demo`: `11_reset_demo.sql` → `03` → re-vincular cuentas (UUIDs en `.env`) | Guion → reset → guion idéntico |
+| O-3.1 | `POST /admin/reset-demo`: `12_reset_demo.sql` → `03` → re-vincular cuentas (UUIDs en `.env`) | Guion → reset → guion idéntico |
 | O-3.2 | **I#3**: ciclo PED-DEMO-001 dos veces con reset | Todos los MUST verdes o bugs para el viernes |
 
 ### Fase 4 — Vie
