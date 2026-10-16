@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { MenuIcon, PackageCheckIcon, XIcon } from "lucide-react";
 
@@ -50,6 +50,20 @@ export function AppLayout() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const { data } = useSession();
   const rol = data ? ROLES[data.role] : null;
+
+  // Con el menú móvil abierto, bloquea el desplazamiento de la página de detrás:
+  // sin esto, la rueda del ratón movía el contenido de fuera del menú.
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const html = document.documentElement;
+    const previo = { body: document.body.style.overflow, html: html.style.overflow };
+    document.body.style.overflow = "hidden";
+    html.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previo.body;
+      html.style.overflow = previo.html;
+    };
+  }, [menuAbierto]);
 
   return (
     <div className="min-h-svh bg-background text-foreground">
