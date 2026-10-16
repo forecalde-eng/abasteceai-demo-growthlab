@@ -105,7 +105,7 @@ export function MisPedidos() {
               title="Todavía no tienes pedidos"
               description="Crea el pedido del mes para uno de tus puntos y aparecerá aquí."
               action={
-                <Button asChild size="sm">
+                <Button asChild size="sm" variant="outline">
                   <Link to="/pedidos/nuevo">Crear pedido</Link>
                 </Button>
               }

@@ -270,7 +270,7 @@ export function UiKit() {
             title="Tabla"
             desc="Listados densos (reposición, pedidos, incidencias). Alinea a la derecha las cifras."
           >
-            <Card className="overflow-hidden p-0">
+            <Card className="overflow-x-auto p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -438,7 +438,7 @@ export function UiKit() {
               open={modalAbierto}
               onOpenChange={setModalAbierto}
               title="Marcar entregado (sin conteo)"
-              description="El envío pasa a delivered_unchecked. No aumenta stock (regla 9)."
+              description="El envío pasa a «Entregado sin conteo». No aumenta stock (regla 9)."
               footer={
                 <>
                   <Button variant="outline" onClick={() => setModalAbierto(false)}>
