@@ -16,8 +16,11 @@ CLAVE = ec.generate_private_key(ec.SECP256R1())
 SECRETO = "s" * 32
 
 
-def token(sub="u-1", alg="ES256", aud="authenticated", exp=3600, clave=None):
-    claims = {"sub": sub, "aud": aud, "exp": int(time.time()) + exp}
+ISS = "https://x.supabase.co/auth/v1"
+
+
+def token(sub="u-1", alg="ES256", aud="authenticated", exp=3600, clave=None, iss=ISS):
+    claims = {"sub": sub, "aud": aud, "iss": iss, "exp": int(time.time()) + exp}
     return jwt.encode(claims, clave or (CLAVE if alg == "ES256" else SECRETO), algorithm=alg)
 
 
@@ -41,6 +44,8 @@ def test_jwt_valido_asimetrico_y_legacy():
     [
         token(exp=-10),
         token(aud="otra"),
+        token(iss="https://otro.supabase.co/auth/v1"),
+        token(alg="HS256", iss="https://otro.supabase.co/auth/v1"),
         token(clave=ec.generate_private_key(ec.SECP256R1())),
         "no-es-un-jwt",
     ],
@@ -49,6 +54,14 @@ def test_jwt_invalido_es_401(malo):
     with pytest.raises(ApiError) as e:
         auth.verificar_jwt(malo)
     assert (e.value.status, e.value.code) == (401, "UNAUTHORIZED")
+
+
+def test_ensure_point():
+    me = auth.Me("s-1", "Ana", "a@x", "auxiliar", [{"id": "p-1"}])
+    auth.ensure_point(me, "p-1")
+    with pytest.raises(ApiError) as e:
+        auth.ensure_point(me, "p-2")
+    assert (e.value.status, e.value.code) == (403, "FORBIDDEN")
 
 
 def test_algoritmo_none_rechazado():

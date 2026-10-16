@@ -37,7 +37,9 @@ def verificar_jwt(token: str) -> str:
             clave, algs = _jwks().get_signing_key_from_jwt(token).key, _ASIMETRICOS
         else:
             raise jwt.InvalidTokenError("algoritmo o configuración no soportados")
-        claims = jwt.decode(token, clave, algorithms=algs, audience="authenticated")
+        # El emisor ata el token a este proyecto aunque otro entorno comparta la clave.
+        emisor = f"{cfg.supabase_url.rstrip('/')}/auth/v1" if cfg.supabase_url else None
+        claims = jwt.decode(token, clave, algorithms=algs, audience="authenticated", issuer=emisor)
         return str(claims["sub"])
     except (jwt.PyJWTError, KeyError) as exc:
         raise ApiError(401, "UNAUTHORIZED", "Sesión inválida o vencida.") from exc
@@ -93,6 +95,12 @@ def get_me(authorization: Annotated[str | None, Header()] = None) -> Me:
     if me is None:
         raise ApiError(403, "FORBIDDEN", "Cuenta sin perfil operativo.")
     return me
+
+
+def ensure_point(me: Me, location_id: object) -> None:
+    """Primer candado de punto: el `location_id` pedido debe estar entre los puntos del usuario."""
+    if str(location_id) not in {p["id"] for p in me.points}:
+        raise ApiError(403, "FORBIDDEN", "Punto no asignado.")
 
 
 def require_roles(*roles: str):
