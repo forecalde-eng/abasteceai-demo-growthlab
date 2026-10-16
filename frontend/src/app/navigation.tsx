@@ -22,6 +22,7 @@ import { Despacho } from "@/features/despacho/Despacho";
 import { InventarioBodega } from "@/features/bodega/InventarioBodega";
 import { ColaBodega } from "@/features/bodega/ColaBodega";
 import { PlanRutas } from "@/features/logistica/PlanRutas";
+import { Recepcion } from "@/features/recepcion/Recepcion";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { DetalleAdmin } from "@/app/pages/DetalleAdmin";
@@ -255,14 +256,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-2.5",
     desc: "Escanear el QR o tipear la guía, contar y aceptar por ítem.",
-    element: (
-      <Placeholder
-        title="Recepción con QR"
-        task="B-2.5"
-        owner="Bruno"
-        desc="Escanear el QR o tipear la guía, contar y aceptar por ítem."
-      />
-    ),
+    element: <Recepcion />,
   },
   {
     path: "/trazabilidad",
