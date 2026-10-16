@@ -7,7 +7,7 @@
  *                 `useIncidents(filtro)`, `useAnalysis(orderId)`, `useShipments(filtro)`,
  *                 `useReplenishment(ciudad?)`
  *   - escrituras → `createOrder(datos)`, `analyzeOrder(id)`, `decideOrder(id, datos)` (J-1.4),
- *                  `markDelivered(id)` (J-2.1)
+ *                  `markDelivered(id)` (J-2.1), `askAssistant(pregunta)` (J-4.1)
  *
  * Los componentes NUNCA llaman a Supabase ni a `fetch` directamente (AGENTS.md §12): usan
  * estas funciones. `createOrder` es una función, no un hook: se envuelve con `useMutation`,
@@ -40,6 +40,7 @@ import {
 } from "@/mocks";
 
 import { FECHA_REFERENCIA, PUNTOS_POR_STAFF } from "@/app/dev/datosDemo";
+import { DOCUMENTOS_DEMO, type DocumentoDemo } from "@/app/dev/documentosDemo";
 import { STAFF_ID_POR_ROL, rolActual, useSession } from "@/app/dev/session";
 
 /** Latencia simulada, para que se vean los estados de carga. */
@@ -810,4 +811,128 @@ export function useReplenishment(ciudad?: string) {
         );
     },
   });
+}
+
+// --- J-4.1 · asistente con fuentes (C1 `POST /assistant`, capa temporal) -----------------
+
+/** `AiSource` del contrato (`specs/000-contratos/openapi.yaml`). */
+export type AiSource = "SIMULADO" | "API_REAL";
+
+/** Documento citado por el asistente (`schemas.AssistantResult.citations`). */
+export type Citation = { document_id: string; title: string; version: string };
+
+/** `AssistantResult` de `POST /assistant` (`specs/000-contratos/openapi.yaml`). */
+export type AssistantResult = {
+  answer: string;
+  source: AiSource;
+  model: string;
+  citations: Citation[];
+  decision_log_id: string;
+};
+
+/** Respuesta del contrato cuando ningún documento autorizado responde (HU-4.2). */
+const SIN_FUENTE = "No tengo una fuente para eso.";
+
+/** Contador de consultas de la sesión de demo; lo real queda en `decision_logs` (I6). */
+let siguienteConsultaDemo = 1;
+
+/** Palabras vacías del español: no aportan a la recuperación. */
+const PALABRAS_VACIAS = new Set([
+  "que", "cual", "cuales", "como", "cuando", "donde", "quien", "quienes", "cuanto", "cuantos",
+  "cuanta", "cuantas", "por", "para", "con", "sin", "los", "las", "una", "uno", "unos", "unas",
+  "del", "al", "es", "son", "se", "su", "sus", "el", "la", "de", "en", "y", "o", "a", "e", "lo",
+  "le", "les", "me", "mi", "tu", "hay", "este", "esta", "esto", "estos", "estas", "sobre",
+  "entre", "mas", "muy", "tiene", "tienen", "puede", "pueden", "hace", "hacer", "hacia", "tal",
+]);
+
+/** Minúsculas y sin tildes, para comparar palabras (`recepción` = `recepcion`). */
+function normalizarTexto(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/** Palabras significativas de un texto (2+ letras, sin las vacías). */
+function palabrasClave(texto: string): Set<string> {
+  return new Set(
+    normalizarTexto(texto)
+      .split(/[^a-z0-9]+/)
+      .filter((palabra) => palabra.length >= 2 && !PALABRAS_VACIAS.has(palabra)),
+  );
+}
+
+/** Cuánto responde un documento: el título pesa más que el cuerpo y se cuenta la cobertura. */
+function puntuarDocumento(
+  documento: DocumentoDemo,
+  consulta: Set<string>,
+): { puntaje: number; coincidencias: number } {
+  const titulo = palabrasClave(documento.title);
+  const cuerpo = palabrasClave(documento.body);
+  let puntaje = 0;
+  let coincidencias = 0;
+  for (const palabra of consulta) {
+    if (titulo.has(palabra)) {
+      puntaje += 3;
+      coincidencias += 1;
+    } else if (cuerpo.has(palabra)) {
+      puntaje += 1;
+      coincidencias += 1;
+    }
+  }
+  return { puntaje, coincidencias };
+}
+
+/**
+ * `askAssistant(pregunta)` (POST `/assistant`, contrato C1 · HU-4.2).
+ *
+ * // temporal: reemplazar por `POST /assistant` (O-4.3): RAG con `websearch_to_tsquery` sobre
+ * // temporal: `document_chunks` con el JWT del usuario + funciones de lectura. Aquí solo se
+ * // temporal: recuperan documentos por palabras clave y se respeta `allowed_roles` (la política
+ * // temporal: `chunks_read`: el auxiliar no recibe «Costos y compras DEMO»). Solo lee: nunca
+ * // temporal: escribe en la operación (HU-4.2). Sin fuente → «No tengo una fuente para eso.»
+ * y `citations` vacío. Hoy todo es `SIMULADO` (`AI_CALLS_ENABLED=false`), con su etiqueta
+ * obligatoria (invariante I6). Una pregunta de datos (p. ej. "cuántos pedidos este mes") no se
+ * cuelga de un documento cualquiera: las funciones de lectura llegan con el backend (O-4.3).
+ */
+export async function askAssistant(question: string): Promise<AssistantResult> {
+  await esperar(500);
+  if (question.trim() === "") {
+    throw new ErrorApi(422, "VALIDATION", "La pregunta no puede estar vacía.", {
+      field: "question",
+    });
+  }
+
+  const consulta = palabrasClave(question);
+  // Misma visibilidad que la RLS de documentos: solo los que el rol puede ver (`allowed_roles`).
+  const visibles = DOCUMENTOS_DEMO.filter((documento) =>
+    documento.allowed_roles.includes(rolActual()),
+  );
+
+  let mejorDocumento: DocumentoDemo | null = null;
+  let mejorPuntaje = 0;
+  let mejorCoincidencias = 0;
+  for (const documento of visibles) {
+    const { puntaje, coincidencias } = puntuarDocumento(documento, consulta);
+    if (puntaje > mejorPuntaje) {
+      mejorPuntaje = puntaje;
+      mejorCoincidencias = coincidencias;
+      mejorDocumento = documento;
+    }
+  }
+  // Se cita solo si el documento responde de verdad: suma 2+ y cubre la mitad de la pregunta.
+  // Así una pregunta de datos («¿cuántos pedidos…?») no se cuelga de un documento cualquiera.
+  const cobertura = consulta.size > 0 ? mejorCoincidencias / consulta.size : 0;
+  const elegido = mejorDocumento && mejorPuntaje >= 2 && cobertura >= 0.5 ? mejorDocumento : null;
+
+  return {
+    answer: elegido ? elegido.body : SIN_FUENTE,
+    source: "SIMULADO",
+    model: "SIMULADO/asistente-rag",
+    citations: elegido
+      ? [{ document_id: elegido.id, title: elegido.title, version: elegido.version }]
+      : [],
+    // `decision_log_id` del contrato; en la demo es un id de sesión (lo real lo asigna la base).
+    decision_log_id: `demo-asistente-${String(siguienteConsultaDemo++).padStart(3, "0")}`,
+  };
 }
