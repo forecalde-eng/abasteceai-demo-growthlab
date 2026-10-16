@@ -18,7 +18,7 @@
 1. Lee `AGENTS.md`, `docs/06_PLAN_EQUIPO.md` (§3 C3 = tabla de funciones) y `docs/equipo/david.md` (los tickets D-x.x que vas a hacer).
 2. Una tarea = una rama nueva desde `main` actualizado (`back/jorge/…`). **No encadenes PRs** (solo squash).
 3. El borrador del contrato de funciones está en el PR de David [#93](https://github.com/forecalde-eng/abasteceai-demo-growthlab/pull/93) (`specs/000-contratos/funciones.md`, aún no en `main`). Las decisiones ya aceptadas están en la sección *Decisiones aceptadas* de abajo; si chocan con #93, **mandan estas**.
-4. **Secretos:** nunca en el repo, chat, PR, logs ni capturas. Solo `backend/.env` y `frontend/.env.local` (en `.gitignore`), entregados por canal privado.
+4. **Secretos:** nunca en el repo, chat, PR, logs ni capturas. Las llaves secretas y `DATABASE_URL` van solo en `backend/.env` (en `.gitignore`). `frontend/.env.local` lleva únicamente la URL y la publishable key (públicas por diseño). Todo lo que empiece con `VITE_` termina en el JavaScript del navegador: **nunca** pongas ahí contraseñas (ni `VITE_DEMO_PASSWORD_*`, aunque `frontend/.env.example` las muestre comentadas) ni la secret key. El login se hace a mano con las contraseñas del canal privado.
 
 ---
 
@@ -66,7 +66,7 @@ Las contraseñas las generas tú y las pasas **solo por canal privado**.
 | URL del proyecto + publishable key | `frontend/.env.local` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_USE_MOCKS=false`) | Settings → API |
 | `SUPABASE_SECRET_KEY` | solo `backend/.env` | idem |
 | `DATABASE_URL` | solo `backend/.env` | Connect → **Session pooler (5432)**, `sslmode=require` |
-| contraseñas de las 7 cuentas | canal privado | las que creaste |
+| contraseñas de las 7 cuentas | solo canal privado; **no** van a ningún `.env` del frontend | las que creaste |
 
 Variables exactas: `backend/.env.example` y `db/config_frontend.env.example`.
 
@@ -76,7 +76,7 @@ Variables exactas: `backend/.env.example` y `db/config_frontend.env.example`.
 
 ## FASE 1 · `db/09_fn_pedidos.sql` (D-1.1, D-1.2, D-1.3)
 
-Desbloquea crear, analizar y aprobar pedidos reales. Firmas en `docs/06_PLAN_EQUIPO.md §3 C3`. Todas en esquema `abastece`, `SECURITY DEFINER`, `SET search_path = abastece, pg_temp`, y **cada función termina con**
+Desbloquea crear, analizar y aprobar pedidos reales. Firmas en `docs/06_PLAN_EQUIPO.md §3 C3`, con **una excepción acordada**: C3 todavía dice `fn_analizar_reglas(order)` y la firma correcta es la de abajo (con `p_staff` y `p_proposal`). En el mismo PR de `09_fn_pedidos.sql` actualiza esa fila de C3 en `docs/06_PLAN_EQUIPO.md` (o el `funciones.md` que se congele) para que Omar y el backend llamen a la misma firma; si no, el endpoint falla con `UndefinedFunction`. Todas en esquema `abastece`, `SECURITY DEFINER`, `SET search_path = abastece, pg_temp`, y **cada función termina con**
 `REVOKE EXECUTE ON FUNCTION … FROM PUBLIC, anon, authenticated;` (solo las llama el backend).
 
 | Función | Qué hace | Casos de prueba obligatorios |
@@ -89,7 +89,7 @@ Desbloquea crear, analizar y aprobar pedidos reales. Firmas en `docs/06_PLAN_EQU
 - **Errores:** `P0403` prohibido, `P0404` no existe, `P0409` estado/conflicto, `P0422` validación. En P0422 el `DETAIL` es JSON `{field, index?, product_id?, message?}`.
 - **Fechas de negocio:** `demo_metadata.reference_at` (2026‑10‑10 22:00 UTC), **nunca `now()`**.
 - **Crear:** devuelve el pedido + `created` (el backend lo quita: 201 vs 200). Las reglas de *adicional* (el relacionado existe, mismo punto y ciclo; *regular* con `related_order`/`reason` → P0422) viven **solo dentro** de `fn_crear_pedido`: el seed PED-DEMO-025 es regular con motivo/vínculo y no debe romperse.
-- **Analizar:** en pedido que no está `submitted` → 200 con arreglos vacíos, sin llamar a Jev, sin 409. La `proposal` es siempre el log de IA (`mock`/`typesafe`), nunca el de `rules`. Si Jev falló: `provider='typesafe'`, `status='human_review'`, `response {"error":"timeout"}` (no es un 502).
+- **Analizar:** en pedido que no está `submitted` → 200 con arreglos vacíos, sin llamar a Jev, sin 409. La `proposal` es siempre el log de IA (`mock`/`typesafe`), nunca el de `rules`. Si Jev falló, el backend pasa un `p_proposal` de fallo y la función **no lanza error**: guarda `provider='typesafe'`, `status='human_review'`, `response {"error":"timeout"}` y las reglas/incidencias, y devuelve el resultado. Qué HTTP se responde lo decide FastAPI, no el SQL: `openapi.yaml` (congelado) declara `502 UPSTREAM_AI` para `/analyze` con la propuesta ya guardada en `human_review`, y eso es lo que implementa el backend. Cambiarlo a 200 exigiría un PR a `specs/000-contratos`.
 - **Incidencias:** "abiertas" = `open|under_review`; dedupe por `(order_id, kind)`; códigos `INC-NNN` siguiendo el 008.
 - **Decidir:** sin `items` → aprobado = solicitado; lista parcial → el resto = solicitado; aprobado > solicitado → P0422. El motivo se audita en `audit_events.after_state {decision, reason, items}`; **no** toques `orders.reason` ni `decision_logs.status`.
 
