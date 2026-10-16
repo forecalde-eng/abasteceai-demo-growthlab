@@ -3,7 +3,8 @@
  *
  * Imita el contrato C2 (`docs/06_PLAN_EQUIPO.md` §3) con las **mismas firmas**, para que
  * las pantallas no cambien cuando llegue lo real:
- *   - lecturas  → `useProducts()`, `useOrders(filtro)`, `useLocations(scope)`  (hoy `@/mocks`, B-0.1)
+ *   - lecturas  → `useProducts()`, `useOrders(filtro)`, `useLocations(scope)`, `useIncidents(filtro)`
+ *                 (hoy `@/mocks`, B-0.1 partes 1 y 2)
  *   - escritura → `createOrder(datos)`                    (hoy valida y guarda en memoria)
  *
  * Los componentes NUNCA llaman a Supabase ni a `fetch` directamente (AGENTS.md §12): usan
@@ -17,7 +18,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { locations, orders, products, type Location, type Order, type Product } from "@/mocks";
+import {
+  incidents,
+  locations,
+  orders,
+  products,
+  type Incident,
+  type Location,
+  type Order,
+  type Product,
+} from "@/mocks";
 
 import { FECHA_REFERENCIA, PUNTOS_POR_STAFF } from "@/app/dev/datosDemo";
 import { STAFF_ID_POR_ROL, rolActual, useSession } from "@/app/dev/session";
@@ -118,6 +128,50 @@ export function useLocations(scope: "asignados" | "todos" = "asignados") {
       await esperar(100);
       if (scope === "todos" || verTodos) return locations;
       return locations.filter((punto) => ids.includes(punto.id));
+    },
+  });
+}
+
+/** Filtro de incidencias (`useIncidents(filtro)`, contrato C2). */
+export type FiltroIncidencias = {
+  orderId?: string;
+  locationId?: string;
+  status?: Incident["status"];
+  kind?: Incident["kind"];
+};
+
+/**
+ * Lista de lectura: incidencias visibles (`useIncidents(filtro)`, contrato C2).
+ *
+ * Misma visibilidad que `useOrders`/`useLocations`: la política RLS `incidents_read`
+ * filtra por `location_id`, así que quien tiene puntos asignados solo ve las suyas.
+ * Sin filtro devuelve las del alcance del usuario (el admin ve todas).
+ */
+export function useIncidents(filtro?: FiltroIncidencias) {
+  const { data: sesion } = useSession();
+  const puntos = sesion?.points ?? [];
+  const verTodos = puntos.length === 0;
+  const ids = puntos.map((punto) => punto.id);
+
+  return useQuery<Incident[]>({
+    queryKey: [
+      "demo",
+      "incidencias",
+      verTodos ? "todos" : ids,
+      filtro?.orderId ?? null,
+      filtro?.locationId ?? null,
+      filtro?.status ?? null,
+      filtro?.kind ?? null,
+    ],
+    staleTime: 0,
+    queryFn: async () => {
+      await esperar(150);
+      return incidents
+        .filter((incidencia) => verTodos || ids.includes(incidencia.location_id))
+        .filter((incidencia) => !filtro?.orderId || incidencia.order_id === filtro.orderId)
+        .filter((incidencia) => !filtro?.locationId || incidencia.location_id === filtro.locationId)
+        .filter((incidencia) => !filtro?.status || incidencia.status === filtro.status)
+        .filter((incidencia) => !filtro?.kind || incidencia.kind === filtro.kind);
     },
   });
 }
