@@ -4,7 +4,10 @@ Estado: **acuerdos de C3 cerrados** para las tres funciones de pedidos. Las
 convenciones de `fn_crear_pedido` registran decisiones de los PR #93 y #114; los
 pendientes 3–8 y 10 los decidió Omar en el PR #113 y David confirmó su
 incorporación a este documento. Este documento no crea funciones. El cambio de
-`openapi.yaml` del PR #93 declara el 404 ya acordado para `POST /orders`.
+`openapi.yaml` del PR #93 declara el 404 ya acordado para `POST /orders`. Los
+acuerdos **11** y **12** (sobre interno de `p_proposal` y caso no `submitted` sin
+log de IA) los proponen Jorge y David para cerrar D-1.2 (#29); este PR los
+incorpora **con la revisión de Omar registrada como pendiente**.
 Fuentes: `openapi.yaml` (`POST /orders`,
 `/orders/{id}/analyze`, `/orders/{id}/decision` y sus schemas),
 `docs/06_PLAN_EQUIPO.md §3 C3`,
@@ -113,11 +116,18 @@ y no permite aplicar la regla de autoría de OpenAPI dentro de la función; por
 eso se añade `p_staff`. No se aceptará un `staff` enviado por el cliente.
 
 **Entrada:** `p_order` UUID obligatorio, tomado de `{id}`; `p_staff` UUID
-obligatorio e interno, resuelto del JWT; `p_proposal` JSONB obligatorio con la
-propuesta de IA ya obtenida por FastAPI dentro del endpoint. El endpoint no
-tiene cuerpo: `p_proposal` no es una clave de la API, sino el parámetro interno
-con el que el backend entrega a SQL el log de IA (`mock`/`typesafe`), **nunca**
-el log de `rules`. La llamada externa a Jev ocurre fuera de la transacción.
+obligatorio e interno, resuelto del JWT; `p_proposal` JSONB con la propuesta de
+IA ya obtenida por FastAPI dentro del endpoint (presente cuando el pedido está en
+`submitted`). El endpoint no tiene cuerpo: `p_proposal` no es una clave de la
+API, sino el parámetro interno con el que el backend entrega a SQL el log de IA
+(`mock`/`typesafe`/`openai`), **nunca** el log de `rules`. La llamada externa a
+Jev ocurre fuera de la transacción y **fuera de la función**: el backend
+comprueba el estado del pedido **antes** de invocar a Jev, de modo que si el
+pedido no está en `submitted` **no se llama a Jev** y la función recibe
+`p_proposal = NULL`. En esa rama la función **ignora** `p_proposal` (en
+PostgreSQL un parámetro `jsonb` admite nulo); si el estado cambiara entre la
+comprobación de FastAPI y la llamada a la función, esta vuelve a decidir bajo
+bloqueo y también ignora la propuesta (acuerdo 12).
 
 **Validaciones y permisos:** perfil activo con rol `administrador`, `auxiliar`
 o `supervisor`; para los dos últimos, `orders.requested_by=p_staff`. Pedido
@@ -145,11 +155,14 @@ devuelve `order_id`, los tres arreglos `duplicates`, `missing_kit` e
 `incidents` (vacíos si no hay nada) y `proposal` con `source`, `model`,
 `status`, `answers` y `decision_log_id`, a partir del log de IA recibido en
 `p_proposal`. El backend presenta este objeto como respuesta de
-`POST /orders/{id}/analyze`; ya no compone la `proposal` fuera de SQL.
+`POST /orders/{id}/analyze`; ya no compone la `proposal` fuera de SQL. La
+`proposal` puede ser `null` cuando el pedido no está en `submitted` y no existe
+un log de IA reutilizable (acuerdo 12).
 
 **Persistencia y transacción:** las incidencias nuevas, el registro
-`decision_logs` de proveedor `rules` (no IA) y el log de IA `mock`/`typesafe`
-tomado de `p_proposal` (con su `decision_log_id`) se escriben junto al análisis
+`decision_logs` de proveedor `rules` (no IA) y el log de IA
+(`mock`/`typesafe`/`openai`) tomado de `p_proposal` (con su `decision_log_id`) se
+escriben junto al análisis
 en la misma transacción, sin duplicarse indebidamente. Si Jev falla, el backend
 pasa un `p_proposal` de fallo; la función **no lanza error**: guarda
 `provider='typesafe'`, `status='human_review'`, `response {"error":"timeout"}`,
@@ -161,7 +174,9 @@ La función de reglas no transforma alertas en decisiones humanas.
 **Errores:** `P0403` → 403, `P0404` → 404; 502 lo emite FastAPI ante el
 proveedor externo. OpenAPI no anuncia 409 ni 422 para este endpoint. Analizar
 un pedido que no está en `submitted` no es un error (acuerdo 6): devuelve 200
-con los tres arreglos vacíos, sin llamar a Jev.
+con los tres arreglos vacíos, sin llamar a Jev. En ese caso la `proposal`
+reutiliza el log de IA más reciente del pedido; si nunca hubo un log de IA,
+`proposal` es `null` (acuerdo 12).
 
 ## 3. `fn_decidir_pedido`
 
@@ -231,9 +246,11 @@ el mismo pedido dos veces.
    solo no identifica al actor. Se actualiza la fila de C3 en
    `docs/06_PLAN_EQUIPO.md`.
 4. **Jev, `proposal` y atomicidad — acordado.** FastAPI llama a Jev fuera de la
-   transacción y entrega el log de IA en `p_proposal` (`mock`/`typesafe`,
-   **nunca** el de `rules`). La función escribe en la misma transacción las
-   incidencias, el log `rules` y la propuesta de IA, y devuelve el
+   transacción y entrega el log de IA en `p_proposal`
+   (`mock`/`typesafe`/`openai`, **nunca** el de `rules`). Si el pedido no está en
+   `submitted`, FastAPI **no llama a Jev** y pasa `p_proposal` nulo. La función
+   escribe en la misma transacción las incidencias, el log `rules` y la propuesta
+   de IA, y devuelve el
    `AnalysisResult` completo con su `decision_log_id`. Si Jev falla, `p_proposal`
    llega como fallo y la función guarda `provider='typesafe'`,
    `status='human_review'` y `response {"error":"timeout"}`, devuelve el
@@ -256,10 +273,51 @@ el mismo pedido dos veces.
 10. **Detalles de validación — acordado.** `P0422` se traduce a
     `Error.error.details` como `{field, index?, product_id?, message?}`, sin
     cambiar OpenAPI.
+11. **Sobre interno de `p_proposal` — propuesto en este PR para D-1.2 (#29);
+    revisión de Omar pendiente.** FastAPI entrega en `p_proposal` el log de IA
+    con la **forma de las columnas** de `decision_logs`; SQL valida los datos,
+    **genera él mismo el `id`** (nunca lo recibe) y persiste la fila junto al
+    análisis en la misma transacción. Claves del sobre y reglas:
+
+    | Clave | Tipo | Regla |
+    |---|---|---|
+    | `provider` | texto | `mock` \| `typesafe` \| `openai`; **nunca** `rules`. |
+    | `model_version` | texto | No vacío; si falta, SQL usa `response.model`. |
+    | `input_state` | objeto | Estado **real** enviado a Jev (no `{}`); trazabilidad. |
+    | `response` | objeto | Éxito: `{model, answers, usage}`. Fallo: `{error: "timeout"}`. |
+    | `proposed_action` | texto | Token no vacío; en el fallo, `human_review`. |
+    | `status` | texto | `proposed` \| `human_review`; nunca `accepted`/`rejected`. |
+    | `input_tokens` | entero | `>= 0`; con `provider='mock'`, exactamente `0`. |
+    | `estimated_cost_usd` | numeric | `>= 0` y finito; con `mock`, exactamente `0`. |
+
+    SQL deriva además `id` (`gen_random_uuid()`, el `decision_log_id` público),
+    `order_id=p_order`, `location_id` del pedido, `created_at=reference_at`,
+    `task` (`classify_notes` para el log de IA; `detect_rules` para el log
+    `rules`) y el `source` público (`mock` → `SIMULADO`; `typesafe`/`openai` →
+    `API_REAL`; `rules` **no** es una `proposal` válida). La validación debe
+    **ramificar por `response ? 'error'`**, no por `status`: con `error` no se
+    exigen `answers`; sin `error` se exigen `response.model` y
+    `response.answers`. El log de proveedor `rules` es una fila **separada**
+    (`task='detect_rules'`, `model_version` p. ej. `rules-v1`, `input_tokens` y
+    `estimated_cost_usd` `0`, `response` = hallazgos de las reglas) y **nunca**
+    es la `proposal` pública.
+12. **Pedido no `submitted` — propuesto en este PR para D-1.2 (#29); revisión de
+    Omar pendiente.** Analizar un pedido que no está en `submitted` no es un
+    error (acuerdo 6): 200, los tres arreglos vacíos, sin llamar a Jev y sin
+    escribir. **FastAPI comprueba el estado antes de invocar a Jev**: si no está
+    en `submitted`, no llama a Jev y pasa `p_proposal = NULL`. La `proposal`
+    pública se resuelve así: si el pedido tiene algún log
+    de IA (`mock`/`typesafe`/`openai`), se **reutiliza el más reciente** como
+    `{source, model, status, answers, decision_log_id}` (sin crear otra fila); si
+    **nunca** hubo log de IA, `proposal` es `null`. Este último caso exige que
+    `AnalysisResult.proposal` admita nulo en `openapi.yaml` (cambio incluido en
+    este PR); `p_proposal` se ignora y puede llegar `NULL` sin cambiar la firma.
 
 Los acuerdos 1–2 y 9 documentan los PR #93 y #114; los acuerdos 3–8 y 10
 quedaron decididos por Omar en el PR #113 y confirmados por David para este
-documento. Con esto, los contratos de `fn_analizar_reglas` y `fn_decidir_pedido`
-quedan cerrados y son la base de D-1.2 (#29) y D-1.3 (#30). `09_fn_pedidos.sql`
-(D-1.1) ya está en `main`; las funciones de análisis y decisión se añaden por
-separado.
+documento. Los acuerdos **11** y **12** los proponen Jorge y David en un PR
+aparte para desbloquear D-1.2 (#29); **la revisión de Omar queda registrada como
+pendiente** y no modifican las firmas ni la semántica ya acordada. Con esto, los
+contratos de `fn_analizar_reglas` y `fn_decidir_pedido` quedan cerrados y son la
+base de D-1.2 (#29) y D-1.3 (#30). `09_fn_pedidos.sql` (D-1.1) ya está en
+`main`; las funciones de análisis y decisión se añaden por separado.
