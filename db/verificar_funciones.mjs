@@ -413,6 +413,303 @@ test('D-1.2: detecciones deterministas previas al contrato de p_proposal', async
  }
 });
 
+test('D-1.2: fn_analizar_reglas (POST /orders/{id}/analyze)', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`
+   CREATE ROLE anon;
+   CREATE ROLE authenticated;
+   CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth;
+   CREATE TABLE auth.users(id uuid PRIMARY KEY);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
+   REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC, anon, authenticated;
+   GRANT USAGE ON SCHEMA auth TO authenticated;
+   GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+  `);
+  for (const file of [
+   '01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql',
+   '03_datos_ficticios.sql', '08_proveedor_openai.sql', '09_fn_pedidos.sql',
+  ]) await db.exec(readSql(file));
+
+  const fixture = JSON.parse(readSql('jev_respuesta_SIMULADA.json')).response;
+  const staff = (await db.query('SELECT id, role FROM abastece.staff_members')).rows;
+  const admin = staff.find(x => x.role === 'administrador').id;
+  const auxiliar = staff.find(x => x.role === 'auxiliar').id;
+  const supervisor = staff.find(x => x.role === 'supervisor').id;
+  const bodega = staff.find(x => x.role === 'bodega').id;
+  const order = async code => (await db.query(
+   'SELECT id, location_id FROM abastece.orders WHERE code = $1', [code])).rows[0];
+  const first = await order('PED-DEMO-001');
+  const second = await order('PED-DEMO-002');
+  const duplicate = await order('PED-DEMO-025');
+  const third = await order('PED-DEMO-003');
+  let repeatedOrderId;
+  const envelope = (provider = 'mock', overrides = {}) => ({
+   provider, model_version: fixture.model,
+   input_state: {order_code: 'PED-DEMO-001'}, response: fixture,
+   proposed_action: 'Mostrar prioridad sugerida y solicitar revisión del administrador.',
+   status: 'human_review', input_tokens: 0, estimated_cost_usd: 0, ...overrides,
+  });
+  const analyze = (id, proposal = envelope(), actor = admin) => db.query(`
+   SELECT abastece.fn_analizar_reglas($1::uuid, $2::uuid, $3::jsonb) AS result`,
+  [actor, id, proposal === null ? null : JSON.stringify(proposal)]);
+  const one = async (...args) => (await analyze(...args)).rows[0].result;
+  const counts = async id => (await db.query(`SELECT
+   (SELECT count(*)::integer FROM abastece.incidents WHERE order_id = $1) AS incidents,
+   (SELECT count(*)::integer FROM abastece.decision_logs WHERE order_id = $1) AS logs`,
+  [id])).rows[0];
+
+  await t.test('EXECUTE solo del servidor; SECURITY INVOKER y search_path seguro', async () => {
+   const row = (await db.query(`SELECT p.prosecdef, p.proconfig,
+    has_function_privilege('anon', p.oid, 'EXECUTE') AS anon,
+    has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authenticated,
+    has_function_privilege('service_role', p.oid, 'EXECUTE') AS backend
+    FROM pg_proc AS p JOIN pg_namespace AS n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'abastece' AND p.proname = 'fn_analizar_reglas'`)).rows[0];
+   assert.equal(row.prosecdef, false);
+   assert.deepEqual(row.proconfig, ['search_path=""']);
+   assert.equal(row.anon, false);
+   assert.equal(row.authenticated, false);
+   assert.equal(row.backend, true);
+   await db.exec('SET ROLE service_role');
+   try {
+    assert.equal((await one(third.id, null)).proposal, null);
+    assert.equal((await one(first.id, envelope(), supervisor)).order_id, first.id);
+   } finally {
+    await db.exec('RESET ROLE');
+   }
+  });
+
+  await t.test('Perfil, rol y autoría se verifican antes de escribir', async () => {
+   await assert.rejects(() => analyze(first.id, envelope(), bodega), {code: 'P0403'});
+   await assert.rejects(() => analyze(first.id, envelope(), auxiliar), {code: 'P0403'});
+   await db.query('UPDATE abastece.staff_members SET active = false WHERE id = $1', [admin]);
+   try { await assert.rejects(() => analyze(first.id), {code: 'P0403'}); }
+   finally { await db.query('UPDATE abastece.staff_members SET active = true WHERE id = $1', [admin]); }
+   await assert.rejects(() => analyze('00000000-0000-0000-0000-000000000001'),
+    {code: 'P0404'});
+   const result = await one(first.id, envelope(), supervisor);
+   assert.equal(result.order_id, first.id);
+   assert.equal(result.duplicates[0].order_code, 'PED-DEMO-025');
+  });
+
+  await t.test('Registra incidencias y logs separados con reloj de demo', async () => {
+   const result = await one(second.id);
+   assert.deepEqual(result.missing_kit.map(x => x.sku), ['INS-016']);
+   assert.equal(result.proposal.source, 'SIMULADO');
+   assert.deepEqual(result.proposal.answers, fixture.answers);
+   assert.deepEqual(Object.keys(result).sort(),
+    ['duplicates', 'incidents', 'missing_kit', 'order_id', 'proposal']);
+   const rows = (await db.query(`SELECT id, task, provider, model_version, response,
+    created_at = (SELECT reference_at FROM abastece.demo_metadata WHERE id) AS demo_clock
+    FROM abastece.decision_logs WHERE order_id = $1 ORDER BY task`, [second.id])).rows;
+   assert.equal(rows.length, 2);
+   assert.deepEqual(rows.map(x => [x.task, x.provider]),
+    [['classify_notes', 'mock'], ['detect_rules', 'rules']]);
+   assert.equal(rows.every(x => x.demo_clock), true);
+   assert.equal(result.proposal.decision_log_id, rows[0].id);
+   assert.deepEqual(rows[0].response, fixture);
+   assert.equal(rows[1].response.missing_kit[0].sku, 'INS-016');
+   assert.equal(result.incidents.length, 1);
+   assert.equal(result.incidents[0].kind, 'missing_from_kit');
+  });
+
+  await t.test('Repetir análisis reutiliza incidencias open y under_review', async () => {
+   const lines = (await db.query(`SELECT jsonb_agg(jsonb_build_object(
+    'product_id', product_id, 'requested_qty', requested_qty)
+    ORDER BY product_id) AS items FROM abastece.order_items WHERE order_id = $1`,
+   [first.id])).rows[0].items;
+   const created = (await db.query(`SELECT abastece.fn_crear_pedido(
+    $1::uuid, $2::uuid, '2026-10-01'::date, 'regular', NULL,
+    NULL, '', $3::jsonb, 'd12-repeat-local') AS result`,
+   [supervisor, first.location_id, JSON.stringify(lines)])).rows[0].result;
+   repeatedOrderId = created.id;
+   const before = await counts(repeatedOrderId);
+   const firstCall = await one(repeatedOrderId);
+   assert.equal(firstCall.incidents.length, 1);
+   assert.match(firstCall.incidents[0].code, /^INC-\d{3,}$/);
+   const afterFirst = await counts(repeatedOrderId);
+   assert.equal(afterFirst.incidents, before.incidents + 1);
+   assert.equal(afterFirst.logs, before.logs + 2);
+   await db.query(`UPDATE abastece.incidents SET status = 'under_review'
+    WHERE id = $1`, [firstCall.incidents[0].id]);
+   const repeated = await one(repeatedOrderId);
+   assert.deepEqual(repeated.incidents, firstCall.incidents);
+   const afterRepeat = await counts(repeatedOrderId);
+   assert.equal(afterRepeat.incidents, afterFirst.incidents);
+   assert.equal(afterRepeat.logs, afterFirst.logs + 2);
+  });
+
+  await t.test('Incidencia resolved permite nueva INC-NNN única con severidad', async () => {
+   const prior = (await db.query(`SELECT id FROM abastece.incidents
+    WHERE order_id = $1 AND kind = 'possible_duplicate' AND status = 'under_review'`,
+   [repeatedOrderId])).rows[0];
+   await db.query(`UPDATE abastece.incidents SET status = 'resolved' WHERE id = $1`, [prior.id]);
+   const result = await one(repeatedOrderId);
+   assert.notEqual(result.incidents[0].id, prior.id);
+   assert.match(result.incidents[0].code, /^INC-\d{3,}$/);
+   const rows = (await db.query(`SELECT code, severity, location_id, created_by,
+    created_at = (SELECT reference_at FROM abastece.demo_metadata WHERE id) AS demo_clock
+    FROM abastece.incidents WHERE id = $1`, [result.incidents[0].id])).rows;
+   assert.deepEqual(rows[0], {code: result.incidents[0].code, severity: 'high',
+    location_id: first.location_id, created_by: admin, demo_clock: true});
+   assert.equal((await db.query(`SELECT count(*)::integer AS n FROM abastece.incidents
+    WHERE code = $1`, [result.incidents[0].code])).rows[0].n, 1);
+  });
+
+  await t.test('Dos alertas generan códigos únicos y severidades por clase', async () => {
+   const lines = (await db.query(`SELECT jsonb_agg(jsonb_build_object(
+    'product_id', product_id, 'requested_qty', requested_qty)
+    ORDER BY product_id) AS items FROM abastece.order_items WHERE order_id = $1`,
+   [second.id])).rows[0].items;
+   const created = (await db.query(`SELECT abastece.fn_crear_pedido(
+    $1::uuid, $2::uuid, '2026-10-01'::date, 'regular', NULL,
+    NULL, '', $3::jsonb, 'd12-two-alerts-local') AS result`,
+   [supervisor, second.location_id, JSON.stringify(lines)])).rows[0].result;
+   const result = await one(created.id);
+   assert.equal(result.duplicates.some(x => x.order_id === second.id), true);
+   assert.deepEqual(result.missing_kit.map(x => x.sku), ['INS-016']);
+   assert.deepEqual(result.incidents.map(x => x.kind).sort(),
+    ['missing_from_kit', 'possible_duplicate']);
+   assert.equal(new Set(result.incidents.map(x => x.code)).size, 2);
+   assert.equal(result.incidents.every(x => /^INC-\d{3,}$/.test(x.code)), true);
+   const rows = (await db.query(`SELECT kind, severity FROM abastece.incidents
+    WHERE order_id = $1 ORDER BY kind`, [created.id])).rows;
+   assert.deepEqual(rows, [
+    {kind: 'missing_from_kit', severity: 'medium'},
+    {kind: 'possible_duplicate', severity: 'high'},
+   ]);
+  });
+
+  await t.test('typesafe, openai y human_review válido conservan respuesta real', async () => {
+   for (const provider of ['typesafe', 'openai']) {
+    const result = await one(duplicate.id, envelope(provider));
+    assert.equal(result.proposal.source, 'API_REAL');
+    assert.equal(result.proposal.model, fixture.model);
+    assert.equal(result.proposal.status, 'human_review');
+    assert.deepEqual(result.proposal.answers, fixture.answers);
+    const row = (await db.query('SELECT provider, response FROM abastece.decision_logs WHERE id = $1',
+     [result.proposal.decision_log_id])).rows[0];
+    assert.equal(row.provider, provider);
+    assert.deepEqual(row.response, fixture);
+   }
+  });
+
+  await t.test('proposed con respuesta válida permanece distinto de timeout', async () => {
+   const result = await one(duplicate.id, envelope('typesafe', {status: 'proposed'}));
+   assert.equal(result.proposal.status, 'proposed');
+   assert.deepEqual(result.proposal.answers, fixture.answers);
+   const row = (await db.query(`SELECT status, response FROM abastece.decision_logs
+    WHERE id = $1`, [result.proposal.decision_log_id])).rows[0];
+   assert.equal(row.status, 'proposed');
+   assert.deepEqual(row.response, fixture);
+  });
+
+  await t.test('Timeout de Jev guarda error y human_review sin inventar answers', async () => {
+   const result = await one(duplicate.id, envelope('typesafe', {
+    response: {error: 'timeout'}, proposed_action: 'human_review',
+    status: 'human_review',
+   }));
+   assert.deepEqual(result.proposal.answers, {});
+   assert.equal(result.proposal.model, fixture.model);
+   assert.equal(result.proposal.status, 'human_review');
+   const row = (await db.query(`SELECT task, provider, status, response
+    FROM abastece.decision_logs WHERE id = $1`,
+   [result.proposal.decision_log_id])).rows[0];
+   assert.deepEqual(row, {task: 'classify_notes', provider: 'typesafe',
+    status: 'human_review', response: {error: 'timeout'}});
+  });
+
+  await t.test('JSON inválido se rechaza y no altera incidencias ni logs', async () => {
+   const baseline = await counts(duplicate.id);
+   for (const proposal of [
+    null, [], {}, envelope('rules'), envelope('unknown'),
+    envelope('mock', {status: 'accepted'}),
+    envelope('mock', {input_state: {}}),
+    envelope('mock', {response: {model: fixture.model, answers: {}}}),
+    envelope('mock', {response: {error: 'timeout'}}),
+    envelope('typesafe', {response: {error: 'timeout'}, proposed_action: 'review'}),
+    envelope('typesafe', {response: {error: 'network'}, proposed_action: 'human_review'}),
+    envelope('mock', {input_tokens: 1}),
+    envelope('mock', {estimated_cost_usd: 0.1}),
+    envelope('typesafe', {input_tokens: -1}),
+    envelope('typesafe', {input_tokens: 1.5}),
+    envelope('typesafe', {estimated_cost_usd: -1}),
+    envelope('typesafe', {estimated_cost_usd: 0.000000001}),
+    envelope('mock', {id: '00000000-0000-0000-0000-000000000001'}),
+    envelope('mock', {provider: null}),
+    envelope('mock', {model_version: null}),
+   ]) await assert.rejects(() => analyze(duplicate.id, proposal), {code: '22023'});
+   assert.deepEqual(await counts(duplicate.id), baseline);
+  });
+
+  await t.test('Pedido no submitted sin log devuelve proposal null sin escribir', async () => {
+   const before = await counts(third.id);
+   const result = await one(third.id, {invalid: 'ignored'});
+   assert.deepEqual(result, {order_id: third.id, duplicates: [], missing_kit: [],
+    incidents: [], proposal: null});
+   assert.deepEqual(await counts(third.id), before);
+  });
+
+  await t.test('Pedido no submitted reutiliza su único log IA sin escribir', async () => {
+   const firstLog = (await db.query(`SELECT id FROM abastece.decision_logs
+    WHERE order_id = $1 AND provider IN ('mock', 'typesafe', 'openai')`,
+   [second.id])).rows[0];
+   await db.query(`UPDATE abastece.orders SET status = 'draft' WHERE id = $1`, [second.id]);
+   const before = await counts(second.id);
+   const result = await one(second.id, null);
+   assert.deepEqual(result.duplicates, []);
+   assert.deepEqual(result.missing_kit, []);
+   assert.deepEqual(result.incidents, []);
+   assert.equal(result.proposal.decision_log_id, firstLog.id);
+   assert.deepEqual(await counts(second.id), before);
+  });
+
+  await t.test('Último log IA se identifica por orden persistente', async () => {
+   const firstAnalysis = await one(duplicate.id, envelope('typesafe'));
+   const lastAnalysis = await one(duplicate.id, envelope('openai'));
+   const logs = (await db.query(`SELECT id, analysis_sequence FROM abastece.decision_logs
+    WHERE id IN ($1::uuid, $2::uuid) ORDER BY analysis_sequence`,
+   [firstAnalysis.proposal.decision_log_id, lastAnalysis.proposal.decision_log_id])).rows;
+   assert.deepEqual(logs.map(x => x.id), [firstAnalysis.proposal.decision_log_id,
+    lastAnalysis.proposal.decision_log_id]);
+   assert.equal((await db.query(`SELECT count(*)::integer AS missing
+    FROM abastece.decision_logs WHERE analysis_sequence IS NULL`)).rows[0].missing, 0);
+   const before = await counts(duplicate.id);
+   await db.query(`UPDATE abastece.orders SET status = 'draft' WHERE id = $1`, [duplicate.id]);
+   try {
+    const result = await one(duplicate.id, null);
+    assert.equal(result.proposal.decision_log_id, lastAnalysis.proposal.decision_log_id);
+    assert.deepEqual(result.duplicates, []);
+    assert.deepEqual(result.missing_kit, []);
+    assert.deepEqual(result.incidents, []);
+    assert.deepEqual(await counts(duplicate.id), before);
+   } finally {
+    await db.query(`UPDATE abastece.orders SET status = 'submitted' WHERE id = $1`,
+     [duplicate.id]);
+   }
+  });
+
+  await t.test('Fallo del segundo log revierte incidencia y log rules', async () => {
+   await db.query(`UPDATE abastece.incidents SET status = 'resolved'
+    WHERE order_id = $1 AND kind = 'possible_duplicate'`, [duplicate.id]);
+   const before = await counts(duplicate.id);
+   await db.exec(`ALTER TABLE abastece.decision_logs ADD CONSTRAINT d12_reject_ai
+    CHECK (task <> 'classify_notes') NOT VALID`);
+   try {
+    await assert.rejects(() => analyze(duplicate.id), {code: '23514'});
+   } finally {
+    await db.exec('ALTER TABLE abastece.decision_logs DROP CONSTRAINT d12_reject_ai');
+   }
+   assert.deepEqual(await counts(duplicate.id), before);
+  });
+ } finally {
+  await db.close();
+ }
+});
+
 test('D-1.3: fn_decidir_pedido (POST /orders/{id}/decision)', async t => {
  const db = new PGlite();
  try {

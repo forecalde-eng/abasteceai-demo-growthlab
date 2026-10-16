@@ -237,6 +237,205 @@ $$;
 GRANT EXECUTE ON FUNCTION abastece.fn_detectar_reglas_pedido(uuid) TO service_role;
 REVOKE EXECUTE ON FUNCTION abastece.fn_detectar_reglas_pedido(uuid) FROM PUBLIC, anon, authenticated;
 
+-- El reloj de demostración es fijo. Esta identidad conserva el orden real de
+-- inserción incluso cuando varios análisis comparten created_at.
+ALTER TABLE abastece.decision_logs
+ ADD COLUMN analysis_sequence bigint GENERATED ALWAYS AS IDENTITY;
+CREATE UNIQUE INDEX decision_logs_analysis_sequence_uq
+ ON abastece.decision_logs (analysis_sequence);
+
+-- D-1.2 (#29): POST /orders/{id}/analyze. FastAPI resuelve el JWT y llama a
+-- Jev fuera de esta transacción únicamente si el pedido sigue submitted.
+CREATE FUNCTION abastece.fn_analizar_reglas(
+ p_staff uuid, p_order uuid, p_proposal jsonb
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+ v_role text;
+ v_order abastece.orders%ROWTYPE;
+ v_findings jsonb;
+ v_incidents jsonb := '[]'::jsonb;
+ v_proposal jsonb;
+ v_log abastece.decision_logs%ROWTYPE;
+ v_ref timestamptz;
+ v_provider text;
+ v_model_version text;
+ v_status text;
+ v_response jsonb;
+ v_is_timeout boolean;
+ v_input_tokens numeric;
+ v_cost numeric;
+ v_kind text;
+ v_code text;
+ v_ai_id uuid;
+BEGIN
+ SELECT role INTO v_role FROM abastece.staff_members
+ WHERE id = p_staff AND active;
+ IF v_role IS NULL OR v_role NOT IN ('administrador', 'auxiliar', 'supervisor') THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'Perfil no autorizado para analizar';
+ END IF;
+
+ SELECT * INTO v_order FROM abastece.orders WHERE id = p_order FOR UPDATE;
+ IF NOT FOUND THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0404', MESSAGE = 'Pedido no encontrado';
+ END IF;
+ IF v_role IN ('auxiliar', 'supervisor') AND v_order.requested_by <> p_staff THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'Solo el autor puede analizar este pedido';
+ END IF;
+
+ IF v_order.status <> 'submitted' THEN
+  -- C3: esta rama no llama a Jev ni escribe; ignora incluso un sobre malformado.
+  SELECT * INTO v_log FROM abastece.decision_logs
+  WHERE order_id = p_order AND provider IN ('mock', 'typesafe', 'openai')
+  ORDER BY analysis_sequence DESC LIMIT 1;
+  IF FOUND THEN
+   v_proposal := pg_catalog.jsonb_build_object(
+    'source', CASE WHEN v_log.provider = 'mock' THEN 'SIMULADO' ELSE 'API_REAL' END,
+    'model', CASE WHEN v_log.response ? 'error' THEN v_log.model_version
+     ELSE coalesce(v_log.response->>'model', v_log.model_version) END,
+    'status', v_log.status,
+    'answers', CASE WHEN pg_catalog.jsonb_typeof(v_log.response->'answers') = 'object'
+     THEN v_log.response->'answers' ELSE '{}'::jsonb END,
+    'decision_log_id', v_log.id);
+  END IF;
+  RETURN pg_catalog.jsonb_build_object('order_id', p_order,
+   'duplicates', '[]'::jsonb, 'missing_kit', '[]'::jsonb,
+   'incidents', '[]'::jsonb, 'proposal', v_proposal);
+ END IF;
+
+ -- p_proposal es el sobre interno aprobado en C3. No se acepta un ID ni una
+ -- fuente enviada por FastAPI: ambos se derivan del INSERT y del proveedor.
+ IF p_proposal IS NULL OR pg_catalog.jsonb_typeof(p_proposal) <> 'object' THEN
+  RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'p_proposal debe ser objeto JSON';
+ END IF;
+ IF EXISTS (SELECT 1 FROM pg_catalog.jsonb_object_keys(p_proposal) AS k(key)
+  WHERE key NOT IN ('provider', 'model_version', 'input_state', 'response',
+   'proposed_action', 'status', 'input_tokens', 'estimated_cost_usd')) THEN
+  RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'p_proposal contiene claves no permitidas';
+ END IF;
+ v_provider := p_proposal->>'provider';
+ v_status := p_proposal->>'status';
+ v_response := p_proposal->'response';
+ IF pg_catalog.jsonb_typeof(p_proposal->'provider') IS DISTINCT FROM 'string' OR
+    v_provider IS NULL OR v_provider NOT IN ('mock', 'typesafe', 'openai') OR
+    pg_catalog.jsonb_typeof(p_proposal->'status') IS DISTINCT FROM 'string' OR
+    v_status IS NULL OR v_status NOT IN ('proposed', 'human_review') OR
+    pg_catalog.jsonb_typeof(p_proposal->'input_state') IS DISTINCT FROM 'object' OR
+    p_proposal->'input_state' = '{}'::jsonb OR
+    pg_catalog.jsonb_typeof(v_response) IS DISTINCT FROM 'object' OR
+    pg_catalog.jsonb_typeof(p_proposal->'proposed_action') IS DISTINCT FROM 'string' OR
+    nullif(pg_catalog.btrim(p_proposal->>'proposed_action'), '') IS NULL THEN
+  RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'p_proposal tiene campos inválidos';
+ END IF;
+ v_is_timeout := v_response ? 'error';
+ IF v_is_timeout THEN
+  IF v_response <> '{"error":"timeout"}'::jsonb OR v_provider <> 'typesafe' OR
+     v_status <> 'human_review' OR p_proposal->>'proposed_action' <> 'human_review' THEN
+   RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Timeout de Jev inválido';
+  END IF;
+ ELSE
+  IF pg_catalog.jsonb_typeof(v_response->'model') IS DISTINCT FROM 'string' OR
+     nullif(pg_catalog.btrim(v_response->>'model'), '') IS NULL OR
+     pg_catalog.jsonb_typeof(v_response->'answers') IS DISTINCT FROM 'object' OR
+     pg_catalog.jsonb_typeof(v_response->'usage') IS DISTINCT FROM 'object' THEN
+   RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Respuesta de Jev inválida';
+  END IF;
+ END IF;
+ IF p_proposal ? 'model_version' AND
+    (pg_catalog.jsonb_typeof(p_proposal->'model_version') IS DISTINCT FROM 'string' OR
+     nullif(pg_catalog.btrim(p_proposal->>'model_version'), '') IS NULL) THEN
+  RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'model_version inválido';
+ END IF;
+ v_model_version := coalesce(p_proposal->>'model_version', v_response->>'model');
+ IF nullif(pg_catalog.btrim(v_model_version), '') IS NULL THEN
+  RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'model_version obligatorio';
+ END IF;
+ IF pg_catalog.jsonb_typeof(p_proposal->'input_tokens') IS DISTINCT FROM 'number' OR
+    pg_catalog.jsonb_typeof(p_proposal->'estimated_cost_usd') IS DISTINCT FROM 'number' THEN
+  RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Uso de Jev inválido';
+ END IF;
+ v_input_tokens := (p_proposal->>'input_tokens')::numeric;
+ v_cost := (p_proposal->>'estimated_cost_usd')::numeric;
+ IF v_input_tokens < 0 OR v_input_tokens > 2147483647 OR
+    v_input_tokens <> pg_catalog.trunc(v_input_tokens) OR
+    v_cost < 0 OR v_cost >= 1000000 OR v_cost <> pg_catalog.round(v_cost, 8) OR
+    (v_provider = 'mock' AND (v_input_tokens <> 0 OR v_cost <> 0)) THEN
+  RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'Uso de Jev fuera de rango';
+ END IF;
+
+ SELECT reference_at INTO STRICT v_ref FROM abastece.demo_metadata WHERE id = true;
+ v_findings := abastece.fn_detectar_reglas_pedido(p_order);
+
+ -- El pedido está bloqueado. El advisory lock serializa códigos INC-NNN entre
+ -- pedidos distintos; incidents.code UNIQUE sigue siendo la defensa final.
+ PERFORM pg_catalog.pg_advisory_xact_lock(17391011, 2);
+ FOR v_kind IN SELECT pg_catalog.jsonb_array_elements_text(v_findings->'kinds_to_create')
+ LOOP
+  IF NOT EXISTS (SELECT 1 FROM abastece.incidents
+   WHERE order_id = p_order AND kind = v_kind AND status IN ('open', 'under_review')) THEN
+   SELECT 'INC-' || pg_catalog.lpad(
+    (coalesce(max(substring(code FROM 5)::bigint), 0) + 1)::text, 3, '0')
+   INTO v_code FROM abastece.incidents WHERE code ~ '^INC-[0-9]+$';
+   INSERT INTO abastece.incidents
+    (code, location_id, order_id, kind, severity, status, description,
+     created_at, created_by)
+   VALUES (v_code, v_order.location_id, p_order, v_kind,
+    CASE v_kind WHEN 'possible_duplicate' THEN 'high' ELSE 'medium' END,
+    'open', CASE v_kind WHEN 'possible_duplicate'
+     THEN 'Posible duplicado: mismo punto, ciclo, productos y cantidades.'
+     ELSE 'Faltan productos obligatorios del kit del punto.' END,
+    v_ref, p_staff);
+  END IF;
+ END LOOP;
+
+ SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+  'id', id, 'code', code, 'kind', kind) ORDER BY kind), '[]'::jsonb)
+ INTO v_incidents FROM (
+  SELECT DISTINCT ON (i.kind) i.id, i.code, i.kind, i.created_at
+  FROM abastece.incidents AS i
+  WHERE i.order_id = p_order AND i.status IN ('open', 'under_review')
+   AND ((i.kind = 'possible_duplicate' AND
+    pg_catalog.jsonb_array_length(v_findings->'duplicates') > 0) OR
+    (i.kind = 'missing_from_kit' AND
+    pg_catalog.jsonb_array_length(v_findings->'missing_kit') > 0))
+  ORDER BY i.kind, i.created_at, i.id
+ ) AS selected_incidents;
+
+ INSERT INTO abastece.decision_logs
+  (location_id, order_id, task, provider, model_version, input_state,
+   response, proposed_action, status, input_tokens, estimated_cost_usd, created_at)
+ VALUES (v_order.location_id, p_order, 'detect_rules', 'rules', 'rules-v1',
+  pg_catalog.jsonb_build_object('order_id', p_order, 'order_code', v_order.code),
+  pg_catalog.jsonb_build_object('duplicates', v_findings->'duplicates',
+   'missing_kit', v_findings->'missing_kit', 'incidents', v_incidents),
+  'review_alerts', 'proposed', 0, 0, v_ref);
+
+ INSERT INTO abastece.decision_logs
+  (location_id, order_id, task, provider, model_version, input_state,
+   response, proposed_action, status, input_tokens, estimated_cost_usd, created_at)
+ VALUES (v_order.location_id, p_order, 'classify_notes', v_provider,
+  v_model_version, p_proposal->'input_state', v_response,
+  p_proposal->>'proposed_action', v_status, v_input_tokens::integer, v_cost, v_ref)
+ RETURNING id INTO v_ai_id;
+
+ v_proposal := pg_catalog.jsonb_build_object(
+  'source', CASE WHEN v_provider = 'mock' THEN 'SIMULADO' ELSE 'API_REAL' END,
+  'model', CASE WHEN v_is_timeout THEN v_model_version ELSE v_response->>'model' END,
+  'status', v_status,
+  'answers', CASE WHEN v_is_timeout THEN '{}'::jsonb ELSE v_response->'answers' END,
+  'decision_log_id', v_ai_id);
+ RETURN pg_catalog.jsonb_build_object('order_id', p_order,
+  'duplicates', v_findings->'duplicates', 'missing_kit', v_findings->'missing_kit',
+  'incidents', v_incidents, 'proposal', v_proposal);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION abastece.fn_analizar_reglas(uuid,uuid,jsonb) TO service_role;
+REVOKE EXECUTE ON FUNCTION abastece.fn_analizar_reglas(uuid,uuid,jsonb) FROM PUBLIC, anon, authenticated;
+
 -- D-1.3 (#30): POST /orders/{id}/decision.
 CREATE FUNCTION abastece.fn_decidir_pedido(
  p_staff uuid, p_order uuid, p_decision text, p_items jsonb, p_reason text
