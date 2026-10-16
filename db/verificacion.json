@@ -3,8 +3,8 @@
   "live_api_calls": 0,
   "tests_passed": 61,
   "storage": {
-    "schema_plus_indexes_bytes": 4317184,
-    "whole_local_database_bytes": 12779643,
+    "schema_plus_indexes_bytes": 5111808,
+    "whole_local_database_bytes": 13590651,
     "supabase_free_reference_mb": 500,
     "planning_demo_target_mb": 100,
     "cloud_size_not_measured": true
@@ -300,7 +300,7 @@
     {
       "test": "Local data plus indexes under 100 MB planning target",
       "passed": true,
-      "actual_bytes": 4317184
+      "actual_bytes": 5111808
     }
   ]
 }

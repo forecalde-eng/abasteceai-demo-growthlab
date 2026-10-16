@@ -235,9 +235,10 @@ El detalle (`openapi.yaml`) vive en `specs/000-contratos/` y queda **congelado**
 
 ### Migraciones nuevas
 
-- `db/08…11`: funciones SQL `abastece.fn_*` con la lógica de cada escritura (ver `06_PLAN_EQUIPO.md §3 C3`). FastAPI valida y las llama.
+- `db/07_integridad_preseed.sql`: integridad, lectura segura de cantidades para bodega y alcance de rutas. Se ejecuta después de `02` y antes de `03`.
+- `db/09…12`: funciones SQL `abastece.fn_*` y reinicio de la demo (ver `06_PLAN_EQUIPO.md §3 C3`). FastAPI valida y las llama.
 
-#### `db/07_proveedor_openai.sql`
+#### `db/08_proveedor_openai.sql`
 
 `decision_logs.provider` solo admite `mock | typesafe | rules`. Para registrar el asistente (I6) se agrega `openai` al CHECK. Va por PR a `specs/000-contratos`.
 

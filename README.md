@@ -26,8 +26,8 @@ frontend/      React + Vite (pendiente, T0.7)
 ## Verificar la base localmente
 
 ```bash
-mkdir -p /tmp/abastece-verify && cp db/verificar_postgres.mjs db/0[1-4]_*.sql /tmp/abastece-verify/
-cd /tmp/abastece-verify && npm init -y && npm i @electric-sql/pglite && node verificar_postgres.mjs
+mkdir -p /tmp/abastece-verify && cp db/verificar_postgres.mjs db/verificar_07_integridad.mjs db/0[1-4]_*.sql db/07_integridad_preseed.sql /tmp/abastece-verify/
+cd /tmp/abastece-verify && npm init -y && npm i @electric-sql/pglite@0.5.10 && node verificar_postgres.mjs && node verificar_07_integridad.mjs
 ```
 
-Resultado esperado: `{"tests_passed":61}`.
+Resultados esperados: `{"tests_passed":61}` y `{"tests_passed":29,"remote_calls":0}`.
