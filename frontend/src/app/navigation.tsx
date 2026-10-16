@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import type { Role } from "@/app/dev/session";
+import { InventarioBodega } from "@/features/bodega/InventarioBodega";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { DetalleAdmin } from "@/app/pages/DetalleAdmin";
@@ -167,14 +168,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-1.2",
     desc: "Por producto: físico, reservado, disponible y vencido, con las compras pendientes al lado.",
-    element: (
-      <Placeholder
-        title="Inventario de bodega"
-        task="B-1.2"
-        owner="Bruno"
-        desc="Por producto: físico, reservado, disponible y vencido, con las compras pendientes al lado."
-      />
-    ),
+    element: <InventarioBodega />,
   },
   {
     path: "/bodega/preparar",
