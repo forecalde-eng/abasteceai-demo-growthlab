@@ -1,4 +1,4 @@
-import { HomeIcon } from "lucide-react";
+﻿import { HomeIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { gruposDeRol } from "@/app/navigation";
@@ -122,8 +122,8 @@ export function Inicio() {
 
       {USAR_SESION_TEMPORAL ? (
         <p className="text-xs text-muted-foreground">
-          El rol se elige con el selector «Rol de prueba» de la barra lateral. Es temporal:
-          desaparecerá cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
+          El rol se elige con «Cambiar de cuenta» (solo en modo dev), que abre el menú de las 7 cuentas de la demo para cambiar entre ellas en dos clics.
+          Desaparecerá cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
         </p>
       ) : null}
     </div>
