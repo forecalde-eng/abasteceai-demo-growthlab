@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
+import { readSqlViews } from './sql-views.mjs'
 
 const root = new URL('./', import.meta.url)
 const csvRoot = new URL('../../../db/datos/', root)
@@ -33,6 +34,53 @@ const tables = [
     site_type: 'string | null', area_m2: 'number | null', workers: 'number | null',
     window_start: 'string | null', window_end: 'string | null', service_minutes: 'number',
     demo_scope: "'detailed' | 'catalog' | 'internal'", is_synthetic: 'boolean',
+  } },
+  { csv: 'shipments', name: 'shipments', type: 'Shipment', columns: {
+    id: 'string', code: 'string', order_id: 'string', location_id: 'string',
+    mode: "'own' | 'courier'", route_id: 'string | null', carrier_name: 'string | null',
+    guide_code: 'string', qr_token: 'string',
+    status: "'created' | 'dispatched' | 'delivered_unchecked' | 'reconciled' | 'with_difference'",
+    dispatched_at: 'string | null', promised_delivery_at: 'string | null',
+    delivered_at: 'string | null', provenance: "'synthetic'",
+  } },
+  { csv: 'shipment_items', name: 'shipmentItems', type: 'ShipmentItem', columns: {
+    id: 'string', shipment_id: 'string', order_id: 'string', order_item_id: 'string',
+    product_id: 'string', lot_id: 'string', shipped_qty: 'number',
+  } },
+  { csv: 'incidents', name: 'incidents', type: 'Incident', columns: {
+    id: 'string', code: 'string', location_id: 'string', order_id: 'string | null',
+    shipment_id: 'string | null',
+    kind: "'possible_duplicate' | 'missing_from_kit' | 'packing_difference' | 'receipt_shortage' | 'delay' | 'excess_stock' | 'expiry'",
+    severity: "'low' | 'medium' | 'high'", status: "'open' | 'under_review' | 'resolved'",
+    description: 'string', created_at: 'string', created_by: 'string', provenance: 'string',
+  } },
+  { csv: 'purchase_orders', name: 'purchases', type: 'Purchase', columns: {
+    id: 'string', code: 'string', supplier_name: 'string', created_by: 'string',
+    status: "'draft' | 'ordered' | 'partially_received' | 'received' | 'cancelled'",
+    approved_by: 'string | null', approved_at: 'string | null', ordered_at: 'string | null',
+    expected_at: 'string | null', provenance: "'synthetic'",
+  } },
+  { csv: 'purchase_order_items', name: 'purchaseItems', type: 'PurchaseItem', columns: {
+    id: 'string', purchase_id: 'string', product_id: 'string', ordered_qty: 'number', unit_cost_usd: 'number',
+  } },
+]
+
+const views = [
+  { name: 'inventory', type: 'Inventory', columns: {
+    location_id: 'string', product_id: 'string', physical_qty: 'number', usable_qty: 'number',
+    expired_qty: 'number', reserved_qty: 'number', available_qty: 'number',
+  } },
+  { name: 'replenishment', type: 'Replenishment', columns: {
+    location_id: 'string', product_id: 'string', sku: 'string', daily_demand_units: 'number',
+    review_days: 'number', delivery_lead_days: 'number', safety_days: 'number', usable_qty: 'number',
+    confirmed_inbound_qty: 'number', coverage_days: 'number', recommended_qty: 'number',
+    coverage_status: "'critical' | 'attention' | 'covered' | 'excess'", demand_source: "'synthetic_rule'",
+  } },
+  { name: 'orderTrace', type: 'OrderTrace', columns: {
+    order_code: 'string', location_id: 'string', status: "Order['status']", order_item_id: 'string',
+    sku: 'string', name: 'string', requested_qty: 'number', approved_qty: 'number | null',
+    prepared_qty: 'number', shipped_qty: 'number', counted_qty: 'number | null',
+    accepted_qty: 'number | null', shortage_qty: 'number | null',
   } },
 ]
 
@@ -94,18 +142,20 @@ export async function buildFixtures() {
       return Object.fromEntries(Object.entries(row).map(([key, value]) => [key, convert(value, table.columns[key])]))
     }).filter((row) => table.csv !== 'locations' || ['detailed', 'internal'].includes(row.demo_scope))
   }
+  Object.assign(fixtures, await readSqlViews())
   return fixtures
 }
 
 export function renderFiles(fixtures) {
-  const banner = '// DEMO FICTICIA · Generado desde db/datos/*.csv por generate.mjs. No editar a mano.\n'
+  const banner = '// DEMO FICTICIA · Generado desde CSV y vistas SQL oficiales por generate.mjs. No editar a mano.\n'
+  const definitions = [...tables, ...views]
   const files = {}
-  files['types.ts'] = banner + tables.map((table) =>
+  files['types.ts'] = banner + definitions.map((table) =>
     `export interface ${table.type} {\n${Object.entries(table.columns).map(([key, type]) => `  ${key}: ${type}`).join('\n')}\n}\n`,
   ).join('\n')
-  files['index.ts'] = tables.map((table) => `export { ${table.name} } from './${table.name}'`).join('\n')
-    + "\nexport type { Order, OrderItem, Product, Location } from './types'\n"
-  for (const table of tables) {
+  files['index.ts'] = definitions.map((table) => `export { ${table.name} } from './${table.name}'`).join('\n')
+    + `\nexport type { ${definitions.map((table) => table.type).join(', ')} } from './types'\n`
+  for (const table of definitions) {
     files[`${table.name}.ts`] = banner + `import type { ${table.type} } from './types'\n\n`
       + `export const ${table.name}: ${table.type}[] = ${JSON.stringify(fixtures[table.name], null, 2)}\n`
   }
