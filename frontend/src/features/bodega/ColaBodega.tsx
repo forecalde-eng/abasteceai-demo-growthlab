@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PackageSearchIcon, RefreshCwIcon, RouteIcon } from "lucide-react";
 
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/ui";
 // temporal: reemplazar por @/data
 import { useIncidents, useLocations, useOrders } from "./queueHooks";
+import { PrepararPedido } from "./PrepararPedido";
 
 const dateTime = new Intl.DateTimeFormat("es-EC", {
   day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
@@ -17,6 +18,11 @@ const dateTime = new Intl.DateTimeFormat("es-EC", {
 });
 
 export function ColaBodega() {
+  const [params] = useSearchParams();
+  return params.has("pedido") ? <PrepararPedido /> : <ListaColaBodega />;
+}
+
+function ListaColaBodega() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const orders = useOrders();
@@ -82,6 +88,7 @@ export function ColaBodega() {
                 <TableHead>Punto</TableHead>
                 <TableHead>Aprobado</TableHead>
                 <TableHead>Diferencia de empaque</TableHead>
+                <TableHead>Preparación</TableHead>
                 <TableHead>Trazabilidad</TableHead>
                 <TableHead>Estado</TableHead>
               </TableRow></TableHeader>
@@ -108,6 +115,7 @@ export function ColaBodega() {
                         ))}</div>
                       )}
                     </TableCell>
+                    <TableCell><Button asChild variant="outline" size="sm"><Link to={`/bodega/preparar?pedido=${encodeURIComponent(order.code)}`}><PackageSearchIcon data-icon="inline-start" />Preparar</Link></Button></TableCell>
                     <TableCell><Button asChild variant="outline" size="sm"><Link to={`/trazabilidad?pedido=${encodeURIComponent(order.code)}`}><RouteIcon data-icon="inline-start" />Ver trazabilidad</Link></Button></TableCell>
                     <TableCell><StatusBadge kind="pedido" value={order.status} /></TableCell>
                   </TableRow>

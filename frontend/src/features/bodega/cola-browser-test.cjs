@@ -42,6 +42,17 @@ async (page) => {
   await page.setViewportSize({ width: 375, height: 812 });
   check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "Sin desbordamiento de página a 375 px");
 
+  await packing.getByRole("link", { name: "Preparar", exact: true }).click();
+  await page.getByRole("heading", { name: "Preparar pedido", exact: true }).waitFor();
+  check(page.url().endsWith("/bodega/preparar?pedido=PED-DEMO-003"), "Detalle de preparación conectado por código");
+  await page.getByRole("table", { name: "Cantidades de preparación", exact: true }).waitFor();
+  check(await page.getByLabel("Preparado INS-002", { exact: true }).inputValue() === "5", "Cantidades del pedido correcto desde CSV");
+  check(await page.getByRole("button", { name: "Confirmar preparación", exact: true }).isDisabled(), "No confirma sin plan vigente");
+  await page.getByRole("button", { name: "Vista previa FEFO", exact: true }).click();
+  await page.getByText("La preparación todavía no tiene un servicio de demo. No se ha reservado ni modificado stock.", { exact: true }).waitFor();
+  check(await page.getByRole("button", { name: "Confirmar preparación", exact: true }).isDisabled(), "No finge una preparación ante servicio pendiente");
+  await page.getByRole("link", { name: "Volver a la cola", exact: true }).click();
+  await packing.waitFor();
   await packing.getByRole("link", { name: "Ver trazabilidad" }).click();
   check(page.url().endsWith("/trazabilidad?pedido=PED-DEMO-003"), "Enlace por código a trazabilidad");
   await page.getByRole("table").waitFor();
@@ -63,5 +74,5 @@ async (page) => {
   await approved.waitFor();
   check((await approved.innerText()).includes("Aprobado"), "Cola refleja aprobación de la sesión compartida");
   check(errors.length === 0, `Errores JavaScript: ${errors.join(", ")}`);
-  console.log("B-2.1: cola, PITCH-4, filtros, enlace, permisos, móvil y aprobación de la sesión OK.");
+  console.log("B-2.1/B-2.2: cola, PITCH-4, filtros, preparación por query, servicio pendiente sin escrituras, trazabilidad, permisos, móvil y aprobación de sesión OK.");
 }
