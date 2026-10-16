@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RouteIcon, SendIcon } from "lucide-react";
 
@@ -16,11 +16,12 @@ export type VehicleOption = { id: string; code: string; description: string; cap
 
 /** Propuesta de planificación: la produce el backend (`POST /routes/plan`), no la UI. */
 export type RoutePlanProposal = {
+  vehicle_id?: string;
   dispatch_date: string;
   planning_method: string;
   estimated_km: number;
   estimated_minutes: number;
-  stops: { location: Location; order_ids: string[]; sequence: number }[];
+  stops: { location: Location; order_ids: string[]; sequence: number; planned_arrival?: string | null }[];
 };
 
 /** Reglas de habilitación, separadas para que cada una sea legible y comprobable. */
@@ -34,10 +35,11 @@ export function canConfirmRoute(input: {
   const hasReadyOrders = input.readyOrders.length > 0;
   const hasVehicle = input.selectedVehicleId !== "";
   const hasProposal = input.proposal !== null && input.proposal.stops.length > 0;
-  const proposalCoversReady = hasProposal && input.proposal!.stops.every((stop) =>
+  const proposalOrdersAreReady = hasProposal && input.proposal!.stops.every((stop) =>
     stop.order_ids.every((id) => input.readyOrders.some((order) => order.id === id)),
   );
-  return hasReadyOrders && hasVehicle && hasProposal && proposalCoversReady && !input.busy && !input.confirmed;
+  const vehicleMatchesProposal = !input.proposal?.vehicle_id || input.proposal.vehicle_id === input.selectedVehicleId;
+  return hasReadyOrders && hasVehicle && hasProposal && proposalOrdersAreReady && vehicleMatchesProposal && !input.busy && !input.confirmed;
 }
 
 /** Código visible del punto (`Q-007`). La UI nunca muestra el UUID. */
@@ -45,15 +47,18 @@ function pointCodeOf(locationId: string, locations: Location[]): string {
   return locations.find((location) => location.id === locationId)?.code ?? "Sin código";
 }
 
-export function ConfirmarRuta({ readyOrders, locations, vehicles, proposal, service = confirmRoutes }: {
+export function ConfirmarRuta({ readyOrders, locations, vehicles, proposal, service = confirmRoutes, onBusyChange, onConfirmed }: {
   readyOrders: Order[]; locations: Location[]; vehicles: VehicleOption[]; proposal: RoutePlanProposal | null; service?: ConfirmRoutesService;
+  onBusyChange?: (busy: boolean) => void; onConfirmed?: (result: RouteConfirmResult) => void;
 }) {
   const client = useQueryClient();
-  const [vehicleId, setVehicleId] = useState("");
+  const [vehicleId, setVehicleId] = useState(proposal?.vehicle_id ?? "");
   const [result, setResult] = useState<RouteConfirmResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const canConfirm = canConfirmRoute({
     readyOrders, selectedVehicleId: vehicleId, proposal, busy, confirmed: result !== null,
@@ -65,7 +70,7 @@ export function ConfirmarRuta({ readyOrders, locations, vehicles, proposal, serv
       vehicle_id: selectedVehicle.id,
       dispatch_date: proposal.dispatch_date,
       stops: proposal.stops.map((stop) => ({
-        location_id: stop.location.id, sequence: stop.sequence, planned_arrival: null, order_ids: stop.order_ids,
+        location_id: stop.location.id, sequence: stop.sequence, planned_arrival: stop.planned_arrival ?? null, order_ids: stop.order_ids,
       })),
       estimated_km: proposal.estimated_km,
       estimated_minutes: proposal.estimated_minutes,
@@ -77,18 +82,21 @@ export function ConfirmarRuta({ readyOrders, locations, vehicles, proposal, serv
     if (locked.current || !canConfirm || !requestBody) return;
     locked.current = true;
     setBusy(true);
+    onBusyChange?.(true);
     setError(null);
     try {
       const response = validateRouteResult(await service(requestBody), requestBody);
+      if (!mounted.current) return;
       setResult(response);
       void client.invalidateQueries({ queryKey: ["demo"] });
       void client.invalidateQueries({ queryKey: ["bruno"] });
       toast.success("Ruta confirmada por el servicio.");
+      onConfirmed?.(response);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo confirmar la ruta.");
+      if (mounted.current) setError(cause instanceof Error ? cause.message : "No se pudo confirmar la ruta.");
     } finally {
       locked.current = false;
-      setBusy(false);
+      if (mounted.current) { setBusy(false); onBusyChange?.(false); }
     }
   }
 
@@ -129,7 +137,7 @@ export function ConfirmarRuta({ readyOrders, locations, vehicles, proposal, serv
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="route-vehicle">Vehículo</Label>
-              <Select id="route-vehicle" value={vehicleId} onChange={(event) => setVehicleId(event.target.value)} disabled={busy || result !== null}>
+              <Select id="route-vehicle" value={vehicleId} onChange={(event) => setVehicleId(event.target.value)} disabled={busy || result !== null || !!proposal?.vehicle_id}>
                 <option value="">Elegir vehículo</option>
                 {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.code} · {vehicle.capacity_kg} kg</option>)}
               </Select>

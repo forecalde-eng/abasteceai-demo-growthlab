@@ -16,6 +16,7 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
     ['shipments', 'shipments'], ['shipmentItems', 'shipment_items'], ['incidents', 'incidents'],
     ['purchases', 'purchase_orders'], ['purchaseItems', 'purchase_order_items'],
     ['decisionLogs', 'decision_logs'],
+    ['routePlans', 'route_plans'],
   ]) {
     const source = await readSource(csv)
     const expected = name === 'locations'
@@ -26,6 +27,20 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
     assert.equal(new Set(fixtures[name].map((row) => row.id)).size, expected.length)
   }
   const orderIds = new Set(fixtures.orders.map((row) => row.id))
+  const routeSource = await readSource('route_stops')
+  assert.equal(fixtures.routeStops.length, routeSource.length)
+  assert.deepEqual(fixtures.routeStops.map((row) => [row.route_id, row.location_id, row.sequence, row.planned_arrival]),
+    routeSource.map((row) => [row.route_id, row.location_id, Number(row.sequence), row.planned_arrival || null]))
+  const routeIds = new Set(fixtures.routePlans.map((row) => row.id))
+  assert.equal(new Set(fixtures.routeStops.map((row) => `${row.route_id}:${row.sequence}`)).size, routeSource.length)
+  assert.ok(fixtures.routeStops.every((row) => routeIds.has(row.route_id)))
+  const referenceRoute = fixtures.routePlans.find((row) => row.code === 'RUTA-DEMO-2')
+  assert.equal(referenceRoute.estimated_km, null)
+  assert.equal(referenceRoute.estimated_minutes, null)
+  const refCodes = fixtures.routeStops.filter((row) => row.route_id === referenceRoute.id)
+    .sort((a, b) => a.sequence - b.sequence)
+    .map((stop) => fixtures.locations.find((point) => point.id === stop.location_id).code)
+  assert.deepEqual(refCodes, ['Q-006', 'Q-007'])
   const productIds = new Set(fixtures.products.map((row) => row.id))
   const locationIds = new Set(fixtures.locations.map((row) => row.id))
   const allLocations = await readSource('locations')

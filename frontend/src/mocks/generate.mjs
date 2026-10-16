@@ -67,6 +67,16 @@ const tables = [
     id: 'string', code: 'string', description: 'string', capacity_kg: 'number', capacity_m3: 'number',
     available_from: 'string', available_until: 'string', is_synthetic: 'boolean',
   } },
+  { csv: 'route_plans', name: 'routePlans', type: 'RoutePlan', columns: {
+    id: 'string', code: 'string', vehicle_id: 'string', dispatch_date: 'string',
+    status: "'draft' | 'approved' | 'dispatched' | 'finished'",
+    matrix_source: "'synthetic' | 'openrouteservice'", planning_method: 'string',
+    estimated_km: 'number | null', estimated_minutes: 'number | null',
+    approved_by: 'string | null', provenance: 'string',
+  } },
+  { csv: 'route_stops', name: 'routeStops', type: 'RouteStopRecord', columns: {
+    route_id: 'string', location_id: 'string', sequence: 'number', planned_arrival: 'string | null',
+  } },
   { csv: 'decision_logs', name: 'decisionLogs', type: 'DecisionLog', columns: {
     id: 'string', location_id: 'string | null', order_id: 'string | null', task: 'string',
     provider: "'mock' | 'typesafe' | 'rules'", model_version: 'string',
