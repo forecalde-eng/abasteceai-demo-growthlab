@@ -136,6 +136,27 @@ export interface Vehicle {
   is_synthetic: boolean
 }
 
+export interface RoutePlan {
+  id: string
+  code: string
+  vehicle_id: string
+  dispatch_date: string
+  status: 'draft' | 'approved' | 'dispatched' | 'finished'
+  matrix_source: 'synthetic' | 'openrouteservice'
+  planning_method: string
+  estimated_km: number | null
+  estimated_minutes: number | null
+  approved_by: string | null
+  provenance: string
+}
+
+export interface RouteStopRecord {
+  route_id: string
+  location_id: string
+  sequence: number
+  planned_arrival: string | null
+}
+
 export interface DecisionLog {
   id: string
   location_id: string | null
