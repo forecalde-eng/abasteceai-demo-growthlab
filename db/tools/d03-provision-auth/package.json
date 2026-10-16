@@ -1,0 +1,17 @@
+{
+  "name": "abasteceai-d03-provision-auth",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "d03": "node provision.mjs",
+    "test": "node provision.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "pg": "8.23.1"
+  }
+}
