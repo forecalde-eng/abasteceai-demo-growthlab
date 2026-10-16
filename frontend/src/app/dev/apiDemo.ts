@@ -31,16 +31,22 @@ const creados: Order[] = [];
 const creadosPorClave = new Map<string, Order>();
 let siguienteNumero = orders.length + 1; // 27 → PED-DEMO-027
 
-/** Error con la misma forma que el backend (`specs/000-contratos/openapi.yaml` §8). */
+/**
+ * Error con la forma del contrato (`schemas.Error`: `{ error: { code, message, details } }`).
+ * `code` es uno del enum del openapi; `status` y `details` son de la capa temporal.
+ */
 export class ErrorApi extends Error {
   status: number;
+  /** `UNAUTHORIZED | FORBIDDEN | NOT_FOUND | INVALID_STATE | VALIDATION | CONFLICT | UPSTREAM_AI`. */
   code: string;
+  details?: Record<string, unknown>;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, details?: Record<string, unknown>) {
     super(message);
     this.name = "ErrorApi";
     this.status = status;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -91,12 +97,17 @@ export type NuevoPedido = {
   idempotency_key: string;
 };
 
+/** Lo que devuelve `POST /orders` (`schemas.OrderResult`): **no** el pedido completo. */
+export type OrderResult = { id: string; code: string; status: Order["status"] };
+
 /**
  * Escritura: crea el pedido (`status=submitted`). Reproduce lo que valida la base en
- * `fn_crear_pedido` (HU-1.1): punto no asignado → 403; producto inexistente/inactivo o
- * repetido → 422; mismo `Idempotency-Key` → devuelve el pedido existente.
+ * `fn_crear_pedido` (HU-1.1): punto no asignado → 403 (`FORBIDDEN`); producto
+ * inexistente/inactivo o repetido → 422 (`VALIDATION`); adicional sin pedido/motivo →
+ * 422 (`VALIDATION`); misma `Idempotency-Key` → 200 con el pedido existente (sin duplicar).
+ * Devuelve **solo** `{ id, code, status }` (`schemas.OrderResult`); el detalle se lee con `useOrders`.
  */
-export async function createOrder(datos: NuevoPedido): Promise<Order> {
+export async function createOrder(datos: NuevoPedido): Promise<OrderResult> {
   await esperar(600);
 
   // 1) Idempotencia: la misma clave devuelve el pedido ya creado (no duplica).
@@ -107,7 +118,7 @@ export async function createOrder(datos: NuevoPedido): Promise<Order> {
   const staffId = STAFF_ID_POR_ROL[rolActual()];
   const asignados = PUNTOS_POR_STAFF[staffId] ?? [];
   if (!asignados.includes(datos.location_id)) {
-    throw new ErrorApi(403, "punto_no_asignado", "Ese punto no está entre los que tienes asignados.");
+    throw new ErrorApi(403, "FORBIDDEN", "Ese punto no está entre los que tienes asignados.");
   }
 
   // 3) Ítems: producto existente y activo, sin repetir.
@@ -115,10 +126,17 @@ export async function createOrder(datos: NuevoPedido): Promise<Order> {
   for (const item of datos.items) {
     const producto = products.find((p) => p.id === item.product_id);
     if (!producto || !producto.active) {
-      throw new ErrorApi(422, "producto_invalido", "El pedido tiene un producto inexistente o inactivo.");
+      throw new ErrorApi(
+        422,
+        "VALIDATION",
+        "El pedido tiene un producto inexistente o inactivo.",
+        { product_id: item.product_id },
+      );
     }
     if (vistos.has(item.product_id)) {
-      throw new ErrorApi(422, "producto_repetido", "El pedido tiene un producto repetido.");
+      throw new ErrorApi(422, "VALIDATION", "El pedido tiene un producto repetido.", {
+        product_id: item.product_id,
+      });
     }
     vistos.add(item.product_id);
   }
@@ -126,10 +144,14 @@ export async function createOrder(datos: NuevoPedido): Promise<Order> {
   // 4) Un adicional necesita pedido original y motivo (lo exige la base).
   if (datos.order_type === "additional") {
     if (!datos.related_order_id) {
-      throw new ErrorApi(422, "adicional_sin_pedido", "Un pedido adicional necesita el pedido original.");
+      throw new ErrorApi(422, "VALIDATION", "Un pedido adicional necesita el pedido original.", {
+        field: "related_order_id",
+      });
     }
     if (!datos.reason || datos.reason.trim() === "") {
-      throw new ErrorApi(422, "adicional_sin_motivo", "Un pedido adicional necesita un motivo.");
+      throw new ErrorApi(422, "VALIDATION", "Un pedido adicional necesita un motivo.", {
+        field: "reason",
+      });
     }
   }
 
@@ -154,5 +176,6 @@ export async function createOrder(datos: NuevoPedido): Promise<Order> {
 
   creados.push(pedido);
   creadosPorClave.set(datos.idempotency_key, pedido);
-  return pedido;
+  // `201`/`200` del contrato: solo el resultado, no el pedido completo.
+  return { id: pedido.id, code: pedido.code, status: pedido.status };
 }

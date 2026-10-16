@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClipboardListIcon, SearchIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,7 +13,7 @@ import {
 } from "@/app/dev/apiDemo";
 import { MES_DEMO } from "@/app/dev/datosDemo";
 import { useSession } from "@/app/dev/session";
-import type { Location, Product } from "@/mocks";
+import type { Product } from "@/mocks";
 import {
   Badge,
   Button,
@@ -81,6 +81,7 @@ function contenido(producto: Product): string {
 
 export function CrearPedido() {
   const navegar = useNavigate();
+  const queryClient = useQueryClient();
   const sesion = useSession();
   const productosQ = useProducts();
 
@@ -104,7 +105,9 @@ export function CrearPedido() {
       : `demo-${Date.now()}`,
   );
 
-  const puntos: Location[] = sesion.data?.puntos ?? [];
+  // `GET /me` trae los puntos asignados (contrato C2). Si cambia el rol, el punto elegido
+  // puede dejar de estar asignado: se cae al primero.
+  const puntos = sesion.data?.points ?? [];
   // Si cambia el rol, el punto elegido puede dejar de estar asignado: se cae al primero.
   const punto = puntos.find((p) => p.id === puntoId) ?? puntos[0];
   const puntoElegido = punto?.id ?? "";
@@ -138,6 +141,8 @@ export function CrearPedido() {
     mutationFn: (datos: NuevoPedido) => createOrder(datos),
     onSuccess: (pedido) => {
       toast.success(`Pedido ${pedido.code} enviado`);
+      // `POST /orders` devuelve { id, code, status }: el detalle se relee con `useOrders`.
+      void queryClient.invalidateQueries({ queryKey: ["demo", "pedidos"] });
       navegar("/pedidos");
     },
     onError: (error) => {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { puntosAsignados } from "@/app/dev/datosDemo";
-import type { Location } from "@/mocks";
+import { puntosAsignados, type PuntoAsignado } from "@/app/dev/datosDemo";
 
 /**
  * ⚠️ SESIÓN TEMPORAL — NO ES EL LOGIN REAL.
@@ -34,7 +33,10 @@ export type RoleMeta = {
   /** Identidades del seed (spec §2). */
   name: string;
   email: string;
-  /** Puntos visibles por RLS, tal como los describe la spec §2. */
+  /**
+   * Texto de pantalla de la demo (spec §2). **No** forma parte de `GET /me`: con la capa
+   * real se calculará en el componente a partir de `points`.
+   */
   pointsLabel: string;
 };
 
@@ -108,15 +110,19 @@ export const STAFF_ID_POR_ROL: Record<Role, string> = {
   gerencia: "24e3adc4-68d1-5a5e-8a54-7d2929198729",
 };
 
+/**
+ * Forma de `GET /me` (`schemas.Me`), con los **mismos nombres snake_case** que el backend
+ * (`staff_id`, `full_name`, `points`). Así, cuando David entregue `src/data/useSession`,
+ * las pantallas no cambian. `pointsLabel` ya no vive aquí: es texto de pantalla.
+ */
 export type Session = {
   /** `staff_members.id` del seed. */
-  staffId: string;
-  name: string;
+  staff_id: string;
+  full_name: string;
   email: string;
   role: Role;
-  pointsLabel: string;
   /** Puntos asignados (`point_assignments`): el auxiliar 3, el supervisor 24, el resto 0. */
-  puntos: Location[];
+  points: PuntoAsignado[];
 };
 
 const STORAGE_KEY = "abasteceai.dev.role";
@@ -180,12 +186,11 @@ export function useSession(): {
   const staffId = STAFF_ID_POR_ROL[role];
   return {
     data: {
-      staffId,
-      name: meta.name,
+      staff_id: staffId,
+      full_name: meta.name,
       email: meta.email,
       role,
-      pointsLabel: meta.pointsLabel,
-      puntos: puntosAsignados(staffId),
+      points: puntosAsignados(staffId),
     },
     isLoading: false,
     isError: false,

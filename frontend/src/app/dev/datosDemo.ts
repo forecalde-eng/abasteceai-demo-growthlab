@@ -59,10 +59,19 @@ export const PUNTOS_POR_STAFF: Record<string, string[]> = {
 };
 
 /**
- * Puntos asignados a un `staff_id`, resueltos contra `@/mocks` (`locations`).
- * Devuelve las filas de `locations` tal cual (nada calculado).
+ * Punto tal como lo devuelve `GET /me` (`schemas.Me.points`): la fila de `locations`
+ * recortada a lo que usa la UI. Mismos nombres que el backend (C2).
  */
-export function puntosAsignados(staffId: string): Location[] {
+export type PuntoAsignado = Pick<Location, "id" | "code" | "name" | "city" | "demo_scope">;
+
+/**
+ * Puntos asignados a un `staff_id` (`point_assignments`), resueltos contra `@/mocks`.
+ * Solo se copian los campos del contrato; nada calculado. Los roles globales (sin
+ * asignaciones explícitas) devuelven lista vacía.
+ */
+export function puntosAsignados(staffId: string): PuntoAsignado[] {
   const ids = PUNTOS_POR_STAFF[staffId] ?? [];
-  return locations.filter((punto) => ids.includes(punto.id));
+  return locations
+    .filter((punto) => ids.includes(punto.id))
+    .map(({ id, code, name, city, demo_scope }) => ({ id, code, name, city, demo_scope }));
 }
