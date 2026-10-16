@@ -28,6 +28,17 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
   const orderIds = new Set(fixtures.orders.map((row) => row.id))
   const productIds = new Set(fixtures.products.map((row) => row.id))
   const locationIds = new Set(fixtures.locations.map((row) => row.id))
+  const allLocations = await readSource('locations')
+  const mapSource = allLocations.filter((row) => row.kind === 'service_point' || row.code === 'BOD-DEMO')
+  assert.equal(fixtures.mapLocations.length, 701, 'Mapa: 700 puntos + bodega')
+  assert.deepEqual(fixtures.mapLocations.map((row) => row.id), mapSource.map((row) => row.id))
+  assert.equal(new Set(fixtures.mapLocations.map((row) => row.id)).size, 701)
+  assert.equal(fixtures.mapLocations.filter((row) => row.demo_scope === 'catalog').length, 676)
+  assert.equal(fixtures.mapLocations.filter((row) => row.demo_scope === 'detailed').length, 24)
+  for (const [city, count] of [['Quito', 300], ['Guayaquil', 250], ['Cuenca', 150]]) {
+    assert.equal(fixtures.mapLocations.filter((row) => row.city === city && row.kind === 'service_point').length, count)
+  }
+  assert.ok(fixtures.mapLocations.every((row) => !['TRA-DEMO', 'CUA-DEMO'].includes(row.code)))
   for (const item of fixtures.orderItems) {
     assert.ok(orderIds.has(item.order_id), `Pedido ausente: ${item.order_id}`)
     assert.ok(productIds.has(item.product_id), `Producto ausente: ${item.product_id}`)

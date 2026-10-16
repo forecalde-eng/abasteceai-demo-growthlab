@@ -159,12 +159,17 @@ export async function buildFixtures() {
   const fixtures = {}
   for (const table of tables) {
     const rows = await readSource(table.csv)
-    fixtures[table.name] = rows.map((row) => {
+    const converted = rows.map((row) => {
       if (JSON.stringify(Object.keys(row)) !== JSON.stringify(Object.keys(table.columns))) {
         throw new Error(`Columnas distintas al esquema esperado: ${table.csv}`)
       }
       return Object.fromEntries(Object.entries(row).map(([key, value]) => [key, convert(value, table.columns[key])]))
-    }).filter((row) => table.csv !== 'locations' || ['detailed', 'internal'].includes(row.demo_scope))
+    })
+    fixtures[table.name] = converted.filter((row) => table.csv !== 'locations' || ['detailed', 'internal'].includes(row.demo_scope))
+    if (table.csv === 'locations') {
+      // Mapa: los 700 puntos de servicio (catálogo + detallados) y la bodega central.
+      fixtures.mapLocations = converted.filter((row) => row.kind === 'service_point' || row.code === 'BOD-DEMO')
+    }
   }
   Object.assign(fixtures, await readSqlViews())
   return fixtures
@@ -178,11 +183,14 @@ export function renderFiles(fixtures) {
     `export interface ${table.type} {\n${Object.entries(table.columns).map(([key, type]) => `  ${key}: ${type}`).join('\n')}\n}\n`,
   ).join('\n')
   files['index.ts'] = definitions.map((table) => `export { ${table.name} } from './${table.name}'`).join('\n')
+    + "\nexport { mapLocations } from './mapLocations'"
     + `\nexport type { ${definitions.map((table) => table.type).join(', ')} } from './types'\n`
   for (const table of definitions) {
     files[`${table.name}.ts`] = banner + `import type { ${table.type} } from './types'\n\n`
       + `export const ${table.name}: ${table.type}[] = ${JSON.stringify(fixtures[table.name], null, 2)}\n`
   }
+  files['mapLocations.ts'] = banner + "import type { Location } from './types'\n\n"
+    + `export const mapLocations: Location[] = ${JSON.stringify(fixtures.mapLocations, null, 2)}\n`
   return files
 }
 

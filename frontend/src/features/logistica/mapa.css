@@ -1,0 +1,5 @@
+.mapa-frame { position: relative; isolation: isolate; min-width: 0; }
+.mapa-canvas { width: 100%; height: clamp(360px, 65vh, 640px); border-radius: 8px; }
+.mapa-frame .leaflet-container { font-family: inherit; }
+.mapa-frame .leaflet-control-attribution { max-width: min(320px, 80vw); white-space: normal; }
+.mapa-frame .leaflet-popup-content p { margin: 0; }
