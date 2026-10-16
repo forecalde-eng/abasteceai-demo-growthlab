@@ -196,7 +196,8 @@ Se bloquea la fila del pedido con `FOR UPDATE` y se exige estado
 `occurred_at=reference_at`. El estado resultante se conserva en `after_state`
 como `{status, decision, reason, items}`, donde `status` es el estado final del
 pedido (`approved` | `draft` | `cancelled`), `reason` el motivo e `items` las
-cantidades aprobadas (acuerdo 8); **no** se sobrescribe `orders.reason`, que
+cantidades aprobadas. En `return` y `cancel`, `items` es `[]` porque no se
+aprueban cantidades (acuerdo 8); **no** se sobrescribe `orders.reason`, que
 pertenece a la justificación de un pedido adicional, ni se toca
 `decision_logs.status`. La propuesta IA nunca ejecuta la decisión.
 
