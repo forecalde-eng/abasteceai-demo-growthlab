@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
+from typing import Annotated, Any
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.auth import Me, get_me
 from app.config import get_settings
 from app.db import cerrar_pool
 from app.errors import ApiError
@@ -41,6 +43,10 @@ def create_app() -> FastAPI:
     @app.get("/health", operation_id="getHealth", tags=["sistema"])
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/me", operation_id="getMe", tags=["sistema"])
+    def me(actual: Annotated[Me, Depends(get_me)]) -> dict[str, Any]:
+        return actual.as_dict()
 
     return app
 
