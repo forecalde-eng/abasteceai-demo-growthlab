@@ -42,3 +42,36 @@ Cubre: solo PED-DEMO-007 listo, aviso de propuesta faltante, botón bloqueado in
 ## Lo que no cubre
 
 No crea envíos reales. Los envíos `created` que necesita el despacho (B-2.4) aparecerán cuando el backend implemente `fn_confirmar_ruta` y exista la propuesta de rutas.
+
+## B-4.3 · Courier (solo lectura)
+
+Ruta existente `/logistica/courier`, permiso de logística sin cambios. Bruno confirmó en #72 que asume Courier, mapa y rutas; el cambio mínimo del placeholder en `navigation.tsx` se notificó a Jorge antes de editarlo y se solicita su revisión.
+
+`Courier.tsx` muestra envío/pedido, punto/ciudad, operador, guía, fecha prometida, estado y alerta de retraso. Filtros por código, guía, destino/operador y solo retrasados; enlace a la etiqueta existente de despacho. Usa `@/ui`, `StatusBadge` y `TONO.problema`, sin colores nuevos, UUID ni escrituras. Fechas formateadas en `es-EC` / `America/Guayaquil`.
+
+### La demora la determina SQL, no el reloj del cliente
+
+El generador oficial de `src/mocks/` ejecuta **la consulta de retrasos leída directamente de `db/04_consultas_demo.sql`**, sobre el seed y las vistas cargadas en PGlite. Publica `courierDelays` con sus columnas originales (`code`, `city`, `promised_delivery_at`, `status`) y `demoMetadata` con `reference_at`. No se modifica `db/`, no se agrega una columna/estado de negocio y no se importa SQL o PGlite desde la pantalla.
+
+`useCourierShipments.ts` adapta el hook `useShipments` de la demo compartida y lo marca temporal para reemplazarlo por `@/data`. Cruza el listado SQL con los códigos courier. Si la sesión registra una entrega, retira el aviso anterior del snapshot, sin calcular fechas ni inventar nuevos retrasos. El flag `isDelayed` es solo una propiedad de presentación, no una columna de base ni un estado del envío. Sin mocks explícitos informa que falta la lectura real; los datos simulados no se presentan como datos de Supabase real.
+
+PITCH-9: ENV-DEMO-008, GUIA-DEMO-008, destino G-001 / Guayaquil, estado Despachado y badge Retrasado. Prometido 10 oct 2026, 15:00 Ecuador; reloj del seed 10 oct 2026, 17:00 Ecuador.
+
+### Comprobar Courier
+
+```sh
+node frontend/src/mocks/generate.mjs
+node --test frontend/src/mocks/generate.test.mjs
+```
+
+En `frontend/`: `npx tsc --noEmit && npx vitest run && npm run build`.
+
+Con Vite en `VITE_USE_MOCKS=true` y puerto 5174, desde raíz:
+
+```sh
+playwright-cli open http://127.0.0.1:5174
+playwright-cli run-code --filename=frontend/src/features/logistica/courier-browser-test.cjs
+playwright-cli close
+```
+
+Comprueba PITCH-9, filtros, reloj y fechas de Ecuador, acceso de logística, rechazo al auxiliar, etiqueta, 375 px, entrega registrada por el reemplazo del supervisor y error explícito si falta el reloj de demo.
