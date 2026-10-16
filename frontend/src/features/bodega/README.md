@@ -36,9 +36,9 @@ playwright-cli close
 
 La prueba valida PITCH-5: INS-005 = 8 físico / 7 reservado / 1 disponible / 0 vencido, y COMPRA-DEMO-001 con 100 ordenados en estado pendiente. También filtros, sin UUID ni costos visibles, acceso por rol, adaptación a 375 px y fallo de carga sin inventar saldos.
 
-## B-2.2 · UI y contrato de preparación (integración pendiente)
+## B-2.2 · UI y contrato de preparación
 
-Este avance no modifica `navigation.tsx` ni la cola del PR #106, que todavía no estaba fusionado al prepararlo. El enlace del detalle se coordina tras su merge para mantener las ramas independientes.
+Tras integrar `main` con el PR #106, la cola y el detalle comparten `/bodega/preparar`: sin query muestra la lista; con `?pedido=<code>` muestra la preparación. Cada fila tiene el enlace **Preparar** y el detalle permite **Volver a la cola**. No se modifica `navigation.tsx` para esta integración: conserva su entrada y permisos originales.
 
 `PrepararPedido.tsx` lee `?pedido=<code>` y compone el editor usando el detalle temporal de Jorge. `PreparacionEditor.tsx` pide cantidades válidas y una vista previa antes de confirmar; cualquier edición invalida el plan. El bloqueo inmediato evita dos solicitudes por doble clic. La respuesta de confirmación manda el estado (`ready` o `preparing`) y su código de incidencia; no se recalculan FEFO, reservas, saldos ni faltantes.
 
@@ -57,3 +57,21 @@ playwright-cli close
 ```
 
 Verifica vista previa sin confirmación, edición que invalida el plan, validación de cantidades, confirmación única, rechazo de lote vencido, mensaje de error y estados `preparing`/`ready` devueltos por el servicio controlado. No sustituye la prueba integrada de `fn_preparar`.
+
+## B-2.1 · Cola de bodega
+
+`ColaBodega.tsx` ocupa la ruta existente `/bodega/preparar`, con autorización de Bruno y revisión de Jorge. Mantiene el menú y los permisos originales (solo bodega) y permite abrir el detalle B-2.2 por código en la query.
+
+Muestra solo pedidos `approved` y `preparing`, estado traducido, punto, fecha aprobada y las incidencias de empaque no resueltas. PED-DEMO-003 aparece «En preparación» con INC-EMPAQUE y su descripción original. Sin sumar ni recalcular faltantes; el enlace permite consultar la trazabilidad por código. Incluye filtro por estado/pedido/punto, actualizar y estados de carga/vacío/error.
+
+`queueHooks.ts` adapta `useOrders(filtro)`, `useIncidents(filtro)` y `useLocations(scope)` con la marca temporal para reemplazar por `@/data`. Reutiliza `@/app/dev/apiDemo`, que ya contiene los CSV y las decisiones de esa sesión de demo, para que una aprobación desde admin aparezca en la cola sin duplicar escrituras. El perfil/rol procede de `@/data`; con mocks apagados informa que falta la lectura real. No modifica la capa de Jorge ni la de David. Los reemplazos siguen siendo solo una demo, no permisos reales de RLS.
+
+Prueba adicional, con Vite en modo mocks y sin decisiones previas en esa sesión de navegador:
+
+```sh
+playwright-cli open http://127.0.0.1:5174
+playwright-cli run-code --filename=frontend/src/features/bodega/cola-browser-test.cjs
+playwright-cli close
+```
+
+Valida los cuatro pedidos del seed en cola (003, 006, 010 y 026), PITCH-4 con incidencia, filtros, URL de trazabilidad, alcance por rol, 375 px y una aprobación de prueba desde el reemplazo compartido de Jorge. La aprobación solo vive en memoria y desaparece al recargar.
