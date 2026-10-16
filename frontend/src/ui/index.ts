@@ -25,6 +25,10 @@ export {
   TableCaption,
 } from "@/ui/table";
 export { Badge, badgeVariants } from "@/ui/badge";
+export { Input } from "@/ui/input";
+export { Label } from "@/ui/label";
+export { Textarea } from "@/ui/textarea";
+export { Select } from "@/ui/select";
 export { Alert, AlertTitle, AlertDescription, AlertAction } from "@/ui/alert";
 export { Skeleton } from "@/ui/skeleton";
 export {
