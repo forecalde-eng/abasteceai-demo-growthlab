@@ -12,7 +12,8 @@ info:
     - Rol y puntos se leen de la base con el JWT; nunca del cuerpo (invariante I8).
     - Fechas de negocio nuevas = `demo_metadata.reference_at` (I11).
     - `operationId` = nombre de la función en `frontend/src/data/api.ts` (C2).
-    - `x-roles` indica qué roles pueden llamar cada endpoint. Otro rol → 403.
+    - `x-roles` = valores de `staff_members.role` que pueden llamar el endpoint. Otro rol → 403.
+    - `x-checks` = controles extra sobre la fila (autoría, punto asignado). Los hace la función SQL y FastAPI.
 servers:
   - url: http://localhost:8000
 security:
@@ -58,6 +59,7 @@ paths:
       operationId: createOrder
       summary: Crear pedido (HU-1.1) → `fn_crear_pedido`
       x-roles: [auxiliar, supervisor]
+      x-checks: [location_id entre los puntos asignados del usuario]
       parameters:
         - name: Idempotency-Key
           in: header
@@ -93,7 +95,8 @@ paths:
         (`possible_duplicate`, `missing_from_kit`) solo si no hay una abierta para el pedido,
         y guarda el análisis en `decision_logs` (provider `rules` + `mock`/`typesafe`).
         Volver a llamarlo no duplica incidencias.
-      x-roles: [administrador, autor del pedido]
+      x-roles: [administrador, auxiliar, supervisor]
+      x-checks: [auxiliar y supervisor solo si son el autor del pedido]
       parameters: [{ $ref: "#/components/parameters/OrderId" }]
       responses:
         "200":
@@ -115,6 +118,7 @@ paths:
         Devolver, cancelar o aprobar con `approved_qty` distinta de `requested_qty` sin `reason` → 422.
         Todo queda en `audit_events`.
       x-roles: [administrador]
+      x-checks: [no puede ser el autor del pedido]
       parameters: [{ $ref: "#/components/parameters/OrderId" }]
       requestBody:
         required: true
@@ -257,7 +261,8 @@ paths:
       operationId: markDelivered
       summary: Marcar entregado sin conteo (HU-2.3) → `fn_marcar_entregado`
       description: Envío y pedido → `delivered_unchecked`. **No** aumenta el stock del punto (I9).
-      x-roles: [supervisor asignado al punto]
+      x-roles: [supervisor]
+      x-checks: [punto del envío asignado al supervisor]
       parameters: [{ $ref: "#/components/parameters/ShipmentId" }]
       responses:
         "200":
@@ -280,7 +285,8 @@ paths:
         Una transacción: aceptadas TRA-DEMO → punto; dañadas (contadas − aceptadas) → CUA-DEMO;
         faltantes (enviadas − contadas) se quedan en tránsito con incidencia `receipt_shortage`.
         Todo aceptado → `reconciled`; si no → `with_difference`. Ya existe recepción → 409.
-      x-roles: [auxiliar asignado al punto]
+      x-roles: [auxiliar]
+      x-checks: [punto del envío asignado al auxiliar]
       parameters: [{ $ref: "#/components/parameters/ShipmentId" }]
       requestBody:
         required: true
@@ -703,7 +709,8 @@ components:
 
     RouteConfirmRequest:
       type: object
-      required: [vehicle_id, dispatch_date, stops, estimated_km, estimated_minutes, planning_method, matrix_source]
+      description: "El plan confirmado se guarda con `matrix_source=synthetic` (HU-3.2); no viaja en el cuerpo porque `fn_confirmar_ruta` no lo recibe."
+      required: [vehicle_id, dispatch_date, stops, estimated_km, estimated_minutes, planning_method]
       properties:
         vehicle_id: { type: string, format: uuid }
         dispatch_date: { type: string, format: date }
@@ -714,7 +721,6 @@ components:
         estimated_km: { type: number }
         estimated_minutes: { type: number }
         planning_method: { type: string }
-        matrix_source: { type: string, enum: [synthetic, openrouteservice] }
 
     RouteConfirmResult:
       type: object
