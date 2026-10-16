@@ -390,7 +390,7 @@ paths:
     post:
       operationId: resetDemo
       summary: Volver al seed y re-vincular las 7 cuentas (HU-0.3)
-      description: Corre `db/11_reset_demo.sql` + `db/03_datos_ficticios.sql` y re-vincula `auth_user_id`.
+      description: Corre `db/12_reset_demo.sql` + `db/03_datos_ficticios.sql` y re-vincula `auth_user_id`.
       x-roles: [administrador]
       responses:
         "200":

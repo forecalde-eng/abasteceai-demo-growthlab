@@ -73,7 +73,7 @@
 | D7 | OR-Tools con matriz **haversine × 1,3** [Supuesto] a 25 km/h [Supuesto]; `matrix_source=synthetic`. ORS solo si sobra tiempo | Sin depender de cuota externa en el pitch |
 | D8 | Asistente: `websearch_to_tsquery('spanish', …)` sobre `document_chunks` **con el JWT del usuario** (RLS filtra `allowed_roles`) + funciones de lectura | Sin embeddings; respeta permisos |
 | D9 | QR = `shipments.qr_token`; lector con cámara [Supuesto: `html5-qrcode`] + tipeo de `guide_code`; `vite --https` con certificado local | La cámara exige HTTPS |
-| D10 | **Reloj de demo:** `occurred_at`, `created_at`, `approved_at`, `dispatched_at`, etc. = `demo_metadata.reference_at` (+ segundos crecientes para ordenar) | Las vistas y triggers solo cuentan movimientos `≤ reference_at`; con `now()` lo nuevo no aparecería |
+| D10 | **Reloj de demo:** `occurred_at`, `created_at`, `approved_at`, `dispatched_at`, etc. = `abastece.fn_reloj()`: `reference_at − 1 h` + segundos crecientes, nunca después de `reference_at` (ver `specs/000-contratos/funciones.md §1.2`) | Las vistas y triggers solo cuentan movimientos `≤ reference_at`; con `now()` lo nuevo no aparecería |
 | D11 | Migración `db/08_proveedor_openai.sql`: agrega `openai` al CHECK de `decision_logs.provider` | Registrar el asistente (I6) |
 | D12 | **Reset:** `TRUNCATE` de las 27 tablas → `03_datos_ficticios.sql` → `UPDATE staff_members SET auth_user_id` para los 7 emails (mapa en `backend/.env`) | Repetir el guion idéntico, sin recrear usuarios |
 
