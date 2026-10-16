@@ -26,6 +26,7 @@ import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
+import { Asistente } from "@/features/asistente/Asistente";
 import { Incidencias } from "@/features/incidencias/Incidencias";
 import { Tablero } from "@/features/tablero/Tablero";
 import { Trazabilidad } from "@/features/trazabilidad/Trazabilidad";
@@ -331,14 +332,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-4.1",
     desc: "Preguntas en lenguaje natural sobre los documentos que tu rol puede ver.",
-    element: (
-      <Placeholder
-        title="Asistente"
-        task="J-4.1"
-        owner="Jorge"
-        desc="Preguntas en lenguaje natural sobre los documentos que tu rol puede ver, citando título y versión."
-      />
-    ),
+    element: <Asistente />,
   },
 
   // --- Compras (COULD, sin dueño) ---
