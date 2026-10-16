@@ -148,3 +148,13 @@ def test_rol_equivocado_es_403(monkeypatch):
     assert cliente(monkeypatch, AUX).get("/solo-admin", headers=H).status_code == 403
     adm = auth.Me("s-3", "Carla", "c@x", "administrador", [])
     assert cliente(monkeypatch, adm).get("/solo-admin", headers=H).status_code == 200
+
+
+def test_jwks_caido_es_401_no_500(monkeypatch):
+    def caido():
+        raise jwt.PyJWKClientConnectionError("sin red")
+
+    monkeypatch.setattr(auth, "_jwks", caido)
+    with pytest.raises(ApiError) as e:
+        auth.verificar_jwt(token())
+    assert e.value.status == 401
