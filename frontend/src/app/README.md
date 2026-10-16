@@ -59,10 +59,25 @@ se simula en [`dev/session.ts`](./dev/session.ts):
 
 - `useSession()` devuelve `{ data, isLoading, isError }`, imitando el resultado de React Query
   para que el cambio a `src/data/useSession` no obligue a reescribir pantallas.
-- El rol se elige con el selector «Rol de prueba» de la barra lateral (`DevRoleSwitcher`).
+- El rol se elige con el **cambio de cuenta** de la barra lateral (`DevAccountSwitcher`, J-3.2):
+  dos clics para saltar entre las 7 cuentas demo; al elegir, navega a la pantalla principal del rol.
 
 Para pasar a datos reales: `USAR_SESION_TEMPORAL = false` y cambiar los imports de
 `@/app/dev/session` a `@/data`.
 
 **Esto no es seguridad.** Solo sirve para ver el layout por rol. Quien protege los datos es la
 base (RLS + JWT, invariante I8); la guarda de la interfaz es usabilidad, no un control.
+
+### Cambio rápido de cuenta (`DevAccountSwitcher`, J-3.2)
+
+Solo aparece en **modo dev** (`import.meta.env.DEV`); no entra en la build. Todo el cambio vive
+en [`dev/cuentasDemo.ts`](./dev/cuentasDemo.ts):
+
+- **Hoy:** `cambiarCuenta(rol)` guarda el rol en `abasteceai.dev.role`, el mismo almacén que ya
+  leen la sesión temporal y `src/data/useSession`.
+- **Con el login real:** la misma función firma con Supabase (`signInWithPassword`) usando la
+  contraseña de `frontend/.env.local`. Solo hay que rellenar esa rama; el menú no cambia.
+
+Las contraseñas de las 7 cuentas van en `.env.local` (ignorado por git, **nunca en el repo**):
+`VITE_DEMO_PASSWORD_<ROL>`. El email se deriva del rol y se puede sobreescribir con
+`VITE_DEMO_EMAIL_<ROL>`. Ver [`.env.example`](../.env.example).
