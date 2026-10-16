@@ -96,11 +96,11 @@ paths:
       description: |
         Las alertas son de revisión: no cancelan ni bloquean. Registra `incidents`
         (`possible_duplicate`, `missing_from_kit`) solo si no hay una abierta para el pedido,
-        y guarda el análisis en `decision_logs` (provider `rules` + `mock`/`typesafe`).
+        y guarda el análisis en `decision_logs` (provider `rules` + `mock`/`typesafe`/`openai`).
         Volver a llamarlo no duplica incidencias.
-        Analizar un pedido que no está en `submitted` devuelve 200 con los tres arreglos
-        vacíos, sin llamar a Jev: la `proposal` reutiliza el último log de IA del pedido,
-        o es `null` si nunca hubo uno (acuerdo 12 de `funciones.md`).
+        Si el pedido no está en `submitted`, el backend **no llama a Jev**: devuelve 200 con
+        los tres arreglos vacíos, y la `proposal` reutiliza el último log de IA del pedido o
+        es `null` si nunca hubo uno (acuerdo 12 de `funciones.md`).
       x-roles: [administrador, auxiliar, supervisor]
       x-checks: [auxiliar y supervisor solo si son el autor del pedido]
       parameters: [{ $ref: "#/components/parameters/OrderId" }]

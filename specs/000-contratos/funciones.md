@@ -116,14 +116,18 @@ y no permite aplicar la regla de autoría de OpenAPI dentro de la función; por
 eso se añade `p_staff`. No se aceptará un `staff` enviado por el cliente.
 
 **Entrada:** `p_order` UUID obligatorio, tomado de `{id}`; `p_staff` UUID
-obligatorio e interno, resuelto del JWT; `p_proposal` JSONB obligatorio con la
-propuesta de IA ya obtenida por FastAPI dentro del endpoint. El endpoint no
-tiene cuerpo: `p_proposal` no es una clave de la API, sino el parámetro interno
-con el que el backend entrega a SQL el log de IA (`mock`/`typesafe`), **nunca**
-el log de `rules`. La llamada externa a Jev ocurre fuera de la transacción.
-`p_proposal` solo se usa cuando el pedido está en `submitted`; si el pedido no
-está en `submitted`, la función **ignora** `p_proposal` (puede llegar `NULL`; en
-PostgreSQL un parámetro `jsonb` admite nulo) y no llama a Jev (acuerdo 12).
+obligatorio e interno, resuelto del JWT; `p_proposal` JSONB con la propuesta de
+IA ya obtenida por FastAPI dentro del endpoint (presente cuando el pedido está en
+`submitted`). El endpoint no tiene cuerpo: `p_proposal` no es una clave de la
+API, sino el parámetro interno con el que el backend entrega a SQL el log de IA
+(`mock`/`typesafe`/`openai`), **nunca** el log de `rules`. La llamada externa a
+Jev ocurre fuera de la transacción y **fuera de la función**: el backend
+comprueba el estado del pedido **antes** de invocar a Jev, de modo que si el
+pedido no está en `submitted` **no se llama a Jev** y la función recibe
+`p_proposal = NULL`. En esa rama la función **ignora** `p_proposal` (en
+PostgreSQL un parámetro `jsonb` admite nulo); si el estado cambiara entre la
+comprobación de FastAPI y la llamada a la función, esta vuelve a decidir bajo
+bloqueo y también ignora la propuesta (acuerdo 12).
 
 **Validaciones y permisos:** perfil activo con rol `administrador`, `auxiliar`
 o `supervisor`; para los dos últimos, `orders.requested_by=p_staff`. Pedido
@@ -156,8 +160,9 @@ devuelve `order_id`, los tres arreglos `duplicates`, `missing_kit` e
 un log de IA reutilizable (acuerdo 12).
 
 **Persistencia y transacción:** las incidencias nuevas, el registro
-`decision_logs` de proveedor `rules` (no IA) y el log de IA `mock`/`typesafe`
-tomado de `p_proposal` (con su `decision_log_id`) se escriben junto al análisis
+`decision_logs` de proveedor `rules` (no IA) y el log de IA
+(`mock`/`typesafe`/`openai`) tomado de `p_proposal` (con su `decision_log_id`) se
+escriben junto al análisis
 en la misma transacción, sin duplicarse indebidamente. Si Jev falla, el backend
 pasa un `p_proposal` de fallo; la función **no lanza error**: guarda
 `provider='typesafe'`, `status='human_review'`, `response {"error":"timeout"}`,
@@ -241,9 +246,11 @@ el mismo pedido dos veces.
    solo no identifica al actor. Se actualiza la fila de C3 en
    `docs/06_PLAN_EQUIPO.md`.
 4. **Jev, `proposal` y atomicidad — acordado.** FastAPI llama a Jev fuera de la
-   transacción y entrega el log de IA en `p_proposal` (`mock`/`typesafe`,
-   **nunca** el de `rules`). La función escribe en la misma transacción las
-   incidencias, el log `rules` y la propuesta de IA, y devuelve el
+   transacción y entrega el log de IA en `p_proposal`
+   (`mock`/`typesafe`/`openai`, **nunca** el de `rules`). Si el pedido no está en
+   `submitted`, FastAPI **no llama a Jev** y pasa `p_proposal` nulo. La función
+   escribe en la misma transacción las incidencias, el log `rules` y la propuesta
+   de IA, y devuelve el
    `AnalysisResult` completo con su `decision_log_id`. Si Jev falla, `p_proposal`
    llega como fallo y la función guarda `provider='typesafe'`,
    `status='human_review'` y `response {"error":"timeout"}`, devuelve el
@@ -297,7 +304,9 @@ el mismo pedido dos veces.
 12. **Pedido no `submitted` — propuesto en este PR para D-1.2 (#29); revisión de
     Omar pendiente.** Analizar un pedido que no está en `submitted` no es un
     error (acuerdo 6): 200, los tres arreglos vacíos, sin llamar a Jev y sin
-    escribir. La `proposal` pública se resuelve así: si el pedido tiene algún log
+    escribir. **FastAPI comprueba el estado antes de invocar a Jev**: si no está
+    en `submitted`, no llama a Jev y pasa `p_proposal = NULL`. La `proposal`
+    pública se resuelve así: si el pedido tiene algún log
     de IA (`mock`/`typesafe`/`openai`), se **reutiliza el más reciente** como
     `{source, model, status, answers, decision_log_id}` (sin crear otra fila); si
     **nunca** hubo log de IA, `proposal` es `null`. Este último caso exige que
