@@ -17,14 +17,26 @@ import {
   WarehouseIcon,
 } from "lucide-react";
 
-import type { Role } from "@/app/dev/session";
+import type { Role } from "@/data";
+import { Mapa } from "@/features/logistica/Mapa";
+import { Courier } from "@/features/logistica/Courier";
+import { Despacho } from "@/features/despacho/Despacho";
+import { InventarioBodega } from "@/features/bodega/InventarioBodega";
+import { ColaBodega } from "@/features/bodega/ColaBodega";
+import { PlanRutas } from "@/features/logistica/PlanRutas";
+import { Recepcion } from "@/features/recepcion/Recepcion";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
 import { CrearPedido } from "@/app/pages/CrearPedido";
 import { DetalleAdmin } from "@/app/pages/DetalleAdmin";
+import { EnviosSupervisor } from "@/app/pages/EnviosSupervisor";
 import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
+import { Asistente } from "@/features/asistente/Asistente";
+import { Incidencias } from "@/features/incidencias/Incidencias";
+import { Tablero } from "@/features/tablero/Tablero";
+import { Trazabilidad } from "@/features/trazabilidad/Trazabilidad";
 
 /**
  * Fuente única de verdad de la navegación (J-0.4): ruta, etiqueta, grupo, roles, icono
@@ -124,14 +136,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-2.1",
     desc: "Envíos de los puntos del supervisor y marcado de entrega.",
-    element: (
-      <Placeholder
-        title="Envíos de mis puntos"
-        task="J-2.1"
-        owner="Jorge"
-        desc="Envíos de los puntos del supervisor y marcado de entrega."
-      />
-    ),
+    element: <EnviosSupervisor />,
   },
 
   // --- Revisión (Jorge) ---
@@ -169,14 +174,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-1.2",
     desc: "Por producto: físico, reservado, disponible y vencido, con las compras pendientes al lado.",
-    element: (
-      <Placeholder
-        title="Inventario de bodega"
-        task="B-1.2"
-        owner="Bruno"
-        desc="Por producto: físico, reservado, disponible y vencido, con las compras pendientes al lado."
-      />
-    ),
+    element: <InventarioBodega />,
   },
   {
     path: "/bodega/preparar",
@@ -187,14 +185,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-2.2",
     desc: "Cola de pedidos aprobados y preparación por producto y lote con sugerencia FEFO.",
-    element: (
-      <Placeholder
-        title="Preparación por lote"
-        task="B-2.2"
-        owner="Bruno"
-        desc="Cola de pedidos aprobados y preparación por producto y lote con sugerencia FEFO."
-      />
-    ),
+    element: <ColaBodega />,
   },
   {
     path: "/despacho",
@@ -205,14 +196,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-2.4",
     desc: "Envíos creados, etiqueta con QR imprimible y confirmación de despacho.",
-    element: (
-      <Placeholder
-        title="Despacho de envíos"
-        task="B-2.4"
-        owner="Bruno"
-        desc="Envíos creados, etiqueta con QR imprimible y confirmación de despacho."
-      />
-    ),
+    element: <Despacho />,
   },
 
   // --- Logística (Bruno) ---
@@ -225,14 +209,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-4.1",
     desc: "Mapa con los puntos como catálogo, los detallados resaltados y BOD-DEMO.",
-    element: (
-      <Placeholder
-        title="Mapa de puntos"
-        task="B-4.1"
-        owner="Bruno"
-        desc="Mapa con los puntos como catálogo, los detallados resaltados y BOD-DEMO."
-      />
-    ),
+    element: <Mapa />,
   },
   {
     path: "/logistica/rutas",
@@ -243,14 +220,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-4.2",
     desc: "Propuesta de rutas calculada frente a la precargada, con kilómetros y no asignados.",
-    element: (
-      <Placeholder
-        title="Plan de rutas"
-        task="B-4.2"
-        owner="Bruno"
-        desc="Propuesta de rutas calculada frente a la precargada, con kilómetros y no asignados."
-      />
-    ),
+    element: <PlanRutas />,
   },
   {
     path: "/logistica/courier",
@@ -261,14 +231,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-4.3",
     desc: "Envíos por courier con fecha prometida y aviso de retraso.",
-    element: (
-      <Placeholder
-        title="Courier"
-        task="B-4.3"
-        owner="Bruno"
-        desc="Envíos por courier con fecha prometida y aviso de retraso."
-      />
-    ),
+    element: <Courier />,
   },
 
   // --- Campo (Bruno) ---
@@ -281,14 +244,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-2.5",
     desc: "Escanear el QR o tipear la guía, contar y aceptar por ítem.",
-    element: (
-      <Placeholder
-        title="Recepción con QR"
-        task="B-2.5"
-        owner="Bruno"
-        desc="Escanear el QR o tipear la guía, contar y aceptar por ítem."
-      />
-    ),
+    element: <Recepcion />,
   },
   {
     path: "/trazabilidad",
@@ -299,14 +255,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-1.1",
     desc: "Por ítem: solicitado, aprobado, preparado, enviado, contado y aceptado, con faltantes resaltados.",
-    element: (
-      <Placeholder
-        title="Trazabilidad"
-        task="B-1.1"
-        owner="Bruno"
-        desc="Por ítem: solicitado, aprobado, preparado, enviado, contado y aceptado, con faltantes resaltados."
-      />
-    ),
+    element: <Trazabilidad />,
   },
 
   // --- Análisis (Jorge) ---
@@ -319,14 +268,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-2.2",
     desc: "Cobertura por punto e insumo, tal como la calcula la vista de reposición.",
-    element: (
-      <Placeholder
-        title="Tablero de cobertura"
-        task="J-2.2"
-        owner="Jorge"
-        desc="Cobertura por punto e insumo, tal como la calcula la vista de reposición."
-      />
-    ),
+    element: <Tablero />,
   },
   {
     path: "/incidencias",
@@ -337,14 +279,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-2.3",
     desc: "Incidencias con tipo, severidad y el pedido o envío al que pertenecen.",
-    element: (
-      <Placeholder
-        title="Incidencias"
-        task="J-2.3"
-        owner="Jorge"
-        desc="Incidencias con tipo, severidad y el pedido o envío al que pertenecen."
-      />
-    ),
+    element: <Incidencias />,
   },
   {
     path: "/asistente",
@@ -355,14 +290,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-4.1",
     desc: "Preguntas en lenguaje natural sobre los documentos que tu rol puede ver.",
-    element: (
-      <Placeholder
-        title="Asistente"
-        task="J-4.1"
-        owner="Jorge"
-        desc="Preguntas en lenguaje natural sobre los documentos que tu rol puede ver, citando título y versión."
-      />
-    ),
+    element: <Asistente />,
   },
 
   // --- Compras (COULD, sin dueño) ---

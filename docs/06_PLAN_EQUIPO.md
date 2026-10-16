@@ -11,9 +11,9 @@
 
 | Persona (GitHub) | Rol | IA / IDE | Es dueño de |
 |---|---|---|---|
-| **Omar** `@forecalde-eng` | Líder · FastAPI · auth · IA/RAG · rutas | Claude Code | Contrato API, FastAPI (delgado: valida y llama a la base), verificación de JWT y permisos, Jev, asistente + RAG, OR-Tools/ORS, integración y merges a `main`, **presenta el pitch** |
+| **Omar** `@forecalde-eng` | Líder · FastAPI · auth · IA/RAG · rutas | Claude Code | Contrato API, FastAPI (delgado: valida y llama a la base), verificación de JWT y permisos, Jev, asistente + RAG, OR-Tools/ORS, integración con el backend, **presenta el pitch** |
 | **David** `@Dawid878` | Base de datos | Codex · VS Code/Antigravity | Supabase (proyecto, cuentas), migraciones, **funciones SQL de cada acción** (crear, analizar, decidir, preparar, despachar, recibir…), sus pruebas locales, capa de datos del frontend (`frontend/src/data/`) |
-| **Jorge** `@JorgeRevelo23` | Frontend: shell y pedidos | Claude Code · VS Code/Antigravity | Esqueleto web, login, layout por rol, sistema visual, pedidos, bandeja admin, supervisor, tablero, incidencias, chat |
+| **Jorge** `@JorgeRevelo23` | Frontend: shell y pedidos | Claude Code · VS Code/Antigravity | Esqueleto web, login, layout por rol, sistema visual, pedidos, bandeja admin, supervisor, tablero, incidencias, chat. **Integrador:** revisa y mergea los PRs a `main` |
 | **Bruno** `@bruno7890` | Frontend: operación y logística | OpenCode Go · VS Code/Antigravity | Bodega, inventario, despacho, recepción móvil QR, trazabilidad, mapa y rutas, courier |
 
 **Por qué este corte:** cada uno trabaja en lo que domina y en carpetas distintas. Las fronteras son **tres contratos** (§3) que se fijan en la Fase 0.
@@ -86,7 +86,7 @@ FastAPI valida JWT, rol y punto, y luego llama **una** función. Cada función e
 | Función (esquema `abastece`) | Archivo | La llama |
 |---|---|---|
 | `fn_crear_pedido(staff, location, cycle_month, order_type, related_order, reason, observations, items jsonb, idempotency_key)` | `09_fn_pedidos.sql` | `POST /orders` |
-| `fn_analizar_reglas(order)` → `{duplicates, missing_kit}` + incidencias sin duplicar | `09_fn_pedidos.sql` | `POST /orders/{id}/analyze` |
+| `fn_analizar_reglas(staff, order, proposal jsonb)` → `AnalysisResult` completo + incidencias sin duplicar | `09_fn_pedidos.sql` | `POST /orders/{id}/analyze` |
 | `fn_decidir_pedido(staff, order, decision, items jsonb, reason)` — `approve` \| `return` \| `cancel` | `09_fn_pedidos.sql` | `POST /orders/{id}/decision` |
 | `fn_preparar(staff, order, items jsonb, dry_run)` — FEFO adentro | `10_fn_bodega.sql` | `POST /orders/{id}/prepare` |
 | `fn_confirmar_ruta(staff, vehicle, dispatch_date, stops jsonb, km, minutes, method)` → crea plan, paradas y envíos | `11_fn_envios.sql` | `POST /routes/confirm` |
@@ -190,6 +190,7 @@ Antes: 2 ensayos con reset. Respaldo: video del guion y resultados SIMULADO prec
 - **Sync de 10 min** a las 08:00, 13:00, 18:00 y 22:00: qué terminé, qué me bloquea, qué sigue.
 - **Canal privado** para claves y bloqueos. Nunca claves en GitHub ni en el chat con la IA.
 - **Ramas cortas, PR pequeños.** Revisión al menos 2 veces por fase; ningún PR espera más de 1 hora.
+- **Integrador: Jorge.** Revisa cada PR (corre sus pruebas, no solo lee el diff) y lo mergea a `main` con squash. Si toca `db/` o `specs/000-contratos/`, espera también la revisión de Omar o David (CODEOWNERS).
 - **Quien rompe `main`, lo arregla primero.**
 
 ## 7. Reglas para trabajar con IAs distintas

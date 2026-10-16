@@ -49,3 +49,4 @@ Corre las pruebas de tu parte **antes de cada commit**.
 
 - Rama por tarea: `front/jorge/…`, `front/bruno/…`, `back/david/…`, `ai/omar/…`.
 - Nunca push a `main`. PR con la plantilla. Commits pequeños y en español.
+- **Integrador: Jorge** (`@JorgeRevelo23`). Revisa y mergea los PRs a `main` con squash, después de correr sus pruebas. Cambios en `db/` o `specs/000-contratos/` necesitan además la revisión de Omar o David.

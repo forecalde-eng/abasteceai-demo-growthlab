@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { MenuIcon, PackageCheckIcon, XIcon } from "lucide-react";
 
-import { DevRoleSwitcher } from "@/app/DevRoleSwitcher";
+import { BotonSalir } from "@/app/BotonSalir";
+import { DevAccountSwitcher } from "@/app/DevAccountSwitcher";
 import { RoleMenu } from "@/app/RoleMenu";
-import { ROLES, useSession } from "@/app/dev/session";
+import { ROLES } from "@/app/dev/roles";
+import { useSession } from "@/data";
 import { Badge, TONO, cn } from "@/ui";
 import { Toaster } from "@/ui/sonner";
 
@@ -51,6 +53,20 @@ export function AppLayout() {
   const { data } = useSession();
   const rol = data ? ROLES[data.role] : null;
 
+  // Con el menú móvil abierto, bloquea el desplazamiento de la página de detrás:
+  // sin esto, la rueda del ratón movía el contenido de fuera del menú.
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const html = document.documentElement;
+    const previo = { body: document.body.style.overflow, html: html.style.overflow };
+    document.body.style.overflow = "hidden";
+    html.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previo.body;
+      html.style.overflow = previo.html;
+    };
+  }, [menuAbierto]);
+
   return (
     <div className="min-h-svh bg-background text-foreground">
       {/* Banner obligatorio: 32 px, siempre visible (invariante I10 / HU-0.2). */}
@@ -69,7 +85,8 @@ export function AppLayout() {
           </div>
           <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
             <UsuarioYrol />
-            <DevRoleSwitcher />
+            <DevAccountSwitcher />
+            <BotonSalir />
           </div>
         </aside>
 
@@ -123,7 +140,8 @@ export function AppLayout() {
             </div>
             <div className="space-y-3 border-t border-sidebar-border px-4 py-3">
               <UsuarioYrol />
-              <DevRoleSwitcher />
+              <DevAccountSwitcher onNavigate={() => setMenuAbierto(false)} />
+              <BotonSalir />
             </div>
           </div>
         </div>

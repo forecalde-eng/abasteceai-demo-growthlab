@@ -1,8 +1,9 @@
-import { HomeIcon } from "lucide-react";
+﻿import { HomeIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { gruposDeRol } from "@/app/navigation";
-import { ROLES, USAR_SESION_TEMPORAL, useSession } from "@/app/dev/session";
+import { ROLES } from "@/app/dev/roles";
+import { useMocks, useSession } from "@/data";
 import {
   Badge,
   Button,
@@ -16,20 +17,20 @@ import {
 
 const LISTO = [
   {
-    title: "Esqueleto",
-    desc: "Vite + React + TypeScript + Tailwind + React Router + React Query (J-0.1).",
+    title: "Pedidos de punta a punta",
+    desc: "Crear, analizar con Jev, decidir, preparar, despachar y recibir. El ciclo en vivo mueve el estado real de los pedidos.",
   },
   {
-    title: "Kit de interfaz",
-    desc: "Botones, tarjetas, tabla, badges de estado, modal, toast y estados de pantalla (J-0.2).",
+    title: "IA con procedencia",
+    desc: "Jev clasifica y propone; el asistente responde citando los documentos que tu rol puede ver. Toda salida de IA lleva su etiqueta SIMULADO o API_REAL.",
   },
   {
-    title: "Layout por rol",
-    desc: "Menú y rutas según el rol, con guarda por pantalla (J-0.4).",
+    title: "Logística y trazabilidad",
+    desc: "Plan de rutas para los puntos de Quito, envío courier interprovincial y la línea de tiempo de cada pedido.",
   },
   {
-    title: "Guía de diseño",
-    desc: "Paleta, colores de estado y patrones aplicados en todo el kit (docs/07_GUIA_DISENO.md).",
+    title: "Tablero y control",
+    desc: "Cobertura por punto con sus reglas, incidencias abiertas e inventario utilizable de cada punto.",
   },
 ];
 
@@ -53,7 +54,7 @@ export function Inicio() {
         description="De la bodega central BOD-DEMO (Quito) a los puntos de servicio. Todos los datos son ficticios y se muestran tal cual los entrega el backend."
         actions={
           <>
-            <Badge variant="secondary">Fase 0 · cimientos</Badge>
+            <Badge variant="secondary">Fase 4 · IA y cierre</Badge>
             <Button asChild>
               <Link to="/ui">Ver el kit de interfaz</Link>
             </Button>
@@ -120,10 +121,10 @@ export function Inicio() {
         </CardContent>
       </Card>
 
-      {USAR_SESION_TEMPORAL ? (
+      {useMocks ? (
         <p className="text-xs text-muted-foreground">
-          El rol se elige con el selector «Rol de prueba» de la barra lateral. Es temporal:
-          desaparecerá cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
+          El rol se elige con «Cambiar de cuenta» (solo en modo dev), que abre el menú de las 7 cuentas de la demo para cambiar entre ellas en dos clics.
+          Desaparecerá cuando entre el login real (J-0.3) y la capa de datos de David (src/data/).
         </p>
       ) : null}
     </div>

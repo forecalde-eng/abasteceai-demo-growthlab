@@ -11,6 +11,8 @@ import type { Order, OrderItem, Product, Location } from '@/mocks'
 
 Los nombres de campos coinciden con las columnas SQL (`snake_case`). UUID para relaciones internas; mostrar solo códigos en la UI. `locations` incluye únicamente `demo_scope = detailed | internal` (no los puntos de catálogo), según B-0.1. Los pedidos, ítems y productos se incluyen completos.
 
+Para B-4.1 se exporta también `mapLocations`, generado desde el mismo CSV sin cambiar `locations`: los 700 puntos de servicio (676 catalog + 24 detailed) más BOD-DEMO, con coordenadas y columnas originales. No incluye tránsito ni cuarentena. El mapa usa esta salida; el catálogo de sesión de `src/data/` no se modifica.
+
 Los tipos provisionales de `types.ts` reflejan `db/01_esquema.sql`: NUMERIC/integer como `number`, booleanos como `boolean`, campos opcionales como `null` y fechas/horas como cadenas sin modificar. Cuando David entregue `database.types.ts` (D-0.5), sustituir los tipos provisionales por los generados. No se cambia `src/data/` ni se implementan hooks aquí.
 
 Instalar la herramienta local una vez (no modifica las dependencias del frontend):
@@ -37,6 +39,8 @@ No editar los fixtures a mano: actualizar desde la fuente y regenerar. La prueba
 | `inventory` | `v_inventory`, solo BOD-DEMO |
 | `replenishment` | `v_replenishment` completa |
 | `orderTrace` | `v_order_trace` completa |
+| `courierDelays` | Consulta oficial de retrasos de `db/04_consultas_demo.sql`, ejecutada en PGlite |
+| `demoMetadata` | `demo_metadata.reference_at`, leído del seed SQL |
 | `decisionLogs` | `decision_logs.csv`; `input_state` y `response` se convierten a objetos JSON |
 
 `DecisionLog` mantiene `provider = mock | typesafe | rules` según el esquema vigente, sin anticipar la migración de OpenAI. `input_state` y `response` se tipan como objetos JSON de contenido desconocido (`Record<string, unknown>`); el consumidor debe validar/narrowear su contenido antes de acceder a campos anidados. La fila del seed es de PED-DEMO-001: provider `mock`, model_version `SIMULATED/jev-1.13.0` y confianza de urgencia `0.865`. La etiqueta visible SIMULADO se obtiene con `fuenteDesdeProvider(provider)` en la UI, sin cambiar el proveedor del fixture.

@@ -28,6 +28,17 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
   const orderIds = new Set(fixtures.orders.map((row) => row.id))
   const productIds = new Set(fixtures.products.map((row) => row.id))
   const locationIds = new Set(fixtures.locations.map((row) => row.id))
+  const allLocations = await readSource('locations')
+  const mapSource = allLocations.filter((row) => row.kind === 'service_point' || row.code === 'BOD-DEMO')
+  assert.equal(fixtures.mapLocations.length, 701, 'Mapa: 700 puntos + bodega')
+  assert.deepEqual(fixtures.mapLocations.map((row) => row.id), mapSource.map((row) => row.id))
+  assert.equal(new Set(fixtures.mapLocations.map((row) => row.id)).size, 701)
+  assert.equal(fixtures.mapLocations.filter((row) => row.demo_scope === 'catalog').length, 676)
+  assert.equal(fixtures.mapLocations.filter((row) => row.demo_scope === 'detailed').length, 24)
+  for (const [city, count] of [['Quito', 300], ['Guayaquil', 250], ['Cuenca', 150]]) {
+    assert.equal(fixtures.mapLocations.filter((row) => row.city === city && row.kind === 'service_point').length, count)
+  }
+  assert.ok(fixtures.mapLocations.every((row) => !['TRA-DEMO', 'CUA-DEMO'].includes(row.code)))
   for (const item of fixtures.orderItems) {
     assert.ok(orderIds.has(item.order_id), `Pedido ausente: ${item.order_id}`)
     assert.ok(productIds.has(item.product_id), `Producto ausente: ${item.product_id}`)
@@ -92,7 +103,16 @@ test('fixtures: conteos de CSV, relaciones válidas y archivos reproducibles', a
   const courier = fixtures.shipments.find((row) => row.code === 'ENV-DEMO-008')
   assert.equal(courier.mode, 'courier')
   assert.equal(courier.status, 'dispatched')
+  assert.deepEqual(fixtures.courierDelays.map((row) => row.code), ['ENV-DEMO-008'], 'PITCH-9: retraso calculado por SQL oficial')
+  const delay = fixtures.courierDelays[0]
+  assert.equal(delay.city, 'Guayaquil')
+  assert.equal(delay.status, courier.status)
+  assert.equal(new Date(delay.promised_delivery_at).toISOString(), new Date(courier.promised_delivery_at).toISOString())
+  assert.equal(fixtures.demoMetadata.length, 1)
+  const metadata = (await readSource('demo_metadata'))[0]
+  assert.equal(new Date(fixtures.demoMetadata[0].reference_at).toISOString(), new Date(metadata.reference_at).toISOString())
   for (const [name, content] of Object.entries(renderFiles(fixtures))) {
-    assert.equal(await readFile(new URL(name, import.meta.url), 'utf8'), content, `${name}: regenerar con generate.mjs`)
+    const actual = await readFile(new URL(name, import.meta.url), 'utf8')
+    assert.equal(actual.replace(/\r\n/g, '\n'), content, `${name}: regenerar con generate.mjs`)
   }
 })

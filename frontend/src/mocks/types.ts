@@ -125,6 +125,17 @@ export interface PurchaseItem {
   unit_cost_usd: number
 }
 
+export interface Vehicle {
+  id: string
+  code: string
+  description: string
+  capacity_kg: number
+  capacity_m3: number
+  available_from: string
+  available_until: string
+  is_synthetic: boolean
+}
+
 export interface DecisionLog {
   id: string
   location_id: string | null
@@ -181,4 +192,15 @@ export interface OrderTrace {
   counted_qty: number | null
   accepted_qty: number | null
   shortage_qty: number | null
+}
+
+export interface CourierDelay {
+  code: string
+  city: string
+  promised_delivery_at: string
+  status: Shipment['status']
+}
+
+export interface DemoMetadata {
+  reference_at: string
 }

@@ -84,6 +84,9 @@ paths:
               schema: { $ref: "#/components/schemas/OrderResult" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+          description: "Idempotency-Key usada por otro actor: el pedido no es visible (P0404)."
         "422": { $ref: "#/components/responses/Validation" }
 
   /orders/{id}/analyze:
@@ -93,8 +96,11 @@ paths:
       description: |
         Las alertas son de revisión: no cancelan ni bloquean. Registra `incidents`
         (`possible_duplicate`, `missing_from_kit`) solo si no hay una abierta para el pedido,
-        y guarda el análisis en `decision_logs` (provider `rules` + `mock`/`typesafe`).
+        y guarda el análisis en `decision_logs` (provider `rules` + `mock`/`typesafe`/`openai`).
         Volver a llamarlo no duplica incidencias.
+        Si el pedido no está en `submitted`, el backend **no llama a Jev**: devuelve 200 con
+        los tres arreglos vacíos, y la `proposal` reutiliza el último log de IA del pedido o
+        es `null` si nunca hubo uno (acuerdo 12 de `funciones.md`).
       x-roles: [administrador, auxiliar, supervisor]
       x-checks: [auxiliar y supervisor solo si son el autor del pedido]
       parameters: [{ $ref: "#/components/parameters/OrderId" }]
@@ -578,7 +584,13 @@ components:
               id: { type: string, format: uuid }
               code: { type: string }
               kind: { type: string, enum: [possible_duplicate, missing_from_kit] }
-        proposal: { $ref: "#/components/schemas/AiProposal" }
+        proposal:
+          description: |
+            Propuesta de IA (Jev). `null` cuando el pedido no está en `submitted` y no
+            existe un log de IA previo reutilizable (acuerdo 12 de `funciones.md`).
+          oneOf:
+            - { $ref: "#/components/schemas/AiProposal" }
+            - { type: "null" }
 
     AiProposal:
       type: object

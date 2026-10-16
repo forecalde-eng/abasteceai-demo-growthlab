@@ -63,6 +63,10 @@ const tables = [
   { csv: 'purchase_order_items', name: 'purchaseItems', type: 'PurchaseItem', columns: {
     id: 'string', purchase_id: 'string', product_id: 'string', ordered_qty: 'number', unit_cost_usd: 'number',
   } },
+  { csv: 'vehicles', name: 'vehicles', type: 'Vehicle', columns: {
+    id: 'string', code: 'string', description: 'string', capacity_kg: 'number', capacity_m3: 'number',
+    available_from: 'string', available_until: 'string', is_synthetic: 'boolean',
+  } },
   { csv: 'decision_logs', name: 'decisionLogs', type: 'DecisionLog', columns: {
     id: 'string', location_id: 'string | null', order_id: 'string | null', task: 'string',
     provider: "'mock' | 'typesafe' | 'rules'", model_version: 'string',
@@ -88,6 +92,12 @@ const views = [
     sku: 'string', name: 'string', requested_qty: 'number', approved_qty: 'number | null',
     prepared_qty: 'number', shipped_qty: 'number', counted_qty: 'number | null',
     accepted_qty: 'number | null', shortage_qty: 'number | null',
+  } },
+  { name: 'courierDelays', type: 'CourierDelay', columns: {
+    code: 'string', city: 'string', promised_delivery_at: 'string', status: "Shipment['status']",
+  } },
+  { name: 'demoMetadata', type: 'DemoMetadata', columns: {
+    reference_at: 'string',
   } },
 ]
 
@@ -149,12 +159,17 @@ export async function buildFixtures() {
   const fixtures = {}
   for (const table of tables) {
     const rows = await readSource(table.csv)
-    fixtures[table.name] = rows.map((row) => {
+    const converted = rows.map((row) => {
       if (JSON.stringify(Object.keys(row)) !== JSON.stringify(Object.keys(table.columns))) {
         throw new Error(`Columnas distintas al esquema esperado: ${table.csv}`)
       }
       return Object.fromEntries(Object.entries(row).map(([key, value]) => [key, convert(value, table.columns[key])]))
-    }).filter((row) => table.csv !== 'locations' || ['detailed', 'internal'].includes(row.demo_scope))
+    })
+    fixtures[table.name] = converted.filter((row) => table.csv !== 'locations' || ['detailed', 'internal'].includes(row.demo_scope))
+    if (table.csv === 'locations') {
+      // Mapa: los 700 puntos de servicio (catálogo + detallados) y la bodega central.
+      fixtures.mapLocations = converted.filter((row) => row.kind === 'service_point' || row.code === 'BOD-DEMO')
+    }
   }
   Object.assign(fixtures, await readSqlViews())
   return fixtures
@@ -168,11 +183,14 @@ export function renderFiles(fixtures) {
     `export interface ${table.type} {\n${Object.entries(table.columns).map(([key, type]) => `  ${key}: ${type}`).join('\n')}\n}\n`,
   ).join('\n')
   files['index.ts'] = definitions.map((table) => `export { ${table.name} } from './${table.name}'`).join('\n')
+    + "\nexport { mapLocations } from './mapLocations'"
     + `\nexport type { ${definitions.map((table) => table.type).join(', ')} } from './types'\n`
   for (const table of definitions) {
     files[`${table.name}.ts`] = banner + `import type { ${table.type} } from './types'\n\n`
       + `export const ${table.name}: ${table.type}[] = ${JSON.stringify(fixtures[table.name], null, 2)}\n`
   }
+  files['mapLocations.ts'] = banner + "import type { Location } from './types'\n\n"
+    + `export const mapLocations: Location[] = ${JSON.stringify(fixtures.mapLocations, null, 2)}\n`
   return files
 }
 
