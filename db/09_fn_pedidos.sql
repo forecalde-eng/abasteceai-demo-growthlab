@@ -174,8 +174,70 @@ $$;
 GRANT EXECUTE ON FUNCTION abastece.fn_crear_pedido(uuid,uuid,date,text,uuid,text,text,jsonb,text) TO service_role;
 REVOKE EXECUTE ON FUNCTION abastece.fn_crear_pedido(uuid,uuid,date,text,uuid,text,text,jsonb,text) FROM PUBLIC, anon, authenticated;
 
--- D-1.3 (#30): POST /orders/{id}/decision. D-1.2 insertará
--- fn_analizar_reglas entre las funciones de creación y decisión.
+-- D-1.2 (#29): detecciones deterministas para fn_analizar_reglas.
+-- No escribe ni recibe una propuesta de IA. El wrapper transaccional de C3
+-- usará estos hallazgos cuando se cierre el formato de p_proposal.
+CREATE FUNCTION abastece.fn_detectar_reglas_pedido(p_order uuid) RETURNS jsonb
+LANGUAGE sql STABLE
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+ WITH target AS (
+  SELECT id, location_id, cycle_month, status, order_type
+  FROM abastece.orders WHERE id = p_order
+ ), fingerprint AS (
+  SELECT pg_catalog.string_agg(i.product_id::text || ':' || i.requested_qty::text,
+   ',' ORDER BY i.product_id) AS value
+  FROM abastece.order_items AS i WHERE i.order_id = p_order
+ ), duplicates AS (
+  SELECT o.id AS order_id, o.code AS order_code
+  FROM target AS t
+  JOIN abastece.orders AS o ON o.location_id = t.location_id
+   AND o.cycle_month = t.cycle_month AND o.id <> t.id
+  WHERE t.status = 'submitted' AND t.order_type = 'regular'
+   AND o.order_type = 'regular' AND o.status <> 'cancelled'
+   AND (SELECT value FROM fingerprint) IS NOT NULL
+   AND (SELECT pg_catalog.string_agg(i.product_id::text || ':' || i.requested_qty::text,
+    ',' ORDER BY i.product_id) FROM abastece.order_items AS i WHERE i.order_id = o.id)
+    = (SELECT value FROM fingerprint)
+ ), missing AS (
+  SELECT p.id AS product_id, p.sku
+  FROM target AS t
+  JOIN abastece.replenishment_policies AS r ON r.location_id = t.location_id
+  JOIN abastece.products AS p ON p.id = r.product_id
+  WHERE t.status = 'submitted' AND t.order_type = 'regular' AND r.required_in_kit
+   AND NOT EXISTS (SELECT 1 FROM abastece.order_items AS i
+    WHERE i.order_id = t.id AND i.product_id = r.product_id)
+ ), detected_kinds AS (
+  SELECT 'possible_duplicate'::text AS kind WHERE EXISTS (SELECT 1 FROM duplicates)
+  UNION ALL
+  SELECT 'missing_from_kit'::text WHERE EXISTS (SELECT 1 FROM missing)
+ ), open_incidents AS (
+  SELECT DISTINCT ON (i.kind) i.id, i.code, i.kind
+  FROM abastece.incidents AS i JOIN detected_kinds AS k ON k.kind = i.kind
+  WHERE i.order_id = p_order AND i.status IN ('open', 'under_review')
+  ORDER BY i.kind, i.created_at, i.id
+ )
+ SELECT pg_catalog.jsonb_build_object(
+  'duplicates', coalesce((SELECT pg_catalog.jsonb_agg(
+   pg_catalog.jsonb_build_object('order_id', order_id, 'order_code', order_code)
+   ORDER BY order_code, order_id) FROM duplicates), '[]'::jsonb),
+  'missing_kit', coalesce((SELECT pg_catalog.jsonb_agg(
+   pg_catalog.jsonb_build_object('product_id', product_id, 'sku', sku)
+   ORDER BY sku, product_id) FROM missing), '[]'::jsonb),
+  'open_incidents', coalesce((SELECT pg_catalog.jsonb_agg(
+   pg_catalog.jsonb_build_object('id', id, 'code', code, 'kind', kind)
+   ORDER BY kind) FROM open_incidents), '[]'::jsonb),
+  'kinds_to_create', coalesce((SELECT pg_catalog.jsonb_agg(k.kind ORDER BY k.kind)
+   FROM detected_kinds AS k WHERE NOT EXISTS (
+    SELECT 1 FROM open_incidents AS i WHERE i.kind = k.kind)), '[]'::jsonb)
+ );
+$$;
+
+GRANT EXECUTE ON FUNCTION abastece.fn_detectar_reglas_pedido(uuid) TO service_role;
+REVOKE EXECUTE ON FUNCTION abastece.fn_detectar_reglas_pedido(uuid) FROM PUBLIC, anon, authenticated;
+
+-- D-1.3 (#30): POST /orders/{id}/decision.
 CREATE FUNCTION abastece.fn_decidir_pedido(
  p_staff uuid, p_order uuid, p_decision text, p_items jsonb, p_reason text
 ) RETURNS jsonb

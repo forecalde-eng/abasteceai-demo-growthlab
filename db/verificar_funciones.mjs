@@ -298,6 +298,121 @@ test('D-1.1: fn_crear_pedido (POST /orders)', async t => {
  }
 });
 
+test('D-1.2: detecciones deterministas previas al contrato de p_proposal', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`
+   CREATE ROLE anon;
+   CREATE ROLE authenticated;
+   CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth;
+   CREATE TABLE auth.users(id uuid PRIMARY KEY);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
+   REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC, anon, authenticated;
+   GRANT USAGE ON SCHEMA auth TO authenticated;
+   GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+  `);
+  for (const file of [
+   '01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql',
+   '03_datos_ficticios.sql', '08_proveedor_openai.sql', '09_fn_pedidos.sql',
+  ]) await db.exec(readSql(file));
+
+  const id = async code => (await db.query('SELECT id FROM abastece.orders WHERE code = $1',
+   [code])).rows[0].id;
+  const findings = async order => (await db.query(
+   'SELECT abastece.fn_detectar_reglas_pedido($1::uuid) AS result', [order])).rows[0].result;
+  const first = await id('PED-DEMO-001');
+  const second = await id('PED-DEMO-002');
+  const duplicate = await id('PED-DEMO-025');
+
+  await t.test('Solo service_role puede ejecutar la detección interna', async () => {
+   const row = (await db.query(`SELECT p.prosecdef, p.proconfig,
+    has_function_privilege('anon', p.oid, 'EXECUTE') AS anon,
+    has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authenticated,
+    has_function_privilege('service_role', p.oid, 'EXECUTE') AS backend
+    FROM pg_proc AS p JOIN pg_namespace AS n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'abastece' AND p.proname = 'fn_detectar_reglas_pedido'`)).rows[0];
+   assert.equal(row.prosecdef, false);
+   assert.deepEqual(row.proconfig, ['search_path=""']);
+   assert.equal(row.anon, false);
+   assert.equal(row.authenticated, false);
+   assert.equal(row.backend, true);
+   await db.exec('SET ROLE service_role');
+   try { assert.equal((await findings(first)).duplicates.length, 1); }
+   finally { await db.exec('RESET ROLE'); }
+  });
+
+  await t.test('001 y 025 son duplicados exactos del mismo punto y ciclo', async () => {
+   const result = await findings(first);
+   assert.deepEqual(result.duplicates, [{order_id: duplicate, order_code: 'PED-DEMO-025'}]);
+   assert.deepEqual(result.kinds_to_create, ['possible_duplicate']);
+   assert.deepEqual(result.open_incidents, []);
+  });
+
+  await t.test('025 reutiliza la incidencia abierta de duplicado', async () => {
+   const result = await findings(duplicate);
+   assert.deepEqual(result.duplicates, [{order_id: first, order_code: 'PED-DEMO-001'}]);
+   assert.deepEqual(result.open_incidents.map(i => i.kind), ['possible_duplicate']);
+   assert.deepEqual(result.kinds_to_create, []);
+  });
+
+  await t.test('002 detecta INS-016 ausente y reutiliza su incidencia', async () => {
+   const result = await findings(second);
+   assert.deepEqual(result.missing_kit.map(i => i.sku), ['INS-016']);
+   assert.deepEqual(result.duplicates, []);
+   assert.deepEqual(result.open_incidents.map(i => i.kind), ['missing_from_kit']);
+   assert.deepEqual(result.kinds_to_create, []);
+  });
+
+  await t.test('under_review sigue abierta; resolved permite una incidencia nueva', async () => {
+   await db.query(`UPDATE abastece.incidents SET status = 'under_review'
+    WHERE order_id = $1 AND kind = 'possible_duplicate'`, [duplicate]);
+   assert.deepEqual((await findings(duplicate)).kinds_to_create, []);
+   await db.query(`UPDATE abastece.incidents SET status = 'resolved'
+    WHERE order_id = $1 AND kind = 'possible_duplicate'`, [duplicate]);
+   assert.deepEqual((await findings(duplicate)).kinds_to_create, ['possible_duplicate']);
+  });
+
+  await t.test('La composición incluye cantidades, no solo productos', async () => {
+   const order = (await db.query(`SELECT o.requested_by, o.location_id,
+    jsonb_agg(jsonb_build_object('product_id', i.product_id,
+     'requested_qty', i.requested_qty) ORDER BY i.product_id) AS items
+    FROM abastece.orders AS o JOIN abastece.order_items AS i ON i.order_id = o.id
+    WHERE o.id = $1 GROUP BY o.id`, [first])).rows[0];
+   const created = (await db.query(`SELECT abastece.fn_crear_pedido(
+    $1::uuid, $2::uuid, '2026-10-01'::date, 'regular', NULL,
+    NULL, '', $3::jsonb, 'd12-local-exact') AS result`,
+   [order.requested_by, order.location_id, JSON.stringify(order.items)])).rows[0].result;
+   assert.equal((await findings(created.id)).duplicates.some(x => x.order_id === first), true);
+   await db.query(`UPDATE abastece.order_items SET requested_qty = requested_qty + 1
+    WHERE order_id = $1 AND product_id = $2`, [created.id, order.items[0].product_id]);
+   assert.deepEqual((await findings(created.id)).duplicates, []);
+  });
+
+  await t.test('Fuera de submitted no produce hallazgos ni incidencias', async () => {
+   await db.query(`UPDATE abastece.orders SET status = 'draft' WHERE id = $1`, [duplicate]);
+   const result = await findings(duplicate);
+   assert.deepEqual(result, {duplicates: [], missing_kit: [], open_incidents: [],
+    kinds_to_create: []});
+  });
+
+  await t.test('La detección no escribe incidencias ni decision_logs', async () => {
+   const before = (await db.query(`SELECT
+    (SELECT count(*) FROM abastece.incidents)::integer AS incidents,
+    (SELECT count(*) FROM abastece.decision_logs)::integer AS logs`)).rows[0];
+   await findings(first);
+   await findings(second);
+   const after = (await db.query(`SELECT
+    (SELECT count(*) FROM abastece.incidents)::integer AS incidents,
+    (SELECT count(*) FROM abastece.decision_logs)::integer AS logs`)).rows[0];
+   assert.deepEqual(after, before);
+  });
+ } finally {
+  await db.close();
+ }
+});
+
 test('D-1.3: fn_decidir_pedido (POST /orders/{id}/decision)', async t => {
  const db = new PGlite();
  try {
