@@ -19,11 +19,13 @@
 import { useQuery } from "@tanstack/react-query";
 
 import {
+  decisionLogs,
   incidents,
   locations,
   orderItems,
   orders,
   products,
+  type DecisionLog,
   type Incident,
   type Location,
   type Order,
@@ -44,8 +46,8 @@ const creadosPorClave = new Map<string, Order>();
 let siguienteNumero = orders.length + 1; // 27 → PED-DEMO-027
 
 // --- J-1.4 · análisis y decisión (estado temporal) -------------------------------------
-// temporal: reemplazar por `decision_logs` + `incidents` (lectura `useAnalysis` de `@/data`)
-// temporal: y por `fn_analizar_reglas` / `fn_decidir_pedido` (D-1.2, D-1.3).
+// temporal: reemplazar por las funciones `fn_analizar_reglas` / `fn_decidir_pedido`
+// temporal: (D-1.2, D-1.3). La propuesta de Jev sí sale ya de `decision_logs` (`@/mocks`).
 
 /** Incidencias creadas por el análisis en esta sesión de demo (arriba de las del seed). */
 const incidenciasAnalisis: Incident[] = [];
@@ -54,26 +56,6 @@ const analisisPorPedido = new Map<string, AnalysisResult>();
 /** Estado nuevo de los pedidos decididos en esta sesión (`id` → estado). */
 const estadosDecididos = new Map<string, Order["status"]>();
 let siguienteIncidenciaDemo = 1;
-
-/**
- * `response.answers` de `db/jev_respuesta_SIMULADA.json` (provider `mock` → SIMULADO).
- * temporal: reemplazar por la respuesta real de Jev que guarda `decision_logs`.
- */
-const RESPUESTA_JEV: Record<string, unknown> = {
-  urgency: {
-    type: "choice",
-    choice: "urgent",
-    probabilities: { routine: 0.04, urgent: 0.91, review: 0.05 },
-    confidence: 0.865,
-  },
-  additional_reason: {
-    type: "choice",
-    choice: "review",
-    probabilities: { supported: 0.2, possible_duplicate: 0.2, review: 0.6 },
-    confidence: 0.4,
-  },
-  needs_human_review: { type: "noul", noul: 0.9 },
-};
 
 /** Los dos tipos de alerta que produce el análisis (`fn_analizar_reglas`). */
 const KINDS_ANALISIS: Incident["kind"][] = ["possible_duplicate", "missing_from_kit"];
@@ -428,9 +410,63 @@ function crearIncidencia(
   };
 }
 
+/** Incidencias abiertas de este análisis (duplicado u omisión de kit), sin duplicar. */
+function incidenciasDeAnalisis(orderId: string) {
+  return [...incidents, ...incidenciasAnalisis]
+    .filter(
+      (incidencia) =>
+        incidencia.order_id === orderId &&
+        incidencia.status === "open" &&
+        KINDS_ANALISIS.includes(incidencia.kind),
+    )
+    .map((incidencia) => ({
+      id: incidencia.id,
+      code: incidencia.code,
+      kind: incidencia.kind as "possible_duplicate" | "missing_from_kit",
+    }));
+}
+
+/** `decision_logs.provider` → `AiSource` (contrato: `mock` → SIMULADO; `typesafe`/`openai` → API_REAL). */
+function fuenteDesdeProvider(provider: DecisionLog["provider"]): AiProposal["source"] {
+  return provider === "mock" ? "SIMULADO" : "API_REAL";
+}
+
+/** Forma de `decision_logs.response` (`db/jev_respuesta_SIMULADA.json`). */
+type RespuestaJev = { model?: string; answers?: Record<string, unknown> };
+
+/**
+ * Propuesta de IA de un pedido.
+ *
+ * La única clasificación de Jev del seed es la de PED-DEMO-001 (`decision_logs`), así que
+ * solo ese pedido trae `answers` reales; el resto queda en revisión humana y **sin datos**
+ * (no se inventan confianzas). El `decision_log_id` del seed es el real.
+ * // temporal: reemplazar por `fn_analizar_reglas` (D-1.2) + la llamada real a Jev.
+ */
+function propuestaDe(orderId: string): AiProposal {
+  const registro = decisionLogs.find((log) => log.order_id === orderId);
+  if (registro) {
+    const respuesta = registro.response as RespuestaJev;
+    return {
+      source: fuenteDesdeProvider(registro.provider),
+      model: respuesta.model ?? registro.model_version,
+      status: registro.status === "proposed" ? "proposed" : "human_review",
+      answers: respuesta.answers ?? {},
+      decision_log_id: registro.id,
+    };
+  }
+  return {
+    source: "SIMULADO",
+    model: "jev-1.13.0",
+    status: "human_review",
+    answers: {},
+    decision_log_id: `demo-decision-log-${orderId}`,
+  };
+}
+
 /**
  * Lectura del análisis: `decision_logs` + `incidents` abiertas del pedido
- * (`useAnalysis(orderId)`, contrato C2). `null` si el pedido todavía no se analizó.
+ * (`useAnalysis(orderId)`, contrato C2). `null` si el pedido todavía no tiene ni análisis
+ * de esta sesión ni clasificación en `decision_logs`.
  */
 export function useAnalysis(orderId: string | undefined) {
   return useQuery<AnalysisResult | null>({
@@ -439,7 +475,18 @@ export function useAnalysis(orderId: string | undefined) {
     staleTime: 0,
     queryFn: async () => {
       await esperar(120);
-      return analisisPorPedido.get(orderId as string) ?? null;
+      const id = orderId as string;
+      const analizado = analisisPorPedido.get(id);
+      if (analizado) return analizado;
+      // El seed solo clasifica PED-DEMO-001; el resto aún no tiene `decision_logs`.
+      if (!decisionLogs.some((log) => log.order_id === id)) return null;
+      return {
+        order_id: id,
+        duplicates: [],
+        missing_kit: [],
+        incidents: incidenciasDeAnalisis(id),
+        proposal: propuestaDe(id),
+      };
     },
   });
 }
@@ -447,7 +494,8 @@ export function useAnalysis(orderId: string | undefined) {
 /**
  * `analyzeOrder(id)` (POST `/orders/{id}/analyze`, contrato).
  *
- * // temporal: reemplazar por `fn_analizar_reglas` (D-1.2) + la propuesta real de Jev.
+ * // temporal: reemplazar por `fn_analizar_reglas` (D-1.2). La propuesta sale de
+ * // temporal: `decision_logs` del seed cuando existe (PED-DEMO-001); el resto va sin datos.
  * Reproduce dos reglas: duplicado exacto por punto/mes/composición (`db/04`, PITCH-1) y el
  * caso del kit del seed (PED-DEMO-002 omite INS-016, PITCH-2). Las alertas no cancelan ni
  * bloquean, y volver a llamarlo no duplica incidencias (idempotente).
@@ -504,25 +552,8 @@ export async function analyzeOrder(orderId: string): Promise<AnalysisResult> {
     order_id: pedido.id,
     duplicates,
     missing_kit,
-    incidents: [...incidents, ...incidenciasAnalisis]
-      .filter(
-        (incidencia) =>
-          incidencia.order_id === pedido.id &&
-          incidencia.status === "open" &&
-          KINDS_ANALISIS.includes(incidencia.kind),
-      )
-      .map((incidencia) => ({
-        id: incidencia.id,
-        code: incidencia.code,
-        kind: incidencia.kind as "possible_duplicate" | "missing_from_kit",
-      })),
-    proposal: {
-      source: "SIMULADO", // `decision_logs.provider = mock` → SIMULADO (I6)
-      model: "jev-1.13.0",
-      status: "human_review", // `decision_logs.status` del seed (< 0.80 → revisión humana)
-      answers: RESPUESTA_JEV,
-      decision_log_id: `demo-decision-log-${pedido.id}`,
-    },
+    incidents: incidenciasDeAnalisis(pedido.id),
+    proposal: propuestaDe(pedido.id),
   };
   analisisPorPedido.set(pedido.id, resultado);
   return resultado;

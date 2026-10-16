@@ -214,6 +214,7 @@ export function DetalleAdmin() {
   const coincidencias = comparacion.filter((fila) => fila.a === fila.b).length;
   const respuestas = (analisis?.proposal.answers ?? {}) as Record<string, RespuestaIA>;
   const confianza = respuestas.urgency?.confidence;
+  const tieneRespuestas = Object.keys(respuestas).length > 0;
 
   function abrirDecision(tipo: Decision) {
     // Aprobar sin cambios no necesita motivo: se registra directo.
@@ -463,7 +464,7 @@ export function DetalleAdmin() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <SparklesIcon className="size-4 text-violet-600" />
                 Propuesta de Jev
-                {analisis?.proposal ? (
+                {analisis?.proposal && tieneRespuestas ? (
                   <AiSourceBadge source={analisis.proposal.source} className="ml-auto" />
                 ) : null}
               </CardTitle>
@@ -471,22 +472,28 @@ export function DetalleAdmin() {
             <CardContent className="space-y-2 text-sm">
               {analisis?.proposal ? (
                 <>
-                  <p>
-                    Urgencia: <span className="font-medium">{etiquetaUrgencia(respuestas.urgency?.choice)}</span>
-                    <span className="mx-1.5 text-violet-300">·</span>
-                    Confianza: <span className="font-medium">{formatearConfianza(confianza)}</span>
-                  </p>
+                  {tieneRespuestas ? (
+                    <p>
+                      Urgencia: <span className="font-medium">{etiquetaUrgencia(respuestas.urgency?.choice)}</span>
+                      <span className="mx-1.5 text-violet-300">·</span>
+                      Confianza: <span className="font-medium">{formatearConfianza(confianza)}</span>
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">Jev todavía no clasificó este pedido.</p>
+                  )}
                   <p className="text-muted-foreground">
                     Evidencia: {pedido.observations || "sin nota del auxiliar."}
                   </p>
-                  {analisis.proposal.status === "human_review" ? (
+                  {tieneRespuestas && analisis.proposal.status === "human_review" ? (
                     <Badge variant="outline" className={`border font-medium ${TONO.atencion}`}>
                       Revisión humana
                     </Badge>
                   ) : null}
-                  <p className="font-mono text-xs text-muted-foreground">
-                    {analisis.proposal.model}
-                  </p>
+                  {tieneRespuestas ? (
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {analisis.proposal.model}
+                    </p>
+                  ) : null}
                 </>
               ) : (
                 <p className="text-muted-foreground">
