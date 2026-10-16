@@ -26,6 +26,7 @@ import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
+import { Tablero } from "@/features/tablero/Tablero";
 import { Trazabilidad } from "@/features/trazabilidad/Trazabilidad";
 
 /**
@@ -307,14 +308,7 @@ export const NAV: NavItem[] = [
     owner: "Jorge",
     task: "J-2.2",
     desc: "Cobertura por punto e insumo, tal como la calcula la vista de reposición.",
-    element: (
-      <Placeholder
-        title="Tablero de cobertura"
-        task="J-2.2"
-        owner="Jorge"
-        desc="Cobertura por punto e insumo, tal como la calcula la vista de reposición."
-      />
-    ),
+    element: <Tablero />,
   },
   {
     path: "/incidencias",

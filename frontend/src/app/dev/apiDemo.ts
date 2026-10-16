@@ -4,7 +4,8 @@
  * Imita el contrato C2 (`docs/06_PLAN_EQUIPO.md` §3) con las **mismas firmas**, para que
  * las pantallas no cambien cuando llegue lo real:
  *   - lecturas  → `useProducts()`, `useOrders(filtro)`, `useOrder(id)`, `useLocations(scope)`,
- *                 `useIncidents(filtro)`, `useAnalysis(orderId)`, `useShipments(filtro)`
+ *                 `useIncidents(filtro)`, `useAnalysis(orderId)`, `useShipments(filtro)`,
+ *                 `useReplenishment(ciudad?)`
  *   - escrituras → `createOrder(datos)`, `analyzeOrder(id)`, `decideOrder(id, datos)` (J-1.4),
  *                  `markDelivered(id)` (J-2.1)
  *
@@ -26,6 +27,7 @@ import {
   orderItems,
   orders,
   products,
+  replenishment,
   shipments,
   type DecisionLog,
   type Incident,
@@ -33,6 +35,7 @@ import {
   type Order,
   type OrderItem,
   type Product,
+  type Replenishment,
   type Shipment,
 } from "@/mocks";
 
@@ -754,4 +757,57 @@ export async function markDelivered(shipmentId: string): Promise<ShipmentResult>
     order_status: "delivered_unchecked",
     guide_code: envio.guide_code,
   };
+}
+
+// --- J-2.2 · tablero de cobertura (contrato C2, capa temporal) --------------------------
+
+/**
+ * Los 24 puntos detallados del seed (`locations.demo_scope = 'detailed'`). `v_replenishment`
+ * solo cubre esos puntos; el catálogo (703) no entra en la demo de cobertura.
+ */
+const PUNTOS_DETALLADOS = new Set(
+  locations.filter((punto) => punto.demo_scope === "detailed").map((punto) => punto.id),
+);
+
+/** Ciudad del punto (`locations.city`), para el filtro del tablero. */
+function ciudadDePunto(locationId: string): string | undefined {
+  return locations.find((punto) => punto.id === locationId)?.city;
+}
+
+/** Código del punto (`locations.code`, ej. `Q-001`); nunca se muestra el UUID. */
+function codigoDePunto(locationId: string): string {
+  return locations.find((punto) => punto.id === locationId)?.code ?? "";
+}
+
+/**
+ * Lista de lectura: cobertura de reposición (`useReplenishment(ciudad?)`, contrato C2 →
+ * `v_replenishment`). La vista **ya** calcula `coverage_days`, `recommended_qty`,
+ * `confirmed_inbound_qty` y `coverage_status`; el frontend no recalcula nada (invariante I1).
+ *
+ * Filtra por ciudad del punto (opcional) y por la misma visibilidad que `useOrders`
+ * (RLS, invariante I8). Ordena por punto y luego por insumo, para que la tabla sea estable.
+ */
+export function useReplenishment(ciudad?: string) {
+  const { data: sesion } = useSession();
+  const puntos = sesion?.points ?? [];
+  const verTodos = puntos.length === 0;
+  const ids = puntos.map((punto) => punto.id);
+
+  return useQuery<Replenishment[]>({
+    queryKey: ["demo", "reposicion", ciudad ?? null, verTodos ? "todos" : ids],
+    // Sin caché: la vista cambia con el ciclo en vivo (recepciones, movimientos de stock).
+    staleTime: 0,
+    queryFn: async () => {
+      await esperar(200);
+      return replenishment
+        .filter((fila) => PUNTOS_DETALLADOS.has(fila.location_id))
+        .filter((fila) => verTodos || ids.includes(fila.location_id))
+        .filter((fila) => !ciudad || ciudadDePunto(fila.location_id) === ciudad)
+        .sort(
+          (a, b) =>
+            codigoDePunto(a.location_id).localeCompare(codigoDePunto(b.location_id)) ||
+            a.sku.localeCompare(b.sku),
+        );
+    },
+  });
 }
