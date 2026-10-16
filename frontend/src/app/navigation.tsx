@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import type { Role } from "@/app/dev/session";
+import { Despacho } from "@/features/despacho/Despacho";
 import { InventarioBodega } from "@/features/bodega/InventarioBodega";
 import { ColaBodega } from "@/features/bodega/ColaBodega";
 import { BandejaAdmin } from "@/app/pages/BandejaAdmin";
@@ -191,14 +192,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-2.4",
     desc: "Envíos creados, etiqueta con QR imprimible y confirmación de despacho.",
-    element: (
-      <Placeholder
-        title="Despacho de envíos"
-        task="B-2.4"
-        owner="Bruno"
-        desc="Envíos creados, etiqueta con QR imprimible y confirmación de despacho."
-      />
-    ),
+    element: <Despacho />,
   },
 
   // --- Logística (Bruno) ---

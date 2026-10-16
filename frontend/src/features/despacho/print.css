@@ -1,0 +1,23 @@
+/* La copia imprimible es un portal directo de body, solo mientras hay etiqueta. */
+.dispatch-print-root { display: none; }
+
+@media print {
+  body:has(> .dispatch-print-root) > :not(.dispatch-print-root) { display: none !important; }
+  .dispatch-print-root {
+    display: block;
+    padding: 8mm;
+    background: #fff;
+    color: #0f172a;
+    font-family: "Geist", system-ui, sans-serif;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .dispatch-print-root .dispatch-label {
+    width: 96mm;
+    max-width: 100%;
+    margin: 0 auto;
+    break-inside: avoid;
+    border: 1px solid #0f172a;
+  }
+  .dispatch-print-root svg { width: 50mm; height: 50mm; }
+}
