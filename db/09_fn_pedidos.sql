@@ -173,3 +173,166 @@ $$;
 
 GRANT EXECUTE ON FUNCTION abastece.fn_crear_pedido(uuid,uuid,date,text,uuid,text,text,jsonb,text) TO service_role;
 REVOKE EXECUTE ON FUNCTION abastece.fn_crear_pedido(uuid,uuid,date,text,uuid,text,text,jsonb,text) FROM PUBLIC, anon, authenticated;
+
+-- D-1.3 (#30): POST /orders/{id}/decision. D-1.2 insertará
+-- fn_analizar_reglas entre las funciones de creación y decisión.
+CREATE FUNCTION abastece.fn_decidir_pedido(
+ p_staff uuid, p_order uuid, p_decision text, p_items jsonb, p_reason text
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+ v_order abastece.orders%ROWTYPE;
+ v_item jsonb;
+ v_index integer;
+ v_product uuid;
+ v_requested numeric(12,3);
+ v_approved numeric;
+ v_seen uuid[] := ARRAY[]::uuid[];
+ v_corrected boolean := false;
+ v_status text;
+ v_reference_at timestamptz;
+ v_before_items jsonb;
+ v_after_items jsonb := '[]'::jsonb;
+BEGIN
+ -- p_staff procede del JWT resuelto por FastAPI; el rol se valida otra vez aquí.
+ IF NOT EXISTS (
+  SELECT 1 FROM abastece.staff_members
+  WHERE id = p_staff AND active AND role = 'administrador'
+ ) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'Solo un administrador activo puede decidir';
+ END IF;
+
+ SELECT * INTO v_order FROM abastece.orders WHERE id = p_order FOR UPDATE;
+ IF NOT FOUND THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0404', MESSAGE = 'Pedido no encontrado';
+ END IF;
+ IF v_order.requested_by = p_staff THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'No puede decidir su propio pedido';
+ END IF;
+ IF v_order.status <> 'submitted' THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'El pedido no está en submitted';
+ END IF;
+ IF p_decision IS NULL OR p_decision NOT IN ('approve', 'return', 'cancel') THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Decisión inválida',
+   DETAIL = '{"field":"decision"}';
+ END IF;
+ IF p_decision <> 'approve' AND p_items IS NOT NULL THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'items solo se admite para approve',
+   DETAIL = '{"field":"items"}';
+ END IF;
+ IF p_decision IN ('return', 'cancel') AND nullif(btrim(p_reason), '') IS NULL THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'La decisión requiere motivo',
+   DETAIL = '{"field":"reason"}';
+ END IF;
+ IF p_decision = 'approve' AND p_items IS NOT NULL AND
+    pg_catalog.jsonb_typeof(p_items) <> 'array' THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'items debe ser una lista',
+   DETAIL = '{"field":"items"}';
+ END IF;
+
+ IF p_decision = 'approve' AND p_items IS NOT NULL THEN
+  FOR v_item, v_index IN
+   SELECT value, (ordinality - 1)::integer
+   FROM pg_catalog.jsonb_array_elements(p_items) WITH ORDINALITY
+  LOOP
+   IF pg_catalog.jsonb_typeof(v_item) <> 'object' OR
+      pg_catalog.jsonb_typeof(v_item->'product_id') <> 'string' THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'product_id inválido',
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
+      'index', v_index)::text;
+   END IF;
+   BEGIN
+    v_product := (v_item->>'product_id')::uuid;
+   EXCEPTION WHEN invalid_text_representation THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'product_id inválido',
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
+      'index', v_index)::text;
+   END;
+   IF v_product = ANY(v_seen) THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Producto repetido',
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
+      'index', v_index, 'product_id', v_product)::text;
+   END IF;
+   v_seen := pg_catalog.array_append(v_seen, v_product);
+   SELECT requested_qty INTO v_requested FROM abastece.order_items
+   WHERE order_id = p_order AND product_id = v_product FOR UPDATE;
+   IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Producto ajeno al pedido',
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].product_id', v_index),
+      'index', v_index, 'product_id', v_product)::text;
+   END IF;
+   IF pg_catalog.jsonb_typeof(v_item->'approved_qty') <> 'number' THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'approved_qty inválida',
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].approved_qty', v_index),
+      'index', v_index, 'product_id', v_product)::text;
+   END IF;
+   v_approved := (v_item->>'approved_qty')::numeric;
+   IF v_approved < 0 OR v_approved > v_requested OR
+      v_approved <> pg_catalog.round(v_approved, 3) THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'approved_qty fuera de rango',
+     DETAIL = pg_catalog.jsonb_build_object('field', pg_catalog.format('items[%s].approved_qty', v_index),
+      'index', v_index, 'product_id', v_product)::text;
+   END IF;
+   v_corrected := v_corrected OR v_approved <> v_requested;
+  END LOOP;
+ END IF;
+ IF v_corrected AND nullif(btrim(p_reason), '') IS NULL THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Corregir cantidades requiere motivo',
+   DETAIL = '{"field":"reason"}';
+ END IF;
+
+ SELECT reference_at INTO STRICT v_reference_at
+ FROM abastece.demo_metadata WHERE id = true;
+ SELECT coalesce(pg_catalog.jsonb_agg(
+   pg_catalog.jsonb_build_object('product_id', product_id,
+    'requested_qty', requested_qty, 'approved_qty', approved_qty)
+   ORDER BY product_id), '[]'::jsonb)
+ INTO v_before_items FROM abastece.order_items WHERE order_id = p_order;
+
+ v_status := CASE p_decision WHEN 'approve' THEN 'approved'
+  WHEN 'return' THEN 'draft' ELSE 'cancelled' END;
+ IF p_decision = 'approve' THEN
+  -- Primero se cubren todas las líneas; una lista parcial corrige solo las
+  -- líneas presentes. El bloqueo del pedido serializa decisiones concurrentes.
+  UPDATE abastece.order_items SET approved_qty = requested_qty
+  WHERE order_id = p_order;
+  IF p_items IS NOT NULL THEN
+   FOR v_item IN SELECT value FROM pg_catalog.jsonb_array_elements(p_items)
+   LOOP
+    UPDATE abastece.order_items
+    SET approved_qty = (v_item->>'approved_qty')::numeric
+    WHERE order_id = p_order AND product_id = (v_item->>'product_id')::uuid;
+   END LOOP;
+  END IF;
+  UPDATE abastece.orders
+  SET status = v_status, approved_by = p_staff, approved_at = v_reference_at
+  WHERE id = p_order;
+  SELECT coalesce(pg_catalog.jsonb_agg(
+    pg_catalog.jsonb_build_object('product_id', product_id, 'approved_qty', approved_qty)
+    ORDER BY product_id), '[]'::jsonb)
+  INTO v_after_items FROM abastece.order_items WHERE order_id = p_order;
+ ELSE
+  UPDATE abastece.orders
+  SET status = v_status, approved_by = NULL, approved_at = NULL
+  WHERE id = p_order;
+ END IF;
+
+ INSERT INTO abastece.audit_events
+  (actor_id, location_id, entity_type, entity_id, action,
+   before_state, after_state, occurred_at)
+ VALUES
+  (p_staff, v_order.location_id, 'order', p_order, 'order_' || p_decision,
+   pg_catalog.jsonb_build_object('status', v_order.status, 'items', v_before_items),
+   pg_catalog.jsonb_build_object('status', v_status, 'decision', p_decision,
+    'reason', nullif(btrim(p_reason), ''), 'items', v_after_items), v_reference_at);
+
+ RETURN pg_catalog.jsonb_build_object('id', v_order.id, 'code', v_order.code,
+  'status', v_status);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION abastece.fn_decidir_pedido(uuid,uuid,text,jsonb,text) TO service_role;
+REVOKE EXECUTE ON FUNCTION abastece.fn_decidir_pedido(uuid,uuid,text,jsonb,text) FROM PUBLIC, anon, authenticated;

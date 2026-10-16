@@ -297,3 +297,280 @@ test('D-1.1: fn_crear_pedido (POST /orders)', async t => {
   await db.close();
  }
 });
+
+test('D-1.3: fn_decidir_pedido (POST /orders/{id}/decision)', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`
+   CREATE ROLE anon;
+   CREATE ROLE authenticated;
+   CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth;
+   CREATE TABLE auth.users(id uuid PRIMARY KEY);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
+   REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC, anon, authenticated;
+   GRANT USAGE ON SCHEMA auth TO authenticated;
+   GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+  `);
+  for (const file of [
+   '01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql',
+   '03_datos_ficticios.sql', '08_proveedor_openai.sql', '09_fn_pedidos.sql',
+  ]) await db.exec(readSql(file));
+
+  const staff = (await db.query(`
+   SELECT s.id, s.role, a.location_id FROM abastece.staff_members AS s
+   LEFT JOIN abastece.point_assignments AS a ON a.staff_id = s.id
+   ORDER BY s.role, a.location_id
+  `)).rows;
+  const admin = staff.find(s => s.role === 'administrador');
+  const author = staff.find(s => s.role === 'auxiliar' && s.location_id);
+  const otherRole = staff.find(s => s.role === 'bodega');
+  const products = (await db.query('SELECT id FROM abastece.products ORDER BY sku LIMIT 3')).rows;
+  let nextKey = 0;
+  const newOrder = async (lines = [
+   {product_id: products[0].id, requested_qty: 3},
+   {product_id: products[1].id, requested_qty: 4},
+  ]) => (await db.query(`
+   SELECT abastece.fn_crear_pedido(
+    $1::uuid, $2::uuid, '2026-11-01'::date, 'regular', NULL,
+    NULL, '', $3::jsonb, $4::text
+   ) AS result
+  `, [author.id, author.location_id, JSON.stringify(lines), `d13-local-${++nextKey}`])).rows[0].result;
+  const decide = (order, decision, items = null, reason = null, staffId = admin.id) => db.query(`
+   SELECT abastece.fn_decidir_pedido($1::uuid, $2::uuid, $3::text,
+    $4::jsonb, $5::text) AS result
+  `, [staffId, order, decision, items === null ? null : JSON.stringify(items), reason]);
+  const one = async (...args) => (await decide(...args)).rows[0].result;
+  const rejects = async (order, decision, items, reason, code, field, staffId) => {
+   await assert.rejects(() => decide(order, decision, items, reason, staffId), error => {
+    assert.equal(error.code, code);
+    if (field) assert.equal(JSON.parse(error.detail).field, field);
+    return true;
+   });
+  };
+  const auditFor = async order => (await db.query(`
+   SELECT actor_id, location_id, entity_type, entity_id, action,
+    before_state, after_state, occurred_at =
+     (SELECT reference_at FROM abastece.demo_metadata WHERE id) AS demo_clock
+   FROM abastece.audit_events
+   WHERE entity_type = 'order' AND entity_id = $1::uuid AND action <> 'seed_demo'
+   ORDER BY occurred_at, id
+  `, [order])).rows;
+
+  await t.test('Solo service_role ejecuta; SECURITY INVOKER y search_path vacío', async () => {
+   const row = (await db.query(`
+    SELECT p.prosecdef, p.proconfig,
+     has_function_privilege('anon', p.oid, 'EXECUTE') AS anon,
+     has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authenticated,
+     has_function_privilege('service_role', p.oid, 'EXECUTE') AS backend
+    FROM pg_proc AS p JOIN pg_namespace AS n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'abastece' AND p.proname = 'fn_decidir_pedido'
+   `)).rows[0];
+   assert.equal(row.prosecdef, false);
+   assert.deepEqual(row.proconfig, ['search_path=""']);
+   assert.equal(row.anon, false);
+   assert.equal(row.authenticated, false);
+   assert.equal(row.backend, true);
+  });
+
+  await t.test('Aprueba todas las cantidades solicitadas sin items ni motivo', async () => {
+   const order = await newOrder();
+   await db.exec('SET ROLE service_role');
+   let result;
+   try {
+    result = await one(order.id, 'approve');
+   } finally {
+    await db.exec('RESET ROLE');
+   }
+   assert.deepEqual(result, {id: order.id, code: order.code, status: 'approved'});
+   const saved = (await db.query(`
+    SELECT o.status, o.approved_by, o.approved_at = m.reference_at AS demo_clock,
+     o.reason, count(i.id)::integer AS lines,
+     bool_and(i.approved_qty = i.requested_qty) AS complete
+    FROM abastece.orders AS o JOIN abastece.order_items AS i ON i.order_id = o.id
+    CROSS JOIN abastece.demo_metadata AS m WHERE o.id = $1::uuid
+    GROUP BY o.id, m.reference_at
+   `, [order.id])).rows[0];
+   assert.equal(saved.status, 'approved');
+   assert.equal(saved.approved_by, admin.id);
+   assert.equal(saved.demo_clock, true);
+   assert.equal(saved.reason, null);
+   assert.equal(saved.lines, 2);
+   assert.equal(saved.complete, true);
+   const audit = await auditFor(order.id);
+   assert.equal(audit.length, 1);
+   assert.equal(audit[0].actor_id, admin.id);
+   assert.equal(audit[0].location_id, author.location_id);
+   assert.equal(audit[0].entity_type, 'order');
+   assert.equal(audit[0].action, 'order_approve');
+   assert.equal(audit[0].demo_clock, true);
+   assert.equal(audit[0].before_state.status, 'submitted');
+   assert.deepEqual(Object.keys(audit[0].after_state).sort(),
+    ['decision', 'items', 'reason', 'status']);
+   assert.equal(audit[0].after_state.status, 'approved');
+   assert.equal(audit[0].after_state.decision, 'approve');
+   assert.equal(audit[0].after_state.reason, null);
+   assert.equal(audit[0].after_state.items.length, 2);
+  });
+
+  await t.test('Lista parcial corrige una línea y conserva las demás', async () => {
+   const order = await newOrder();
+   const result = await one(order.id, 'approve',
+    [{product_id: products[0].id, approved_qty: 1}], 'Ajuste por stock');
+   assert.equal(result.status, 'approved');
+   const lines = (await db.query(`
+    SELECT product_id, approved_qty::text AS qty FROM abastece.order_items
+    WHERE order_id = $1::uuid ORDER BY product_id
+   `, [order.id])).rows;
+   assert.equal(lines.find(x => x.product_id === products[0].id).qty, '1.000');
+   assert.equal(lines.find(x => x.product_id === products[1].id).qty, '4.000');
+   const audit = (await auditFor(order.id))[0];
+   assert.equal(audit.after_state.reason, 'Ajuste por stock');
+   assert.equal(audit.after_state.items.length, 2);
+  });
+
+  await t.test('Cantidad igual admite motivo opcional; cero es válido con motivo', async () => {
+   const equal = await newOrder();
+   await one(equal.id, 'approve', [{product_id: products[0].id, approved_qty: 3}]);
+   const zero = await newOrder();
+   await one(zero.id, 'approve', [{product_id: products[0].id, approved_qty: 0}], 'No disponible');
+   const qty = (await db.query(`SELECT approved_qty::text AS qty FROM abastece.order_items
+    WHERE order_id = $1::uuid AND product_id = $2::uuid`,
+   [zero.id, products[0].id])).rows[0].qty;
+   assert.equal(qty, '0.000');
+  });
+
+  await t.test('Devolver y cancelar exigen motivo y registran la transición', async () => {
+   for (const [decision, status] of [['return', 'draft'], ['cancel', 'cancelled']]) {
+    const order = await newOrder();
+    await rejects(order.id, decision, null, '  ', 'P0422', 'reason');
+    const result = await one(order.id, decision, null, 'Motivo humano');
+    assert.equal(result.status, status);
+    const row = (await db.query(`SELECT status, approved_by, approved_at, reason
+     FROM abastece.orders WHERE id = $1::uuid`, [order.id])).rows[0];
+    assert.equal(row.status, status);
+    assert.equal(row.approved_by, null);
+    assert.equal(row.approved_at, null);
+    assert.equal(row.reason, null);
+    const audit = (await auditFor(order.id))[0];
+    assert.equal(audit.after_state.status, status);
+    assert.equal(audit.after_state.decision, decision);
+    assert.equal(audit.after_state.reason, 'Motivo humano');
+    assert.deepEqual(audit.after_state.items, []);
+   }
+  });
+
+  await t.test('Rol no autorizado, staff inactivo y decisión sobre pedido propio -> P0403', async () => {
+   const order = await newOrder();
+   await rejects(order.id, 'approve', null, null, 'P0403', null, otherRole.id);
+   await db.query('UPDATE abastece.staff_members SET active = false WHERE id = $1', [admin.id]);
+   try {
+    await rejects(order.id, 'approve', null, null, 'P0403');
+   } finally {
+    await db.query('UPDATE abastece.staff_members SET active = true WHERE id = $1', [admin.id]);
+   }
+   await db.query(`INSERT INTO abastece.orders
+    (code, location_id, cycle_month, requested_by, requested_at,
+     status, order_type, idempotency_key)
+    SELECT 'PGLITE-SELF-D13', $1::uuid, '2026-11-01'::date, $2::uuid,
+     reference_at, 'submitted', 'regular', 'd13-self'
+    FROM abastece.demo_metadata WHERE id`, [author.location_id, admin.id]);
+   const self = (await db.query(`SELECT id FROM abastece.orders
+    WHERE idempotency_key = 'd13-self'`)).rows[0];
+   await rejects(self.id, 'approve', null, null, 'P0403');
+   assert.equal((await auditFor(self.id)).length, 0);
+  });
+
+  await t.test('Pedido inexistente -> P0404; segundo intento o estado ajeno -> P0409', async () => {
+   await rejects('00000000-0000-0000-0000-000000000001', 'approve', null, null, 'P0404');
+   const order = await newOrder();
+   await one(order.id, 'cancel', null, 'Duplicado');
+   await rejects(order.id, 'approve', null, null, 'P0409');
+   assert.equal((await auditFor(order.id)).length, 1);
+   await rejects('e01ed5b7-f287-5728-9033-1452b2cc4eb7', 'approve', null, null, 'P0409');
+  });
+
+  await t.test('Valida decisión, tipo de items y motivo de corrección', async () => {
+   const order = await newOrder();
+   await rejects(order.id, 'invalid', null, null, 'P0422', 'decision');
+   await rejects(order.id, 'approve', {}, null, 'P0422', 'items');
+   await rejects(order.id, 'cancel', [], 'Motivo', 'P0422', 'items');
+   await rejects(order.id, 'approve',
+    [{product_id: products[0].id, approved_qty: 1}], null, 'P0422', 'reason');
+   assert.equal((await auditFor(order.id)).length, 0);
+  });
+
+  await t.test('Valida producto, duplicados y límites numeric(12,3)', async () => {
+   const order = await newOrder();
+   const valid = {product_id: products[0].id, approved_qty: 1};
+   for (const [lines, field] of [
+    [[valid, valid], 'items[1].product_id'],
+    [[{product_id: products[2].id, approved_qty: 1}], 'items[0].product_id'],
+    [[{product_id: 'not-a-uuid', approved_qty: 1}], 'items[0].product_id'],
+    [[{product_id: products[0].id, approved_qty: 4}], 'items[0].approved_qty'],
+    [[{product_id: products[0].id, approved_qty: -1}], 'items[0].approved_qty'],
+    [[{product_id: products[0].id, approved_qty: 1.0001}], 'items[0].approved_qty'],
+    [[{product_id: products[0].id, approved_qty: '1'}], 'items[0].approved_qty'],
+   ]) await rejects(order.id, 'approve', lines, 'Motivo', 'P0422', field);
+   const status = (await db.query('SELECT status FROM abastece.orders WHERE id = $1',
+    [order.id])).rows[0].status;
+   assert.equal(status, 'submitted');
+  });
+
+  await t.test('No cambia orders.reason ni decision_logs.status', async () => {
+   const related = await newOrder();
+   const additional = (await db.query(`SELECT abastece.fn_crear_pedido(
+    $1::uuid, $2::uuid, '2026-11-01'::date, 'additional', $3::uuid,
+    'Motivo original', '', $4::jsonb, $5::text) AS result`,
+   [author.id, author.location_id, related.id,
+    JSON.stringify([{product_id: products[0].id, requested_qty: 3}]),
+    `d13-local-${++nextKey}`])).rows[0].result;
+   const logsBefore = (await db.query(`SELECT id, status FROM abastece.decision_logs ORDER BY id`)).rows;
+   await one(additional.id, 'approve', [{product_id: products[0].id, approved_qty: 1}],
+    'Motivo de decisión');
+   const saved = (await db.query('SELECT reason FROM abastece.orders WHERE id = $1',
+    [additional.id])).rows[0];
+   assert.equal(saved.reason, 'Motivo original');
+   assert.deepEqual((await db.query(`SELECT id, status FROM abastece.decision_logs ORDER BY id`)).rows,
+    logsBefore);
+  });
+
+  await t.test('Fallo al auditar revierte pedido e ítems completamente', async () => {
+   const order = await newOrder();
+   const before = (await db.query(`SELECT approved_qty FROM abastece.order_items
+    WHERE order_id = $1::uuid`, [order.id])).rows;
+   await db.exec(`ALTER TABLE abastece.audit_events ADD CONSTRAINT d13_reject_audit
+    CHECK (action <> 'order_approve') NOT VALID`);
+   try {
+    await assert.rejects(() => decide(order.id, 'approve',
+     [{product_id: products[0].id, approved_qty: 1}], 'Ajuste'), {code: '23514'});
+   } finally {
+    await db.exec('ALTER TABLE abastece.audit_events DROP CONSTRAINT d13_reject_audit');
+   }
+   const saved = (await db.query(`SELECT status, approved_by, approved_at
+    FROM abastece.orders WHERE id = $1::uuid`, [order.id])).rows[0];
+   assert.equal(saved.status, 'submitted');
+   assert.equal(saved.approved_by, null);
+   assert.equal(saved.approved_at, null);
+   assert.deepEqual((await db.query(`SELECT approved_qty FROM abastece.order_items
+    WHERE order_id = $1::uuid`, [order.id])).rows, before);
+   assert.equal((await auditFor(order.id)).length, 0);
+  });
+
+  await t.test('Dos intentos cercanos sobre un pedido producen una sola decisión', async () => {
+   const order = await newOrder();
+   // PGlite usa una conexión: verifica serialización de llamadas, no una
+   // carrera real entre dos conexiones PostgreSQL independientes.
+   const attempts = await Promise.allSettled([
+    one(order.id, 'approve'), one(order.id, 'cancel', null, 'Duplicado'),
+   ]);
+   assert.equal(attempts.filter(x => x.status === 'fulfilled').length, 1);
+   assert.equal(attempts.filter(x => x.status === 'rejected').length, 1);
+   assert.equal(attempts.find(x => x.status === 'rejected').reason.code, 'P0409');
+   assert.equal((await auditFor(order.id)).length, 1);
+  });
+ } finally {
+  await db.close();
+ }
+});
