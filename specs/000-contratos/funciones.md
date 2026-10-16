@@ -1,8 +1,12 @@
 # C3 · Contratos SQL de pedidos (D-0.6) — borrador para Jorge y Omar
 
-Estado: **propuesta, no congelada**. Este documento no crea funciones ni cambia
-`openapi.yaml`. Fuentes: `openapi.yaml` (`POST /orders`, `/orders/{id}/analyze`,
-`/orders/{id}/decision` y sus schemas), `docs/06_PLAN_EQUIPO.md §3 C3`,
+Estado: **propuesta, no congelada** para las funciones pendientes. Las
+convenciones de `fn_crear_pedido` registran decisiones ya acordadas por Jorge y
+Omar en el PR #93; Omar confirmará la redacción al regresar. Este documento no
+crea funciones. El cambio de `openapi.yaml` en este PR solo declara el 404 ya
+acordado para `POST /orders`. Fuentes: `openapi.yaml` (`POST /orders`,
+`/orders/{id}/analyze`, `/orders/{id}/decision` y sus schemas),
+`docs/06_PLAN_EQUIPO.md §3 C3`,
 `docs/04_SPEC_MAESTRA.md §5 F1 y §8`, `db/01_esquema.sql`,
 `db/02_reglas_y_accesos.sql`, `db/07_integridad_preseed.sql` y
 `db/04_consultas_demo.sql`. Las decisiones que esas fuentes no cierran se
@@ -54,7 +58,7 @@ corresponden uno a uno a `CreateOrderRequest`:
 | `p_location` | Obligatorio, UUID (`location_id`) | Existe y está asignado a `p_staff`; punto ajeno → `P0403`. |
 | `p_cycle_month` | Obligatorio, `date` (`cycle_month`) | Primer día del mes. |
 | `p_order_type` | Obligatorio, texto (`order_type`) | `regular` o `additional`. |
-| `p_related_order` | Opcional para `regular`; obligatorio para `additional`, UUID (`related_order_id`) | Pedido relacionado existente. La regla de relación entre puntos queda pendiente. |
+| `p_related_order` | Opcional para `regular`; obligatorio para `additional`, UUID (`related_order_id`) | Pedido relacionado existente del mismo punto y ciclo en `additional`; `regular` no admite enlace. |
 | `p_reason` | Opcional para `regular`; obligatorio para `additional`, texto (`reason`) | En `additional`, no nulo ni vacío tras `btrim`, conforme a `07_integridad_preseed.sql`. |
 | `p_observations` | Opcional, texto (`observations`) | Si falta, `""` como en OpenAPI. |
 | `p_items` | Obligatorio, arreglo JSONB no vacío (`items`) | Cada objeto exige `product_id` UUID y `requested_qty` numérico `> 0`, representable en `numeric(12,3)`; sin productos repetidos; el producto existe y está activo. |
@@ -66,23 +70,25 @@ La función revisa `role IN ('auxiliar','supervisor')` y la fila de
 `point_assignments`; crea `orders` en `submitted` y sus `order_items`, con
 `requested_by=p_staff` y `requested_at=reference_at`. No crea aprobación ni
 movimientos de inventario. La clave de idempotencia es única: al repetirla,
-devuelve el pedido ya existente **sin insertar otro pedido ni ítems**. Antes de
-devolverlo también debe impedir que una clave ajena exponga el pedido a otro
-usuario. La generación de `orders.code` y el tratamiento de la misma clave con
-un cuerpo distinto requieren acuerdo (pendientes 1 y 2).
+devuelve el pedido ya existente **sin insertar otro pedido ni ítems**. Si el
+mismo actor reutiliza la clave con otro cuerpo, se ignora ese cuerpo y se
+devuelve el pedido original. Una clave de otro actor no revela el pedido.
+`orders.code` usa `PED-DEMO-NNN`, siguiente al máximo, bajo un
+`pg_advisory_xact_lock` global: serializar todas las altas es aceptable para
+esta demostración; con más volumen se revisaría el mecanismo.
 
-**Salida JSONB:** exactamente `OrderResult`: `id` UUID, `code` texto y
-`status="submitted"` para uno nuevo; en una repetición, los tres campos del
-pedido existente. FastAPI responde 201 si se creó y 200 si se reutilizó, sin
-cambiar el cuerpo. La señal interna que permitirá distinguir ambos casos sin
-añadir un campo a `OrderResult` está pendiente (2).
+**Salida JSONB interna:** `id` UUID, `code` texto, `status="submitted"` para
+uno nuevo o el estado actual del pedido existente, y `created` booleano.
+FastAPI responde 201 si `created=true` y 200 si `created=false`, retirando
+`created` antes de responder el `OrderResult` público (`id`, `code`, `status`).
 
 **Errores:** `P0403` para perfil/rol no permitido o punto no asignado;
 `P0422` para mes, tipo, adicional sin motivo/enlace, enlace inexistente,
 ítems vacíos/repetidos, producto inexistente/inactivo o cantidad inválida.
 FastAPI señala el ítem inválido en `Error.error.details`, conforme a OpenAPI;
-el formato exacto de ese detalle se acuerda con Omar. Este endpoint no anuncia
-404 ni 409 en OpenAPI, por lo que no se propone emitirlos aquí.
+el formato exacto de ese detalle se acuerda con Omar. Si otro actor reutiliza
+una `Idempotency-Key`, `P0404` se traduce a HTTP 404 con `NotFound` porque el
+pedido no es visible. `POST /orders` no anuncia 409.
 
 **Transacción:** comprobar autorización e idempotencia, insertar pedido e ítems
 en una misma llamada. Cualquier error revierte la inserción completa. La clave
@@ -198,14 +204,15 @@ debe conservar el schema `Error`, con formato interno aún por acordar.
 revierte todas las escrituras; dos decisiones concurrentes no pueden aprobar
 el mismo pedido dos veces.
 
-## Acuerdos pendientes con Jorge y Omar antes de congelar C3
+## Registro de acuerdos y pendientes de C3
 
-1. **Código nuevo de pedido.** `orders.code` es obligatorio y único, pero
-   OpenAPI no define su algoritmo ni cómo evitar colisiones concurrentes.
-2. **Idempotencia y código HTTP.** OpenAPI exige el mismo pedido al repetir
-   `Idempotency-Key`, incluso sin definir el caso de cuerpo distinto. Hay que
-   acordar tratamiento de otra identidad que reutilice la clave y cómo
-   distinguir 200 de 201 sin añadir campos a `OrderResult`.
+1. **Código nuevo de pedido — acordado para la demo.** `PED-DEMO-NNN` siguiente
+   al máximo, protegido por un advisory lock transaccional global. La
+   serialización global se acepta por el volumen de la demostración.
+2. **Idempotencia y código HTTP — acordado.** Mismo actor y misma clave,
+   incluso con otro cuerpo: devuelve el pedido original e ignora el cuerpo
+   nuevo. Otro actor: `P0404` → 404, sin revelar el pedido. El booleano interno
+   `created` distingue HTTP 201 de 200 y FastAPI lo retira de `OrderResult`.
 3. **Identidad en análisis.** Confirmar `p_staff` en
    `fn_analizar_reglas`; C3 enumera solo `order`, pero sus permisos no pueden
    verificarse de forma segura con ese dato bajo la conexión privilegiada.
@@ -229,12 +236,14 @@ el mismo pedido dos veces.
 8. **Motivo y auditoría.** Definir el JSON interno de `audit_events` para
    conservar el motivo de decisión sin pisar `orders.reason`, y si aceptar o
    rechazar una propuesta actualiza también su `decision_logs.status`.
-9. **Pedido relacionado.** Para `additional`, aclarar si `related_order_id`
-   debe apuntar al mismo punto/ciclo y qué hacer si `regular` trae enlace o
-   motivo. La base actual solo exige existencia y motivo no vacío.
+9. **Pedido relacionado — acordado.** `additional` exige un pedido existente
+   del mismo punto y ciclo y un motivo no vacío. `regular` con enlace o motivo
+   relleno → `P0422`.
 10. **Detalles de validación.** Acordar cómo traducir `P0422` a
     `Error.error.details` para señalar campo, índice de ítem y producto sin
     cambiar OpenAPI.
 
-Hasta resolver estos puntos, las firmas y salidas anteriores son un **borrador
-de revisión**, no autorización para crear `09_fn_pedidos.sql`.
+Las decisiones de `fn_crear_pedido` anteriores documentan acuerdos de los PR
+#93 y #114; Omar confirmará la redacción al regresar. Los contratos de análisis
+y decisión siguen en revisión. `09_fn_pedidos.sql` se revisa por separado en
+el PR #114.
