@@ -92,8 +92,7 @@ function encryptVault(data, passphrase) {
   });
 }
 
-function readVault(passphrase) {
-  const path = vaultPath();
+function readVault(passphrase, path = vaultPath()) {
   if (!existsSync(path)) fail('No existe la bóveda. Ejecuta prepare-vault antes de provision.');
   let envelope;
   try {
@@ -118,17 +117,16 @@ function readVault(passphrase) {
   }
 }
 
-function prepareVault(passphrase) {
-  const path = vaultPath();
+function prepareVault(passphrase, path = vaultPath(), passwordForAccount = () => randomBytes(36).toString('base64url')) {
   if (existsSync(path)) {
-    readVault(passphrase);
+    readVault(passphrase, path);
     console.log('Bóveda existente: 7 contraseñas distintas y recuperables. No se regeneró ninguna.');
     return;
   }
   const data = validateVault({
     version: 1,
     projectRef: PROJECT_REF,
-    accounts: ACCOUNTS.map(({ role, id, email }) => ({ role, id, email, password: randomBytes(36).toString('base64url') })),
+    accounts: ACCOUNTS.map(({ role, id, email }) => ({ role, id, email, password: passwordForAccount() })),
   });
   const encrypted = encryptVault(data, passphrase);
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
@@ -139,20 +137,38 @@ function prepareVault(passphrase) {
   } finally {
     closeSync(fd);
   }
-  readVault(passphrase);
+  readVault(passphrase, path);
   console.log('Bóveda creada y descifrada: 7 contraseñas distintas. Ninguna cuenta Auth fue creada.');
 }
 
-function copyPassword(passphrase, role) {
+function writeClipboard(value) {
+  const result = spawnSync('clip.exe', [], { input: value, encoding: 'utf8', windowsHide: true, stdio: ['pipe', 'ignore', 'ignore'] });
+  return !result.error && result.status === 0;
+}
+
+function readClipboard() {
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'Get-Clipboard -Raw'],
+    { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+  return !result.error && result.status === 0 ? result.stdout.replace(/\r?\n$/, '') : null;
+}
+
+function copyPassword(passphrase, role, {
+  path = vaultPath(), write = writeClipboard, read = readClipboard, schedule = setTimeout,
+} = {}) {
   const account = BY_ROLE.get(role);
   if (!account) fail('Rol desconocido.');
-  const entry = readVault(passphrase).accounts.find((item) => item.role === role);
-  const copied = spawnSync('clip.exe', [], { input: entry.password, encoding: 'utf8', windowsHide: true, stdio: ['pipe', 'ignore', 'ignore'] });
-  if (copied.error || copied.status !== 0) fail('No se pudo copiar al portapapeles.');
+  const entry = readVault(passphrase, path).accounts.find((item) => item.role === role);
+  if (!write(entry.password)) fail('No se pudo copiar al portapapeles.');
   console.log(`Contraseña de ${account.role} copiada al portapapeles durante 30 segundos. Pégala en tu gestor de contraseñas.`);
-  setTimeout(() => {
-    const cleared = spawnSync('clip.exe', [], { input: '', windowsHide: true, stdio: ['pipe', 'ignore', 'ignore'] });
-    console.log(cleared.status === 0 ? 'Portapapeles vaciado.' : 'No se pudo vaciar el portapapeles; vacíalo manualmente.');
+  schedule(() => {
+    const current = read();
+    if (current === null) {
+      console.log('No se pudo comprobar el portapapeles; vacíalo manualmente.');
+    } else if (current !== entry.password) {
+      console.log('El portapapeles cambió; se conservó el contenido nuevo.');
+    } else {
+      console.log(write('') ? 'Portapapeles vaciado.' : 'No se pudo vaciar el portapapeles; vacíalo manualmente.');
+    }
   }, 30_000);
 }
 
@@ -161,7 +177,7 @@ function checkProjectUrl() {
   if (!raw) fail('Falta SUPABASE_URL.');
   let parsed;
   try { parsed = new URL(raw); } catch { fail('SUPABASE_URL inválida.'); }
-  if (parsed.protocol !== 'https:' || parsed.hostname !== `${PROJECT_REF}.supabase.co` ||
+  if (parsed.protocol !== 'https:' || parsed.hostname !== `${PROJECT_REF}.supabase.co` || parsed.port ||
       parsed.pathname !== '/' || parsed.search || parsed.hash || parsed.username || parsed.password) {
     fail('SUPABASE_URL no identifica exactamente el proyecto autorizado.');
   }
@@ -177,7 +193,7 @@ function postgresConfig() {
       !parsed.hostname.endsWith('.pooler.supabase.com') || parsed.port !== '5432' ||
       decodeURIComponent(parsed.username) !== `postgres.${PROJECT_REF}` ||
       decodeURIComponent(parsed.pathname.slice(1)) !== 'postgres' ||
-      !parsed.password || parsed.hash) {
+      !parsed.password || parsed.hash || parsed.search) {
     fail('DATABASE_URL debe usar el Session pooler TLS del proyecto autorizado, puerto 5432.');
   }
   return {
@@ -258,6 +274,23 @@ async function assertStaffWorld(db) {
     if (row.auth_user_id) {
       if (linked.has(row.auth_user_id)) fail('Dos perfiles comparten un auth_user_id.');
       linked.add(row.auth_user_id);
+    }
+  }
+  const { rows: assignments } = await db.query(`
+    SELECT staff_id::text, count(*)::int AS total
+    FROM abastece.point_assignments GROUP BY staff_id
+  `);
+  const counts = new Map();
+  for (const row of assignments) {
+    if (counts.has(row.staff_id) || !ACCOUNTS.some((account) => account.id === row.staff_id)) {
+      fail('Las asignaciones de puntos incluyen un perfil inesperado.');
+    }
+    counts.set(row.staff_id, row.total);
+  }
+  for (const account of ACCOUNTS) {
+    const expected = ['auxiliar', 'supervisor'].includes(account.role) ? account.points : 0;
+    if ((counts.get(account.id) ?? 0) !== expected) {
+      fail(`Las asignaciones de ${account.role} difieren de la semilla aprobada.`);
     }
   }
   const { rows: locations } = await db.query('SELECT count(*)::int AS total FROM abastece.locations');
@@ -384,11 +417,13 @@ function safeError(error) {
   return `Operación detenida (código ${code}, estado ${status}). Revisa el estado de Auth y staff_members antes de repetir.`;
 }
 
-async function remoteCommand(command, role, vault) {
+async function remoteCommand(command, role, vault, {
+  createDb = (config) => new Client(config), createAdmin = adminClient,
+} = {}) {
   const url = checkProjectUrl();
   const config = postgresConfig();
-  const admin = adminClient(url);
-  const db = new Client(config);
+  const admin = createAdmin(url);
+  const db = createDb(config);
   try {
     await db.connect();
     if (db.connection.stream?.encrypted !== true || db.connection.stream?.authorized !== true) {
@@ -443,7 +478,13 @@ async function main() {
   await remoteCommand(command, role, vault);
 }
 
-main().catch((error) => {
-  console.error(safeError(error));
-  process.exitCode = 1;
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(safeError(error));
+    process.exitCode = 1;
+  });
+}
+
+export { ACCOUNTS, ORIGINAL_IDS, validateVault, encryptVault, readVault, prepareVault,
+  copyPassword, checkProjectUrl, postgresConfig, assertStaffWorld, remoteCommand, provisionOne,
+  safeError, adminClient };

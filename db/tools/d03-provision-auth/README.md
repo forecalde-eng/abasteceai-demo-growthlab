@@ -22,9 +22,10 @@ En PowerShell, desde la raíz del repositorio:
 cd db\tools\d03-provision-auth
 node --version
 npm ci --ignore-scripts
+npm test
 ```
 
-La dependencia de Auth es `@supabase/supabase-js`; `pg` se utiliza exclusivamente para el vínculo parametrizado con PostgreSQL. Las versiones están fijadas en `package-lock.json`.
+Comprueba que `node --version` indique **v22** o posterior. `npm test` usa únicamente datos ficticios, archivos temporales y mocks; no necesita credenciales ni conexión a Supabase. La dependencia de Auth es `@supabase/supabase-js`; `pg` se utiliza exclusivamente para el vínculo parametrizado con PostgreSQL. Las versiones están fijadas en `package-lock.json`.
 
 Define las variables protegidas **solo en esta sesión de PowerShell**. `Read-Host -AsSecureString` evita mostrarlas o escribir su valor en el historial:
 
@@ -55,7 +56,9 @@ node provision.mjs prepare-vault
 node provision.mjs verify-vault
 ```
 
-`prepare-vault` genera siete contraseñas diferentes de 36 bytes aleatorios (`crypto.randomBytes`) y **las escribe cifradas y comprueba que puede descifrarlas antes de cualquier alta remota**. Si el archivo ya existe, lo verifica sin regenerar contraseñas. Un archivo existente ilegible detiene el proceso; no lo elimines automáticamente.
+`prepare-vault` genera siete contraseñas diferentes de 36 bytes aleatorios (`crypto.randomBytes`) y **las escribe cifradas y comprueba que puede descifrarlas antes de cualquier alta remota**. Si el archivo ya existe, lo verifica sin regenerar contraseñas. Un archivo existente ilegible detiene el proceso; no lo elimines automáticamente. Guarda una copia del archivo cifrado fuera del repositorio y comprueba su recuperación antes de autorizar las altas.
+
+Para recuperar la bóveda en otro equipo o tras perder el archivo local, instala primero las mismas dependencias, copia el respaldo cifrado a `%LOCALAPPDATA%\AbasteceAI\D-0.3\credentials.enc.json` **solo si esa ruta no contiene una bóveda existente**, configura la misma frase maestra y ejecuta `node provision.mjs verify-vault`. Si ya existe un archivo, consérvalo y revisa cuál corresponde a las cuentas antes de decidir manualmente; el script nunca sobrescribe la bóveda.
 
 Para recuperar una contraseña sin imprimirla, ejecuta, por ejemplo:
 
@@ -63,7 +66,7 @@ Para recuperar una contraseña sin imprimirla, ejecuta, por ejemplo:
 node provision.mjs copy-password auxiliar
 ```
 
-El comando la copia al portapapeles por 30 segundos para pegarla en tu gestor de contraseñas y después vacía el portapapeles. Antes, desactiva el historial y la sincronización del portapapeles de Windows. Repite con los siete roles y comprueba que puedes recuperar sus entradas **antes** de crear usuarios. Si interrumpes el comando, vacía el portapapeles manualmente. No uses esta operación durante una sesión compartida o grabada.
+El comando la copia al portapapeles por 30 segundos para pegarla en tu gestor de contraseñas. Al vencer el plazo, solo vacía el portapapeles si todavía contiene esa contraseña; conserva cualquier contenido nuevo. Si no puede comprobar o vaciar el portapapeles, te avisa para hacerlo manualmente. Antes, desactiva el historial y la sincronización del portapapeles de Windows. Repite con los siete roles y comprueba que puedes recuperar sus entradas **antes** de crear usuarios. Si interrumpes el comando, vacía el portapapeles manualmente. No uses esta operación durante una sesión compartida o grabada.
 
 ## Paso 2: configurar la conexión administrativa local
 
@@ -75,7 +78,7 @@ Set-PrivateEnvironmentValue 'SUPABASE_SECRET_KEY'
 Set-PrivateEnvironmentValue 'DATABASE_URL'
 ```
 
-`DATABASE_URL` debe ser la URI completa del **Session pooler**. El script la analiza y crea la conexión con validación TLS explícita; no la imprime. La clave secret permite operaciones administrativas amplias: úsala solo en tu equipo confiable y cierra PowerShell al terminar.
+`DATABASE_URL` debe ser la URI completa del **Session pooler** en puerto 5432, sin parámetros de consulta. El script comprueba que el usuario del pooler sea `postgres.ylwrzbxlpdmcvqwgnwtb`, analiza la URI y crea la conexión con validación TLS y certificado explícitos; no imprime la URI. La clave secret permite operaciones administrativas amplias: úsala solo en tu equipo confiable y cierra PowerShell al terminar.
 
 ## Paso 3: una cuenta por ejecución
 
@@ -94,7 +97,7 @@ node provision.mjs verify-remote
 
 Cada `provision <rol>`:
 
-1. Descifra y verifica **toda** la bóveda, comprueba la URL, el pooler, TLS, los siete perfiles y las 703 ubicaciones.
+1. Descifra y verifica **toda** la bóveda, comprueba la URL, el pooler, TLS, los siete perfiles, las 27 asignaciones explícitas y las 703 ubicaciones.
 2. Comprueba que permanecen los dos UUID Auth originales y que no hay usuarios ajenos ni correos demo duplicados.
 3. Si la cuenta demo no existe, la crea con `auth.admin.createUser({ email, password, email_confirm: true })` y una marca administrativa D-0.3 de rol y perfil. La contraseña ya estaba en la bóveda. Si existe, exige que la marca corresponda exactamente al perfil previsto; nunca adopta una cuenta ajena.
 4. Vincula únicamente ese perfil mediante `UPDATE` parametrizado, condicionado por UUID, correo, rol, estado activo y `auth_user_id IS NULL`. El vínculo SQL corre en una transacción. Una vinculación ya correcta es una operación sin cambios.
