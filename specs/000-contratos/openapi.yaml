@@ -98,6 +98,9 @@ paths:
         (`possible_duplicate`, `missing_from_kit`) solo si no hay una abierta para el pedido,
         y guarda el análisis en `decision_logs` (provider `rules` + `mock`/`typesafe`).
         Volver a llamarlo no duplica incidencias.
+        Analizar un pedido que no está en `submitted` devuelve 200 con los tres arreglos
+        vacíos, sin llamar a Jev: la `proposal` reutiliza el último log de IA del pedido,
+        o es `null` si nunca hubo uno (acuerdo 12 de `funciones.md`).
       x-roles: [administrador, auxiliar, supervisor]
       x-checks: [auxiliar y supervisor solo si son el autor del pedido]
       parameters: [{ $ref: "#/components/parameters/OrderId" }]
@@ -581,7 +584,13 @@ components:
               id: { type: string, format: uuid }
               code: { type: string }
               kind: { type: string, enum: [possible_duplicate, missing_from_kit] }
-        proposal: { $ref: "#/components/schemas/AiProposal" }
+        proposal:
+          description: |
+            Propuesta de IA (Jev). `null` cuando el pedido no está en `submitted` y no
+            existe un log de IA previo reutilizable (acuerdo 12 de `funciones.md`).
+          oneOf:
+            - { $ref: "#/components/schemas/AiProposal" }
+            - { type: "null" }
 
     AiProposal:
       type: object
