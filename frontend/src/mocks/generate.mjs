@@ -63,6 +63,10 @@ const tables = [
   { csv: 'purchase_order_items', name: 'purchaseItems', type: 'PurchaseItem', columns: {
     id: 'string', purchase_id: 'string', product_id: 'string', ordered_qty: 'number', unit_cost_usd: 'number',
   } },
+  { csv: 'vehicles', name: 'vehicles', type: 'Vehicle', columns: {
+    id: 'string', code: 'string', description: 'string', capacity_kg: 'number', capacity_m3: 'number',
+    available_from: 'string', available_until: 'string', is_synthetic: 'boolean',
+  } },
   { csv: 'decision_logs', name: 'decisionLogs', type: 'DecisionLog', columns: {
     id: 'string', location_id: 'string | null', order_id: 'string | null', task: 'string',
     provider: "'mock' | 'typesafe' | 'rules'", model_version: 'string',

@@ -125,6 +125,17 @@ export interface PurchaseItem {
   unit_cost_usd: number
 }
 
+export interface Vehicle {
+  id: string
+  code: string
+  description: string
+  capacity_kg: number
+  capacity_m3: number
+  available_from: string
+  available_until: string
+  is_synthetic: boolean
+}
+
 export interface DecisionLog {
   id: string
   location_id: string | null
