@@ -26,6 +26,7 @@ import { Inicio } from "@/app/pages/Inicio";
 import { MisPedidos } from "@/app/pages/MisPedidos";
 import { Placeholder } from "@/app/pages/Placeholder";
 import { UiKit } from "@/app/pages/UiKit";
+import { Trazabilidad } from "@/features/trazabilidad/Trazabilidad";
 
 /**
  * Fuente única de verdad de la navegación (J-0.4): ruta, etiqueta, grupo, roles, icono
@@ -293,14 +294,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-1.1",
     desc: "Por ítem: solicitado, aprobado, preparado, enviado, contado y aceptado, con faltantes resaltados.",
-    element: (
-      <Placeholder
-        title="Trazabilidad"
-        task="B-1.1"
-        owner="Bruno"
-        desc="Por ítem: solicitado, aprobado, preparado, enviado, contado y aceptado, con faltantes resaltados."
-      />
-    ),
+    element: <Trazabilidad />,
   },
 
   // --- Análisis (Jorge) ---
