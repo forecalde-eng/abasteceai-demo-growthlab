@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import type { Role } from "@/data";
+import { Mapa } from "@/features/logistica/Mapa";
 import { Courier } from "@/features/logistica/Courier";
 import { Despacho } from "@/features/despacho/Despacho";
 import { InventarioBodega } from "@/features/bodega/InventarioBodega";
@@ -208,14 +209,7 @@ export const NAV: NavItem[] = [
     owner: "Bruno",
     task: "B-4.1",
     desc: "Mapa con los puntos como catálogo, los detallados resaltados y BOD-DEMO.",
-    element: (
-      <Placeholder
-        title="Mapa de puntos"
-        task="B-4.1"
-        owner="Bruno"
-        desc="Mapa con los puntos como catálogo, los detallados resaltados y BOD-DEMO."
-      />
-    ),
+    element: <Mapa />,
   },
   {
     path: "/logistica/rutas",

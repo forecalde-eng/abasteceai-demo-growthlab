@@ -11,6 +11,8 @@ import type { Order, OrderItem, Product, Location } from '@/mocks'
 
 Los nombres de campos coinciden con las columnas SQL (`snake_case`). UUID para relaciones internas; mostrar solo códigos en la UI. `locations` incluye únicamente `demo_scope = detailed | internal` (no los puntos de catálogo), según B-0.1. Los pedidos, ítems y productos se incluyen completos.
 
+Para B-4.1 se exporta también `mapLocations`, generado desde el mismo CSV sin cambiar `locations`: los 700 puntos de servicio (676 catalog + 24 detailed) más BOD-DEMO, con coordenadas y columnas originales. No incluye tránsito ni cuarentena. El mapa usa esta salida; el catálogo de sesión de `src/data/` no se modifica.
+
 Los tipos provisionales de `types.ts` reflejan `db/01_esquema.sql`: NUMERIC/integer como `number`, booleanos como `boolean`, campos opcionales como `null` y fechas/horas como cadenas sin modificar. Cuando David entregue `database.types.ts` (D-0.5), sustituir los tipos provisionales por los generados. No se cambia `src/data/` ni se implementan hooks aquí.
 
 Instalar la herramienta local una vez (no modifica las dependencias del frontend):

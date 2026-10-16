@@ -75,3 +75,26 @@ playwright-cli close
 ```
 
 Comprueba PITCH-9, filtros, reloj y fechas de Ecuador, acceso de logística, rechazo al auxiliar, etiqueta, 375 px, entrega registrada por el reemplazo del supervisor y error explícito si falta el reloj de demo.
+
+## B-4.1 · Mapa Leaflet
+
+Ruta existente `/logistica/mapa`, solo logística. Plan de archivos y dependencias enviado a Jorge en #70 antes de editar. Cambio mínimo en `navigation.tsx`: import + placeholder, sin tocar sesión ni guards de J-0.3. Las dependencias Leaflet/React Leaflet y sus tipos están fijadas en package/lock.
+
+- `mapLocations` se genera desde **locations.csv completo**: 676 de catálogo + 24 detallados = 700 puntos de servicio, más BOD-DEMO (701 marcadores). TRA-DEMO y CUA-DEMO no se dibujan. `locations` conserva sus 27 filas originales para las otras pantallas.
+- `useMapLocations.ts` ofrece un `useLocations('todos')` temporal en nuestra carpeta hasta que exista la lectura equivalente en `@/data`. Perfil desde `@/data`, solo mocks explícitos; no consulta Supabase desde componentes ni muestra mocks como datos reales.
+- `MapaPuntos` carga Leaflet y su CSS de forma diferida. Usa CircleMarker, con tamaños/colores exactos de la guía §8.3 y detallados/bodega dibujados al final para no ocultarlos. Fondo OpenStreetMap estándar y atribución visible, sin API keys.
+- Vista inicial de Quito, Guayaquil y Cuenca; controles de enfoque y selección por código (también mediante teclado). Las coordenadas siempre provienen del CSV, incluso para ajustar las vistas. No se calculan rutas, cobertura ni inventario; el catálogo no se muestra como desabastecido.
+- Popup de código/nombre/ciudad/alcance, sin UUID. Datos ficticios indicados en banner y popup. Coordenadas inválidas no se sustituyen por posiciones inventadas. Si falla el fondo, quedan los puntos disponibles con un aviso.
+- `mapa.css` acota dimensiones y aísla el apilamiento del mapa para no tapar el menú móvil. Los controles internos de zoom están en español.
+
+Comprobaciones: regenerar fixtures y ejecutar su prueba; en frontend, `npx tsc --noEmit && npx vitest run && npm run build`. La carga de teselas necesita internet; la prueba automatizada sustituye solo esas imágenes para no descargar decenas de teselas, manteniendo Leaflet y los datos reales del seed.
+
+Con Vite en `VITE_USE_MOCKS=true`, puerto 5174, desde raíz:
+
+```sh
+playwright-cli open http://127.0.0.1:5174
+playwright-cli run-code --filename=frontend/src/features/logistica/mapa-browser-test.cjs
+playwright-cli close
+```
+
+Valida conteos, colores/radios y ausencia de duplicados; las tres ciudades, popups por código, atribución, permisos, 375 px, estado vacío y fallo del fondo sin perder puntos. Mapa y catálogo no dependen del planificador de #71.
