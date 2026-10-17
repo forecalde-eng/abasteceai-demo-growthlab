@@ -5,14 +5,14 @@ import type { Shipment, ShipmentItem } from "@/mocks";
 // Solo modo mocks. Copia el envío ENV-DEMO-005 (punto 85ffdf07, asignado al auxiliar) en estado
 // `dispatched`, con código, guía y QR propios para no chocar con la semilla de PITCH-8.
 const BASE = shipments.find((row) => row.code === "ENV-DEMO-005")!;
-const TEMP_ID = "temp-envio-recepcion-001";
+const TEMP_ID = "f1680000-0000-4000-8000-000000000001";
 
 export const envioTemporal: Shipment = {
   ...BASE,
   id: TEMP_ID,
   code: "ENV-TEMP-001",
   guide_code: "GUIA-TEMP-001",
-  qr_token: "temp-qr-recepcion-001",
+  qr_token: "f1680000-0000-4000-8000-000000000002",
   status: "dispatched",
   delivered_at: null,
 };
@@ -20,4 +20,8 @@ export const envioTemporal: Shipment = {
 // temporal: reemplazar por los ítems reales del envío del ciclo en vivo.
 export const itemsEnvioTemporal: ShipmentItem[] = shipmentItems
   .filter((row) => row.shipment_id === BASE.id)
-  .map((row) => ({ ...row, id: `${row.id}-temp`, shipment_id: TEMP_ID }));
+  .map((row, index) => ({
+    ...row,
+    id: `f1680001-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+    shipment_id: TEMP_ID,
+  }));
