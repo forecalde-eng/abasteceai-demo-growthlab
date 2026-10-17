@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from app.auth import Me, get_me
 from app.config import get_settings
 from app.db import cerrar_pool
+from app.envios import router as envios_router
 from app.errors import ApiError
 from app.orders import router as orders_router
 from app.routes import router as routes_router
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(orders_router)
+    app.include_router(envios_router)
     app.include_router(routes_router)
 
     @app.get("/me", operation_id="getMe", tags=["sistema"])
