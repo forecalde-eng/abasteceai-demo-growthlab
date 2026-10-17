@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from app.ai.jev import proponer
 from app.auth import Me, ensure_point, require_roles
+from app.config import get_settings
 from app.db import call_fn, fetch_one
 from app.errors import ApiError
 
@@ -86,6 +87,29 @@ def decide_order(
     return {k: r[k] for k in ("id", "code", "status")}  # OrderResult exacto
 
 
+def _sobre_previo(order_id: UUID) -> dict | None:
+    """Reutiliza la última clasificación válida del pedido, sin otra llamada (ni costo) a Jev.
+
+    Evita que un reintento o doble clic gaste otra llamada y cambie la propuesta ya vista.
+    Solo se reutiliza si salió del mismo modo (simulado vs. real) y no fue un fallo.
+    """
+    fila = fetch_one(
+        "SELECT provider, model_version, input_state, response, proposed_action, status"
+        " FROM abastece.decision_logs WHERE order_id = %s AND task = 'classify_notes'"
+        " ORDER BY analysis_sequence DESC LIMIT 1",
+        [order_id],
+    )
+    if (
+        fila is None
+        or "error" in fila[3]
+        or (fila[0] == "mock") != (not get_settings().ai_calls_enabled)
+    ):
+        return None
+    clave = ("provider", "model_version", "input_state", "response", "proposed_action", "status")
+    # No se vuelve a contar el uso: no hubo llamada nueva.
+    return {**dict(zip(clave, fila, strict=True)), "input_tokens": 0, "estimated_cost_usd": 0}
+
+
 @router.post("/orders/{order_id}/analyze", operation_id="analyzeOrder")
 def analyze_order(
     order_id: UUID,
@@ -106,7 +130,7 @@ def analyze_order(
     # Si no está en `submitted` no se llama a Jev: la función recibe NULL (acuerdo 12).
     sobre = None
     if estado == "submitted":
-        sobre = proponer(
+        sobre = _sobre_previo(order_id) or proponer(
             {
                 "order_code": codigo,
                 "point_code": punto,
@@ -115,8 +139,10 @@ def analyze_order(
             }
         )
     r = call_fn("fn_analizar_reglas", me.staff_id, order_id, sobre)
-    if sobre is not None and "error" in sobre["response"]:
-        # La propuesta ya quedó guardada en human_review (acuerdo 4); el contrato pide 502.
+    guardado = r.get("proposal") or {}
+    if sobre is not None and "error" in sobre["response"] and guardado.get("answers") == {}:
+        # SQL guardó el fallo como human_review (acuerdo 4); el contrato pide 502. Si otra
+        # persona decidió el pedido mientras tanto, SQL ignoró el sobre y aquí no hay fallo.
         raise ApiError(
             502,
             "UPSTREAM_AI",

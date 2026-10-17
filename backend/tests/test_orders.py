@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
@@ -210,13 +211,14 @@ RESULTADO = {
     "duplicates": [],
     "missing_kit": [],
     "incidents": [],
-    "proposal": {"decision_log_id": "L-1"},
+    "proposal": {"decision_log_id": "L-1", "answers": {}},
 }
 
 
-def analizar(monkeypatch, fila, me=AUX, sobre=SOBRE, resultado=RESULTADO):
+def analizar(monkeypatch, fila, me=AUX, sobre=SOBRE, resultado=RESULTADO, previo=None, real=False):
     visto = {"jev": [], "fn": []}
-    monkeypatch.setattr(orders, "fetch_one", lambda *_: fila)
+    monkeypatch.setattr(orders, "get_settings", lambda: SimpleNamespace(ai_calls_enabled=real))
+    monkeypatch.setattr(orders, "fetch_one", lambda q, _: previo if "decision_logs" in q else fila)
     monkeypatch.setattr(orders, "proponer", lambda e: visto["jev"].append(e) or sobre)
     monkeypatch.setattr(orders, "call_fn", lambda *a: visto["fn"].append(a) or resultado)
     r = cliente(monkeypatch, me=me).post(f"/orders/{ORD}/analyze", headers=H)
@@ -256,3 +258,41 @@ def test_analyze_con_jev_caido_es_502_con_la_propuesta_guardada(monkeypatch):
     assert r.status_code == 502 and len(v["fn"]) == 1  # SQL guardó human_review antes del 502
     e = r.json()["error"]
     assert e["code"] == "UPSTREAM_AI" and e["details"] == {"decision_log_id": "L-1"}
+
+
+FILA_SUBMITTED = ("submitted", AUTOR, "PED-DEMO-001", "Q-001", "Falta cloro")
+ESTADO = {"order_code": "PED-DEMO-001"}
+PREVIO_MOCK = (
+    "mock",
+    "jev-1.13.0",
+    ESTADO,
+    {"model": "jev-1.13.0", "answers": {"a": 1}},
+    "urgent",
+    "human_review",
+)
+
+
+def test_reintento_reutiliza_la_clasificacion_sin_llamar_a_jev(monkeypatch):
+    r, v = analizar(monkeypatch, FILA_SUBMITTED, previo=PREVIO_MOCK)
+    assert r.status_code == 200 and v["jev"] == []
+    sobre = v["fn"][0][3]
+    assert sobre["provider"] == "mock" and sobre["response"]["answers"] == {"a": 1}
+    assert (sobre["input_tokens"], sobre["estimated_cost_usd"]) == (0, 0)  # sin llamada nueva
+
+
+def test_un_fallo_previo_se_vuelve_a_intentar(monkeypatch):
+    fallo = ("typesafe", "jev-1.13.0", ESTADO, {"error": "timeout"}, "human_review", "human_review")
+    r, v = analizar(monkeypatch, FILA_SUBMITTED, previo=fallo, real=True)
+    assert len(v["jev"]) == 1
+
+
+def test_cambiar_de_simulado_a_real_vuelve_a_llamar_a_jev(monkeypatch):
+    r, v = analizar(monkeypatch, FILA_SUBMITTED, previo=PREVIO_MOCK, real=True)
+    assert len(v["jev"]) == 1
+
+
+def test_si_otro_admin_decidio_mientras_tanto_no_es_502(monkeypatch):
+    caido = {"provider": "typesafe", "response": {"error": "timeout"}}
+    sin_propuesta = {**RESULTADO, "proposal": None}
+    r, v = analizar(monkeypatch, FILA_SUBMITTED, sobre=caido, resultado=sin_propuesta)
+    assert r.status_code == 200 and r.json()["proposal"] is None

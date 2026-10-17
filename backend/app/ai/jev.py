@@ -86,10 +86,19 @@ def proponer(estado: dict) -> dict:
     try:
         respuesta = _llamar_jev(solicitud) if real else _SIMULADO["response"]
         validar_respuesta(solicitud, respuesta)
-    except (urllib.error.URLError, TimeoutError, ValueError, KeyError, json.JSONDecodeError):
+        answers = respuesta["answers"]
+        tokens = int((respuesta.get("usage") or {}).get("input_tokens", 0)) if real else 0
+        if tokens < 0:
+            raise ValueError("input_tokens negativo")
+    except (
+        urllib.error.URLError,
+        TimeoutError,
+        ValueError,
+        TypeError,
+        KeyError,
+        json.JSONDecodeError,
+    ):
         return {**FALLO, "input_state": estado}
-    answers = respuesta["answers"]
-    usage = respuesta.get("usage") or {}
     return {
         "provider": "typesafe" if real else "mock",
         "model_version": respuesta.get("model", MODELO),
@@ -98,6 +107,6 @@ def proponer(estado: dict) -> dict:
         "proposed_action": answers["urgency"]["choice"],
         "status": "human_review" if requiere_revision(answers) else "proposed",
         # shortcut: costo 0 hasta tener la tarifa de TypeSafe; con mock SQL exige 0 de todos modos.
-        "input_tokens": int(usage.get("input_tokens", 0)) if real else 0,
+        "input_tokens": tokens,
         "estimated_cost_usd": 0,
     }

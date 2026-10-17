@@ -76,3 +76,13 @@ def test_confianza_alta_se_propone_sin_revision():
         "needs_human_review": {"type": "noul", "noul": 0.1},
     }
     assert jev.requiere_revision(answers) is False
+
+
+@pytest.mark.parametrize(
+    "uso", [{"input_tokens": None}, {"input_tokens": "x"}, {"input_tokens": -3}]
+)
+def test_uso_mal_formado_va_por_el_fallo(monkeypatch, uso):
+    ajustes(monkeypatch, real=True, clave="k")
+    resp = {**copy.deepcopy(jev._SIMULADO["response"]), "usage": uso}
+    monkeypatch.setattr(jev, "_llamar_jev", lambda _: resp)
+    assert jev.proponer(ESTADO)["response"] == {"error": "timeout"}
