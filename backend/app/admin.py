@@ -22,10 +22,11 @@ DB = Path(__file__).resolve().parents[2] / "db"
 PASOS = ["12_reset_demo.sql", "03_datos_ficticios.sql", "12_revincular_cuentas.sql"]
 # shortcut: el candado es por proceso; con un solo uvicorn basta. Con varios, usar un advisory lock.
 _en_curso = threading.Lock()
+_fallido = False  # un reset a medias deja la base sin semilla: las escrituras siguen cerradas
 
 
 def reset_en_curso() -> bool:
-    return _en_curso.locked()
+    return _en_curso.locked() or _fallido
 
 
 def ejecutar_reset(url: str) -> str:
@@ -65,7 +66,11 @@ def ejecutar_reset(url: str) -> str:
 def reset_demo(_: Annotated[Me, Depends(require_roles("administrador"))]) -> dict:
     if not _en_curso.acquire(blocking=False):
         raise ApiError(409, "CONFLICT", "Ya hay un reinicio en curso.")
+    global _fallido
     try:
-        return {"ok": True, "reference_at": ejecutar_reset(get_settings().database_url)}
+        _fallido = True
+        ref = ejecutar_reset(get_settings().database_url)
+        _fallido = False  # solo un reset verificado reabre las escrituras
+        return {"ok": True, "reference_at": ref}
     finally:
         _en_curso.release()

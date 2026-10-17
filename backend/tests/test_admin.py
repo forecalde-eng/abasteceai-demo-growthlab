@@ -47,3 +47,19 @@ def test_durante_el_reset_se_rechazan_las_escrituras(monkeypatch):
         admin._en_curso.release()
     assert r.status_code == 409 and r.json()["error"]["code"] == "CONFLICT"
     assert salud.status_code == 200
+
+
+def test_un_reset_fallido_deja_las_escrituras_cerradas_hasta_uno_exitoso(monkeypatch):
+    from app.errors import ApiError
+
+    c = cliente(monkeypatch, "administrador")
+
+    def falla(_):
+        raise ApiError(409, "INVALID_STATE", "Falló 03_datos_ficticios.sql")
+
+    monkeypatch.setattr(admin, "ejecutar_reset", falla)
+    assert c.post("/admin/reset-demo", headers=H).status_code == 409
+    assert c.post("/orders", json={}, headers=H).json()["error"]["code"] == "CONFLICT"
+    monkeypatch.setattr(admin, "ejecutar_reset", lambda _: "2026-10-10T22:00:00+00:00")
+    assert c.post("/admin/reset-demo", headers=H).status_code == 200
+    assert c.post("/orders", json={}, headers=H).status_code != 409
