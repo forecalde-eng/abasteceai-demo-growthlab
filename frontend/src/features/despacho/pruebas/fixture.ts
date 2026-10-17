@@ -1,10 +1,15 @@
-import { shipments, orders, locations } from "@/mocks";
+import { shipments, orders, locations, shipmentItems } from "@/mocks";
 import type { EnvioDetalle } from "../useShipments";
 import type { DispatchService } from "../dispatchShipment";
 
 export function seedShipment(code = "ENV-DEMO-004"): EnvioDetalle {
   const shipment = shipments.find((row) => row.code === code)!;
-  return { ...shipment, order: orders.find((row) => row.id === shipment.order_id)!, location: locations.find((row) => row.id === shipment.location_id)! };
+  return {
+    ...shipment,
+    order: orders.find((row) => row.id === shipment.order_id)!,
+    location: locations.find((row) => row.id === shipment.location_id)!,
+    items: shipmentItems.filter((line) => line.shipment_id === shipment.id),
+  };
 }
 
 // SOLO prueba UI: mismo envío/guía/QR del CSV en un estado anterior controlado.
