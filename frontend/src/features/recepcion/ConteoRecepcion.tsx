@@ -1,3 +1,4 @@
+import { refreshOperationalData } from "@/data";
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { SendIcon } from "lucide-react";
@@ -46,8 +47,7 @@ export function ConteoRecepcion({ envio, service = submitReceipt }: {
         items: lines.map((line) => ({ shipment_item_id: line.shipment_item_id, counted_qty: line.counted, accepted_qty: line.accepted })),
       }), envio.id);
       setResult(response);
-      void client.invalidateQueries({ queryKey: ["demo"] });
-      void client.invalidateQueries({ queryKey: ["bruno"] });
+      void refreshOperationalData(client);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo registrar la recepción.");
     } finally {

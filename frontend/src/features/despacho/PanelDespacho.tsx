@@ -1,3 +1,4 @@
+import { refreshOperationalData } from "@/data";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,8 +35,7 @@ export function PanelDespacho({ shipment, service = dispatchShipment }: {
       const response = validateDispatchResult(await service(shipment.id), shipment);
       if (!mounted.current) return;
       setResult(response);
-      void client.invalidateQueries({ queryKey: ["demo"] });
-      void client.invalidateQueries({ queryKey: ["bruno"] });
+      void refreshOperationalData(client);
       toast.success("Despacho confirmado por el servicio.");
     } catch (cause) {
       if (mounted.current) setError(cause instanceof Error ? cause.message : "No se pudo despachar el envío.");
