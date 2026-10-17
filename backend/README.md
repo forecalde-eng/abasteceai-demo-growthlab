@@ -29,3 +29,9 @@ done
 export TEST_DATABASE_URL=postgresql://localhost/abastece_test
 uv run pytest tests/test_integracion_db.py
 ```
+
+### Reset con conciliación de preparación
+
+El reinicio autorizado sigue 12 → 03 → 13 → re-vincular y verifica **9.395 filas**: la semilla original (9.377) más 16 reservas y dos auditorías. El script 13 debe estar desplegado junto al backend; se leen todos los archivos antes del TRUNCATE. Si una etapa falla, se detiene y sigue el mantenimiento. No cambia Auth ni las funciones SQL y no reintenta automáticamente.
+
+PED-DEMO-003 queda preparing (46 preparadas/reservadas); PED-DEMO-006 queda ready (63). INS-005 queda sin disponible en BOD-DEMO: el ensayo de PED-DEMO-001 con INS-005=1 será parcial mientras no haya más stock. Ver `db/12_RESET_DEMO.md`. Integrar código no autoriza un reset remoto.

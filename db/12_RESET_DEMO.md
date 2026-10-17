@@ -12,14 +12,16 @@ No es una corrección del inventario productivo ni un respaldo.
    las 27 tablas, respaldo y los usuarios Auth originales.
 3. Ejecutar **completo** `12_reset_demo.sql` (incluye BEGIN/COMMIT).
 4. Ejecutar **completo** `03_datos_ficticios.sql` original (incluye BEGIN/COMMIT).
-5. Ejecutar **completo** `12_revincular_cuentas.sql`.
-6. Comprobar cada recuento de `conteos_datos.json` (9.377 filas), 703 ubicaciones,
+5. Ejecutar **completo** `13_reconciliar_preparacion_demo.sql` (una sentencia DO atómica).
+6. Ejecutar **completo** `12_revincular_cuentas.sql`.
+7. Comprobar los recuentos de `conteos_datos.json` con 16 reservas y 2 auditorías
+   adicionales: **9.395 filas**, 48 reservas, 28 auditorías, 703 ubicaciones,
    PED-DEMO-001 = submitted y las siete vinculaciones confirmadas. Auth debe
    conservar exactamente los usuarios y credenciales anteriores. Reabrir escrituras.
 
-Son **tres transacciones**, no un reinicio global atómico: si falla una etapa,
+Son **cuatro transacciones**, no un reinicio global atómico: si falla una etapa,
 detenerse y consultar el estado antes de decidir una recuperación. No exponer una
-respuesta de éxito hasta terminar las tres verificaciones. Para hacer atómica la
+respuesta de éxito hasta terminar todas las verificaciones. Para hacer atómica la
 orquestación completa se necesita revisión independiente del manejo transaccional
 del backend; no anidar estos archivos con sus COMMIT en una transacción externa.
 
@@ -38,3 +40,13 @@ Instalar PGlite como explica el README raíz y ejecutar las tres suites. La suit
 `verificar_funciones.mjs` usa Auth ficticio en memoria, avanza PED-DEMO-001 con
 las funciones reales, reinicia, recarga la semilla y comprueba recuentos,
 vinculaciones, permisos y rollback. No necesita secretos ni acceso a Supabase.
+
+## Estado conciliado autorizado
+
+La semilla original y `conteos_datos.json` conservan sus 9.377 filas; no se modifican. La orquestación añade explícitamente 13 después del seed para conservar PED-DEMO-003 en preparing con 46 preparadas/reservadas y PED-DEMO-006 en ready con 63. Se verifican las 32 líneas, los recuentos de las 27 tablas y las siete vinculaciones antes del éxito. Dos reinicios no acumulan reservas ni auditorías: cada uno reconstruye exactamente 9.395 filas.
+
+El backend lee todos los archivos antes de abrir la conexión destructiva. Si falta 13, no ejecuta TRUNCATE. Un fallo posterior detiene la secuencia y conserva la marca de mantenimiento; no reabre escrituras ni reintenta automáticamente. Sigue siendo un procedimiento de cuatro transacciones con recuperación limitada, no un respaldo ni un reset global atómico.
+
+**Efecto para el pitch:** la reserva de INS-005 para PED-DEMO-003 ocupa la última unidad disponible de BOD-DEMO: físico 8, reservado 8, disponible 0. Mantener INS-005=1 en PED-DEMO-001 dará una preparación parcial hasta recibir existencias. Jorge y Omar deben ajustar el ensayo o autorizar una entrada real de stock; este cambio no añade existencias ni modifica el pedido 001 ni su guion.
+
+No ejecutar en Supabase por integrar estos archivos: requiere respaldo restaurable verificado, autorización de ejecución separada y revisión del estado remoto actual.
