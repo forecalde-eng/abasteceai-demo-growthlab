@@ -54,7 +54,7 @@ function Tag({
   kind = "neutral",
 }: {
   children: React.ReactNode;
-  kind?: "neutral" | "teal" | "amber" | "violet" | "green" | "red";
+  kind?: "neutral" | "teal" | "amber" | "green" | "red";
 }) {
   return <span className={`ag-tag ag-${kind}`}>{children}</span>;
 }
@@ -166,7 +166,7 @@ export function AgentDemo() {
               </p>
             </div>
             <Tag kind="neutral">
-              <Bot size={14} /> Agente IA · SIMULADO
+              <Bot size={14} /> Agente IA · <code>SIMULADO</code>
             </Tag>
           </section>
 
@@ -341,9 +341,7 @@ export function AgentDemo() {
               })}
             </ol>
             <div className="ag-flow-footer" aria-live="polite">
-              <span
-                className={`ag-status-dot ${agent.running ? "ag-pulse" : ""}`}
-              />
+              <span className="ag-status-dot" />
               <span>
                 {agent.step < 0
                   ? "Listo para comenzar. Elige productos abajo y ejecuta el recorrido."
@@ -516,9 +514,10 @@ export function AgentDemo() {
                   <Tag kind={best ? "green" : "amber"}>
                     {best ? <CheckCircle2 size={14} /> : <Clock3 size={14} />}
                     {best
-                      ? "Oferta recomendada · SIMULADO"
+                      ? "Oferta recomendada"
                       : "Se requiere revisión humana"}
-                  </Tag>
+                  </Tag>{" "}
+                  <Tag kind="neutral"><code>SIMULADO</code></Tag>
                   <h3>{best ? best.supplier.name : "Ninguna oferta cumple"}</h3>
                   <p>
                     {best

@@ -6,6 +6,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { seedSnapshot } from "@/data/agente-compras/fixtures";
 import { collectNeeds } from "@/data/agente-compras/model";
 import { AgentDemo } from "./AgentDemo";
+import { readFileSync } from "node:fs";
+const css = readFileSync("src/demos/agente-compras/demo.css", "utf8");
 
 const auth = vi.hoisted(() => ({
   read: vi.fn(),
@@ -22,6 +24,7 @@ vi.mock("@/data/supabase", () => ({
 }));
 let root: Root;
 let container: HTMLDivElement;
+let style: HTMLStyleElement;
 const user = (id = "demo-user-a") => ({ user: { id } }) as Session;
 function button(label: string) {
   const found = [...container.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
@@ -41,6 +44,9 @@ beforeEach(async () => {
   auth.read.mockReset().mockResolvedValue({ ...seedSnapshot, source: "supabase", authUserId: "demo-user-a" });
   auth.callback = null;
   auth.unsubscribe.mockClear();
+  style = document.createElement("style");
+  style.textContent = css;
+  document.head.append(style);
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -49,6 +55,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await act(async () => { root.unmount(); });
   container.remove();
+  style.remove();
   vi.unstubAllGlobals();
 });
 it("la etiqueta del agente SIMULADO usa neutro, nunca violeta", () => {
@@ -108,4 +115,26 @@ it("mientras lee no permite cambiar la selección", async () => {
   expect(checkbox("INS-002").disabled).toBe(true);
   await act(async () => { finish({ ...seedSnapshot, source: "supabase", authUserId: "demo-user-a" }); });
   expect(checkbox("INS-002").disabled).toBe(false);
+});
+
+it("el encabezado de la recomendación simulada usa color neutro", () => {
+  const heading = container.querySelector<HTMLElement>(".ag-ai-label")!;
+  expect(heading.textContent).toContain("RECOMENDACIÓN DEL AGENTE");
+  expect(["#475569", "rgb(71, 85, 105)"]).toContain(getComputedStyle(heading).color);
+});
+it("separa la elegibilidad verde del origen SIMULADO neutro al terminar", async () => {
+  for (let index = 0; index < 6; index++) await click(button("Paso a paso"));
+  const tags = [...container.querySelectorAll(".ag-recommendation-result .ag-tag")];
+  expect(tags.find(tag => tag.textContent?.includes("Oferta recomendada"))?.classList.contains("ag-green")).toBe(true);
+  const source = tags.find(tag => tag.textContent === "SIMULADO")!;
+  expect(source.classList.contains("ag-neutral")).toBe(true);
+  expect(source.classList.contains("ag-green")).toBe(false);
+  expect(source.querySelector("code")).not.toBeNull();
+});
+it("al ejecutar mantiene el indicador estático, sin keyframes propios", async () => {
+  await click(button("Iniciar agente demo"));
+  const indicator = container.querySelector<HTMLElement>(".ag-flow-footer .ag-status-dot")!;
+  expect(indicator.classList.contains("ag-pulse")).toBe(false);
+  expect(["", "none"]).toContain(getComputedStyle(indicator).animationName);
+  expect(css).not.toContain("@keyframes");
 });

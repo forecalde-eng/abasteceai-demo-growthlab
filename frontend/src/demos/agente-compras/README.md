@@ -59,5 +59,7 @@ Rama `back/david/demo-agente-compras`, basada en main. Actualizada con main `f4c
 - La selección permanece habilitada sin productos elegidos, incluidos datos reales sin los tres SKU iniciales. Solo se bloquea al cargar, ejecutar o invalidarse la sesión. Iniciar el agente sigue requiriendo al menos un producto.
 - La etiqueta SIMULADO usa la familia neutra, conforme a la guía de diseño.
 - Se conserva la identidad verificada de la captura solo en memoria. Un SIGNED_IN repetido de la misma cuenta no borra datos ni avance; cerrar sesión, cambiar identidad o actualizar el usuario sigue invalidando la captura.
-- Ocho pruebas de interacción React con happy-dom cubren esos casos, incluida recuperación de selección, carga y pausa. La dependencia está fijada como desarrollo y no se incluye en la aplicación publicada.
-- TypeScript OK; suite completa **274/274**; build con ambas entradas OK; diff --check limpio. Sin verificación remota de login ni cambios en Supabase.
+- Once pruebas de interacción React con happy-dom cubren esos casos, incluida recuperación de selección, carga y pausa. La dependencia está fijada como desarrollo y no se incluye en la aplicación publicada.
+- TypeScript OK; suite completa **277/277**; build con ambas entradas OK; diff --check limpio. Sin verificación remota de login ni cambios en Supabase.
+
+La revisión adicional elimina todos los estilos violeta de la demo simulada y los keyframes propios. El encabezado de recomendación es neutro, el origen SIMULADO aparece en una etiqueta neutra monoespaciada separada de la elegibilidad verde, y el indicador de ejecución es estático. Tres regresiones adicionales comprueban el color aplicado, ambas etiquetas al terminar y la ausencia de animación durante la ejecución.
