@@ -216,3 +216,199 @@ $$;
 
 GRANT EXECUTE ON FUNCTION abastece.fn_confirmar_ruta(uuid,uuid,date,jsonb,numeric,numeric,text) TO service_role;
 REVOKE EXECUTE ON FUNCTION abastece.fn_confirmar_ruta(uuid,uuid,date,jsonb,numeric,numeric,text) FROM PUBLIC, anon, authenticated;
+
+-- D-2.3 (#35): acuerdos de Omar en #135. Sin cambios de tablas ni nuevas FK.
+-- Una línea por ítem/lote; la auditoría conserva las reservas que la componen.
+CREATE OR REPLACE FUNCTION abastece.fn_despachar(p_staff uuid, p_shipment uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+ v_staff_role text;
+ v_order_id uuid;
+ v_order abastece.orders%ROWTYPE;
+ v_shipment abastece.shipments%ROWTYPE;
+ v_route_status text;
+ v_bodega uuid;
+ v_transit uuid;
+ v_reference_at timestamptz;
+ v_reservations uuid[];
+ v_lock bigint;
+ v_line record;
+ v_shipment_item uuid;
+ v_transfer uuid;
+ v_lines jsonb := '[]'::jsonb;
+BEGIN
+ SELECT role INTO v_staff_role FROM abastece.staff_members
+ WHERE id = p_staff AND active;
+ IF v_staff_role IS NULL OR v_staff_role NOT IN ('bodega', 'logistica') THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'Rol no autorizado para despachar';
+ END IF;
+
+ SELECT order_id INTO v_order_id FROM abastece.shipments WHERE id = p_shipment;
+ IF NOT FOUND THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0404', MESSAGE = 'Envío no encontrado';
+ END IF;
+ -- Mismo orden que preparación: pedido antes del advisory global (17391011, 5).
+ -- Releer el envío bloqueado evita usar un order_id cambiado durante la espera.
+ SELECT * INTO v_order FROM abastece.orders WHERE id = v_order_id FOR UPDATE;
+ SELECT * INTO v_shipment FROM abastece.shipments WHERE id = p_shipment FOR UPDATE;
+ IF NOT FOUND THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0404', MESSAGE = 'Envío no encontrado';
+ END IF;
+ IF v_shipment.order_id IS DISTINCT FROM v_order.id THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'El pedido del envío cambió';
+ END IF;
+ IF v_shipment.status = 'dispatched' THEN
+  RETURN pg_catalog.jsonb_build_object('id', v_shipment.id, 'code', v_shipment.code,
+   'status', v_shipment.status, 'order_id', v_order.id,
+   'order_status', v_order.status, 'guide_code', v_shipment.guide_code);
+ END IF;
+ IF v_shipment.status <> 'created' OR v_order.status <> 'ready' THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Envío o pedido no apto para despacho';
+ END IF;
+ PERFORM pg_catalog.pg_advisory_xact_lock(17391011, 5);
+
+ IF v_shipment.mode = 'own' THEN
+  SELECT status INTO v_route_status FROM abastece.route_plans
+  WHERE id = v_shipment.route_id FOR UPDATE;
+  IF v_route_status IS NULL OR v_route_status NOT IN ('approved', 'dispatched') OR
+     NOT EXISTS (SELECT 1 FROM abastece.route_stops
+      WHERE route_id = v_shipment.route_id AND location_id = v_shipment.location_id) THEN
+   RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Ruta no apta para este envío';
+  END IF;
+ END IF;
+ SELECT id INTO v_bodega FROM abastece.locations WHERE code = 'BOD-DEMO' AND kind = 'warehouse';
+ SELECT id INTO v_transit FROM abastece.locations WHERE code = 'TRA-DEMO' AND kind = 'transit';
+ IF v_bodega IS NULL OR v_transit IS NULL THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Ubicaciones de despacho no disponibles';
+ END IF;
+ SELECT reference_at INTO STRICT v_reference_at FROM abastece.demo_metadata WHERE id = true;
+ IF v_shipment.dispatched_at IS NOT NULL OR v_shipment.delivered_at IS NOT NULL OR
+    (v_shipment.promised_delivery_at IS NOT NULL AND
+     v_shipment.promised_delivery_at < v_reference_at) OR
+    EXISTS (SELECT 1 FROM abastece.shipments
+     WHERE order_id = v_order.id AND id <> p_shipment) OR
+    EXISTS (SELECT 1 FROM abastece.shipment_items WHERE order_id = v_order.id) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Envío con datos previos incompatibles';
+ END IF;
+
+ PERFORM i.id FROM abastece.order_items AS i
+ WHERE i.order_id = v_order.id ORDER BY i.id FOR UPDATE;
+ PERFORM r.id FROM abastece.inventory_reservations AS r
+ JOIN abastece.order_items AS i ON i.id = r.order_item_id
+ WHERE i.order_id = v_order.id ORDER BY r.id FOR UPDATE OF r;
+ IF NOT EXISTS (SELECT 1 FROM abastece.order_items WHERE order_id = v_order.id AND prepared_qty > 0) OR
+    EXISTS (SELECT 1 FROM abastece.order_items WHERE order_id = v_order.id
+     AND (approved_qty IS NULL OR prepared_qty <> approved_qty OR
+      approved_qty::text = 'NaN' OR prepared_qty::text = 'NaN')) OR
+    EXISTS (
+     SELECT 1 FROM abastece.order_items AS i
+     LEFT JOIN (
+      SELECT order_item_id, pg_catalog.sum(quantity) AS qty
+      FROM abastece.inventory_reservations WHERE status = 'active' GROUP BY order_item_id
+     ) AS r ON r.order_item_id = i.id
+     WHERE i.order_id = v_order.id AND i.prepared_qty <> coalesce(r.qty, 0)
+    ) OR EXISTS (
+     SELECT 1 FROM abastece.inventory_reservations AS r
+     JOIN abastece.order_items AS i ON i.id = r.order_item_id
+     WHERE i.order_id = v_order.id AND (r.status = 'fulfilled' OR
+      (r.status = 'active' AND (r.location_id <> v_bodega OR r.product_id <> i.product_id OR
+       r.quantity::text = 'NaN')))
+    ) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Preparación o reservas inconsistentes';
+ END IF;
+ SELECT pg_catalog.array_agg(r.id ORDER BY r.id) INTO v_reservations
+ FROM abastece.inventory_reservations AS r
+ JOIN abastece.order_items AS i ON i.id = r.order_item_id
+ WHERE i.order_id = v_order.id AND r.status = 'active';
+
+ -- Fija las fechas de los lotes antes de validarlas. Los advisory son los
+ -- mismos de check_stock_balance/check_reservation, ordenados para BOD y TRA.
+ PERFORM l.id FROM abastece.product_lots AS l WHERE l.id IN (
+  SELECT lot_id FROM abastece.inventory_reservations WHERE id = ANY(v_reservations)
+ ) ORDER BY l.id FOR SHARE;
+ IF EXISTS (
+  SELECT 1 FROM abastece.inventory_reservations AS r
+  JOIN abastece.product_lots AS l ON l.id = r.lot_id
+  WHERE r.id = ANY(v_reservations) AND l.expires_on < v_reference_at::date
+ ) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Reserva activa en lote vencido';
+ END IF;
+ FOR v_lock IN
+  SELECT DISTINCT pg_catalog.hashtextextended(x.location_id::text || r.lot_id::text, 0)
+  FROM abastece.inventory_reservations AS r
+  CROSS JOIN (VALUES (v_bodega), (v_transit)) AS x(location_id)
+  WHERE r.id = ANY(v_reservations) ORDER BY 1
+ LOOP
+  PERFORM pg_catalog.pg_advisory_xact_lock(v_lock);
+ END LOOP;
+ IF EXISTS (
+  SELECT 1 FROM (
+   SELECT
+    (SELECT coalesce(pg_catalog.sum(delta_qty), 0) FROM abastece.stock_movements
+     WHERE location_id = v_bodega AND lot_id = l.lot_id AND occurred_at <= v_reference_at) AS physical,
+    (SELECT coalesce(pg_catalog.sum(quantity), 0) FROM abastece.inventory_reservations
+     WHERE location_id = v_bodega AND lot_id = l.lot_id AND status = 'active') AS reserved
+   FROM (SELECT DISTINCT lot_id FROM abastece.inventory_reservations
+    WHERE id = ANY(v_reservations)) AS l
+  ) AS stock WHERE physical < reserved OR physical::text = 'NaN' OR reserved::text = 'NaN'
+ ) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Stock físico insuficiente para las reservas';
+ END IF;
+
+ -- Cumplir primero: el trigger de inventario impide consumir stock reservado.
+ UPDATE abastece.inventory_reservations SET status = 'fulfilled'
+ WHERE id = ANY(v_reservations);
+ FOR v_line IN
+  SELECT order_item_id, product_id, lot_id, pg_catalog.sum(quantity) AS qty,
+   pg_catalog.jsonb_agg(id ORDER BY id) AS reservation_ids
+  FROM abastece.inventory_reservations WHERE id = ANY(v_reservations)
+  GROUP BY order_item_id, product_id, lot_id ORDER BY order_item_id, lot_id
+ LOOP
+  INSERT INTO abastece.shipment_items
+   (shipment_id, order_id, order_item_id, product_id, lot_id, shipped_qty)
+  VALUES (p_shipment, v_order.id, v_line.order_item_id, v_line.product_id,
+   v_line.lot_id, v_line.qty) RETURNING id INTO v_shipment_item;
+  v_transfer := pg_catalog.gen_random_uuid();
+  BEGIN
+   INSERT INTO abastece.stock_movements
+    (location_id, product_id, lot_id, delta_qty, occurred_at, reason,
+     transfer_group, shipment_item_id, recorded_by)
+   VALUES
+    (v_bodega, v_line.product_id, v_line.lot_id, -v_line.qty, v_reference_at,
+     'dispatch', v_transfer, v_shipment_item, p_staff),
+    (v_transit, v_line.product_id, v_line.lot_id, v_line.qty, v_reference_at,
+     'dispatch', v_transfer, v_shipment_item, p_staff);
+  EXCEPTION WHEN raise_exception THEN
+   RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Inventario incompatible con el despacho';
+  END;
+  v_lines := v_lines || pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+   'shipment_item_id', v_shipment_item, 'order_item_id', v_line.order_item_id,
+   'product_id', v_line.product_id, 'lot_id', v_line.lot_id, 'shipped_qty', v_line.qty,
+   'reservation_ids', v_line.reservation_ids, 'transfer_group', v_transfer));
+ END LOOP;
+ UPDATE abastece.shipments SET status = 'dispatched', dispatched_at = v_reference_at
+ WHERE id = p_shipment;
+ UPDATE abastece.orders SET status = 'shipped' WHERE id = v_order.id;
+ IF v_shipment.mode = 'own' AND v_route_status = 'approved' THEN
+  UPDATE abastece.route_plans SET status = 'dispatched' WHERE id = v_shipment.route_id;
+ END IF;
+ INSERT INTO abastece.audit_events
+  (actor_id, location_id, entity_type, entity_id, action, before_state, after_state, occurred_at)
+ VALUES (p_staff, v_order.location_id, 'shipment', p_shipment, 'shipment_dispatch',
+  pg_catalog.jsonb_build_object('status', v_shipment.status, 'order_status', v_order.status,
+   'route_status', v_route_status),
+  pg_catalog.jsonb_build_object('status', 'dispatched', 'order_status', 'shipped',
+   'route_status', CASE WHEN v_shipment.mode = 'own' THEN 'dispatched' ELSE NULL END,
+   'items', v_lines), v_reference_at);
+ RETURN pg_catalog.jsonb_build_object('id', v_shipment.id, 'code', v_shipment.code,
+  'status', 'dispatched', 'order_id', v_order.id, 'order_status', 'shipped',
+  'guide_code', v_shipment.guide_code);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION abastece.fn_despachar(uuid,uuid) TO service_role;
+REVOKE EXECUTE ON FUNCTION abastece.fn_despachar(uuid,uuid) FROM PUBLIC, anon, authenticated;

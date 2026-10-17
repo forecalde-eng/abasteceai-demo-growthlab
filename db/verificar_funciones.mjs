@@ -1423,3 +1423,389 @@ test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
   await db.close();
  }
 });
+
+test('D-2.3: fn_despachar (POST /shipments/{id}/dispatch)', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
+   GRANT USAGE ON SCHEMA auth TO authenticated;
+   GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;`);
+  for (const file of ['01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql',
+   '03_datos_ficticios.sql', '08_proveedor_openai.sql', '09_fn_pedidos.sql',
+   '10_fn_bodega.sql', '11_fn_envios.sql']) await db.exec(readSql(file));
+  const one = async (sql, args = []) => (await db.query(sql, args)).rows[0];
+  const staff = (await db.query('SELECT id, role FROM abastece.staff_members')).rows;
+  const warehouse = staff.find(s => s.role === 'bodega').id;
+  const logistics = staff.find(s => s.role === 'logistica').id;
+  const admin = staff.find(s => s.role === 'administrador').id;
+  const auxiliary = staff.find(s => s.role === 'auxiliar').id;
+  const product = (await one("SELECT id FROM abastece.products WHERE sku = 'INS-001'")).id;
+  const bodega = (await one("SELECT id FROM abastece.locations WHERE code = 'BOD-DEMO'")).id;
+  const transit = (await one("SELECT id FROM abastece.locations WHERE code = 'TRA-DEMO'")).id;
+  const point = (await one("SELECT id FROM abastece.locations WHERE code = 'Q-001'")).id;
+  const vehicle = (await one("SELECT id FROM abastece.vehicles WHERE code = 'VEH-DEMO-2'")).id;
+  let counter = 0;
+  const snapshot = async () => {
+   const state = {};
+   for (const table of ['orders', 'order_items', 'shipments', 'shipment_items',
+    'inventory_reservations', 'stock_movements', 'route_plans', 'route_stops', 'audit_events']) {
+    state[table] = (await db.query(`SELECT * FROM abastece.${table}
+     ORDER BY ${table === 'route_stops' ? 'route_id, sequence' : 'id'}`)).rows;
+   }
+   return state;
+  };
+  const dispatch = async (id, actor = warehouse) => {
+   await db.exec('SET ROLE service_role');
+   try {
+    return (await one('SELECT abastece.fn_despachar($1::uuid, $2::uuid) AS result',
+     [actor, id])).result;
+   } finally { await db.exec('RESET ROLE'); }
+  };
+  const fixture = async ({mode = 'own', qty = '3.000',
+   parts = [{lot: 0, qty}], route = null, expires = '2026-11-01'} = {}) => {
+   const n = ++counter;
+   const order = await one(`INSERT INTO abastece.orders
+    (code, location_id, cycle_month, requested_by, approved_by, requested_at,
+     approved_at, status, order_type, idempotency_key)
+    SELECT $1, $2, '2026-10-01', $3, $4, reference_at - interval '2 hours',
+     reference_at - interval '1 hour', 'ready', 'regular', $1
+    FROM abastece.demo_metadata WHERE id RETURNING id`, [`PED-D23-${n}`, point, auxiliary, admin]);
+   const item = await one(`INSERT INTO abastece.order_items
+    (order_id, product_id, requested_qty, approved_qty, prepared_qty)
+    VALUES ($1, $2, $3, $3, $3) RETURNING id`, [order.id, product, qty]);
+   const lots = [];
+   for (let i = 0; i <= Math.max(...parts.map(p => p.lot)); i++) {
+    const lot = await one(`INSERT INTO abastece.product_lots
+     (product_id, batch_code, expires_on, received_on)
+     VALUES ($1, $2, $3, '2026-10-01') RETURNING id`, [product, `D23-${n}-${i}`, expires]);
+    lots.push(lot.id);
+    await db.query(`INSERT INTO abastece.stock_movements
+     (location_id, product_id, lot_id, delta_qty, occurred_at, reason, recorded_by)
+     SELECT $1, $2, $3, 100, reference_at - interval '1 day', 'opening', $4
+     FROM abastece.demo_metadata WHERE id`, [bodega, product, lot.id, warehouse]);
+   }
+   const reservations = [];
+   for (const part of parts) {
+    const r = await one(`INSERT INTO abastece.inventory_reservations
+     (order_item_id, location_id, product_id, lot_id, quantity, status, created_at)
+     SELECT $1, $2, $3, $4, $5, 'active', reference_at FROM abastece.demo_metadata WHERE id
+     RETURNING id`, [item.id, bodega, product, lots[part.lot], part.qty]);
+    reservations.push(r.id);
+   }
+   if (mode === 'own' && !route) {
+    route = (await one(`INSERT INTO abastece.route_plans
+     (code, vehicle_id, dispatch_date, status, matrix_source, planning_method, approved_by)
+     VALUES ($1, $2, '2026-10-10', 'approved', 'synthetic', 'ortools_vrptw', $3)
+     RETURNING id`, [`RUTA-D23-${n}`, vehicle, logistics])).id;
+    await db.query('INSERT INTO abastece.route_stops(route_id, location_id, sequence) VALUES ($1, $2, 1)',
+     [route, point]);
+   }
+   const shipment = await one(`INSERT INTO abastece.shipments
+    (code, order_id, location_id, mode, route_id, carrier_name, guide_code, qr_token, status)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, gen_random_uuid(), 'created') RETURNING id`,
+    [`ENV-D23-${n}`, order.id, point, mode, route, mode === 'courier' ? 'Courier ficticio' : null,
+     `GUIA-D23-${n}`]);
+   return {order: order.id, item: item.id, shipment: shipment.id, lots, reservations, route};
+  };
+  const rejectUnchanged = async (f, code = 'P0409', actor = warehouse) => {
+   const before = await snapshot();
+   await assert.rejects(() => dispatch(f.shipment, actor), {code});
+   assert.deepEqual(await snapshot(), before);
+  };
+  const checkPairs = async f => {
+   const lines = (await db.query(`SELECT * FROM abastece.shipment_items
+    WHERE shipment_id = $1 ORDER BY lot_id`, [f.shipment])).rows;
+   const balances = [];
+   for (const line of lines) {
+    const moves = (await db.query(`SELECT * FROM abastece.stock_movements
+     WHERE shipment_item_id = $1 ORDER BY delta_qty`, [line.id])).rows;
+    assert.equal(moves.length, 2);
+    assert.equal(moves[0].location_id, bodega);
+    assert.equal(moves[1].location_id, transit);
+    assert.equal(moves[0].transfer_group, moves[1].transfer_group);
+    assert.ok(moves[0].transfer_group);
+    for (const m of moves) {
+     assert.equal(m.reason, 'dispatch');
+     assert.equal(m.lot_id, line.lot_id);
+     assert.equal(m.product_id, line.product_id);
+     assert.equal(m.recorded_by, warehouse);
+    }
+    assert.equal((await one(`SELECT $1::numeric = -$2::numeric AND $1::numeric = $3::numeric AS ok`,
+     [line.shipped_qty, moves[0].delta_qty, moves[1].delta_qty])).ok, true);
+    assert.equal((await one(`SELECT bool_and(m.occurred_at = d.reference_at) AS ok
+     FROM abastece.stock_movements m CROSS JOIN abastece.demo_metadata d
+     WHERE m.shipment_item_id = $1`, [line.id])).ok, true);
+    balances.push((await one(`SELECT sum(delta_qty)::text AS qty FROM abastece.stock_movements
+     WHERE location_id = $1 AND lot_id = $2`, [bodega, line.lot_id])).qty);
+   }
+   assert.equal(new Set((await db.query(`SELECT DISTINCT transfer_group
+    FROM abastece.stock_movements WHERE shipment_item_id IN
+    (SELECT id FROM abastece.shipment_items WHERE shipment_id = $1)`, [f.shipment])).rows
+    .map(m => m.transfer_group)).size, lines.length);
+   return {lines, balances};
+  };
+
+  await t.test('Permisos SQL: solo service_role, INVOKER y search_path vacío', async () => {
+   assert.deepEqual(await one(`SELECT
+    has_function_privilege('service_role', p.oid, 'EXECUTE') AS server,
+    has_function_privilege('anon', p.oid, 'EXECUTE') AS anon,
+    has_function_privilege('authenticated', p.oid, 'EXECUTE') AS client,
+    EXISTS (SELECT 1 FROM pg_catalog.aclexplode(p.proacl) a WHERE a.grantee = 0) AS public,
+    p.prosecdef AS definer, p.proconfig = ARRAY['search_path=""'] AS safe_path
+    FROM pg_catalog.pg_proc p WHERE p.oid = 'abastece.fn_despachar(uuid,uuid)'::regprocedure`),
+   {server: true, anon: false, client: false, public: false, definer: false, safe_path: true});
+   for (const role of ['anon', 'authenticated']) {
+    await db.exec(`SET ROLE ${role}`);
+    try {
+     await assert.rejects(() => db.query('SELECT abastece.fn_despachar(NULL,NULL)'), {code: '42501'});
+    } finally { await db.exec('RESET ROLE'); }
+   }
+  });
+  await t.test('Rechaza cinco roles, perfil ausente/inactivo y envío inexistente', async () => {
+   const f = await fixture();
+   for (const s of staff.filter(s => !['bodega', 'logistica'].includes(s.role))) {
+    await rejectUnchanged(f, 'P0403', s.id);
+   }
+   await rejectUnchanged(f, 'P0403', null);
+   await db.query('UPDATE abastece.staff_members SET active = false WHERE id = $1', [warehouse]);
+   try { await rejectUnchanged(f, 'P0403'); }
+   finally { await db.query('UPDATE abastece.staff_members SET active = true WHERE id = $1', [warehouse]); }
+   await assert.rejects(() => dispatch('00000000-0000-0000-0000-000000000000'), {code: 'P0404'});
+  });
+  await t.test('Una reserva crea una línea, pareja BOD/TRA y auditoría al reloj de demo', async () => {
+   const f = await fixture();
+   const result = await dispatch(f.shipment);
+   assert.deepEqual(Object.keys(result).sort(), ['id', 'code', 'status', 'order_id', 'order_status', 'guide_code'].sort());
+   assert.equal(result.id, f.shipment);
+   assert.equal(result.order_id, f.order);
+   assert.equal(result.status, 'dispatched');
+   assert.equal(result.order_status, 'shipped');
+   const {lines, balances} = await checkPairs(f);
+   assert.equal(lines.length, 1);
+   assert.equal(balances[0], '97.000');
+   assert.equal((await one(`SELECT status FROM abastece.inventory_reservations WHERE id = $1`,
+    [f.reservations[0]])).status, 'fulfilled');
+   const audit = await one(`SELECT a.*, a.occurred_at = m.reference_at AS demo_clock
+    FROM abastece.audit_events a CROSS JOIN abastece.demo_metadata m
+    WHERE a.entity_id = $1 AND a.action = 'shipment_dispatch'`, [f.shipment]);
+   assert.equal(audit.demo_clock, true);
+   assert.deepEqual(audit.after_state.items[0].reservation_ids, f.reservations);
+   assert.equal(audit.after_state.items[0].shipment_item_id, lines[0].id);
+   assert.equal(audit.after_state.items[0].transfer_group, (await one(`
+    SELECT transfer_group FROM abastece.stock_movements WHERE shipment_item_id = $1 LIMIT 1`,
+    [lines[0].id])).transfer_group);
+   assert.equal(audit.actor_id, warehouse);
+   assert.equal(audit.location_id, point);
+   assert.equal(audit.before_state.status, 'created');
+   assert.equal(audit.after_state.status, 'dispatched');
+   assert.equal((await one(`SELECT dispatched_at = reference_at AS demo_clock
+    FROM abastece.shipments CROSS JOIN abastece.demo_metadata WHERE shipments.id = $1`,
+    [f.shipment])).demo_clock, true);
+   assert.equal((await one(`SELECT count(*)::integer AS n FROM abastece.stock_movements m
+    JOIN abastece.shipment_items i ON i.id = m.shipment_item_id
+    WHERE i.shipment_id = $1 AND m.location_id = $2`, [f.shipment, point])).n, 0);
+  });
+  await t.test('Dos reservas del mismo ítem/lote se agrupan sin perder precisión decimal', async () => {
+   const f = await fixture({qty: '0.300', parts: [{lot: 0, qty: '0.100'}, {lot: 0, qty: '0.200'}]});
+   await dispatch(f.shipment);
+   const {lines} = await checkPairs(f);
+   assert.equal(lines.length, 1);
+   assert.equal(lines[0].shipped_qty, '0.300');
+   const audit = await one(`SELECT after_state FROM abastece.audit_events
+    WHERE entity_id = $1 AND action = 'shipment_dispatch'`, [f.shipment]);
+   assert.deepEqual(audit.after_state.items[0].reservation_ids, [...f.reservations].sort());
+  });
+  await t.test('Un ítem desde dos lotes crea dos líneas y dos transfer_group', async () => {
+   const f = await fixture({parts: [{lot: 0, qty: '1.000'}, {lot: 1, qty: '2.000'}]});
+   await dispatch(f.shipment);
+   const {lines} = await checkPairs(f);
+   assert.equal(lines.length, 2);
+   assert.deepEqual(lines.map(l => l.lot_id).sort(), [...f.lots].sort());
+  });
+  await t.test('Courier permite logística y conserva las reservas released', async () => {
+   const f = await fixture({mode: 'courier', expires: null});
+   await db.query(`INSERT INTO abastece.inventory_reservations
+    (order_item_id, location_id, product_id, lot_id, quantity, status, created_at)
+    SELECT $1, $2, $3, $4, 99, 'released', reference_at FROM abastece.demo_metadata WHERE id`,
+    [f.item, bodega, product, f.lots[0]]);
+   const before = (await db.query('SELECT * FROM abastece.route_plans ORDER BY id')).rows;
+   assert.equal((await dispatch(f.shipment, logistics)).status, 'dispatched');
+   assert.deepEqual((await db.query('SELECT * FROM abastece.route_plans ORDER BY id')).rows, before);
+   assert.equal((await one(`SELECT count(*)::integer AS n FROM abastece.inventory_reservations
+    WHERE order_item_id = $1 AND status = 'released'`, [f.item])).n, 1);
+  });
+  await t.test('El primer envío cambia la ruta; el segundo sigue created hasta su despacho', async () => {
+   const first = await fixture();
+   const second = await fixture({route: first.route});
+   await dispatch(first.shipment);
+   assert.equal((await one('SELECT status FROM abastece.route_plans WHERE id = $1', [first.route])).status, 'dispatched');
+   assert.equal((await one('SELECT status FROM abastece.shipments WHERE id = $1', [second.shipment])).status, 'created');
+   assert.equal((await dispatch(second.shipment)).status, 'dispatched');
+   assert.equal((await one('SELECT status FROM abastece.route_plans WHERE id = $1', [first.route])).status, 'dispatched');
+  });
+  await t.test('Repetir un dispatched devuelve lo actual sin nuevas escrituras', async () => {
+   const f = await fixture();
+   const result = await dispatch(f.shipment);
+   const before = await snapshot();
+   assert.deepEqual(await dispatch(f.shipment), result);
+   assert.deepEqual(await snapshot(), before);
+  });
+  await t.test('Un envío histórico dispatched conserva líneas y movimientos originales', async () => {
+   const shipment = await one("SELECT id, order_id FROM abastece.shipments WHERE code = 'ENV-DEMO-008'");
+   const before = await snapshot();
+   const result = await dispatch(shipment.id);
+   assert.equal(result.status, 'dispatched');
+   assert.equal(result.order_id, shipment.order_id);
+   assert.deepEqual(await snapshot(), before);
+  });
+  await t.test('Estados inválidos de pedido, envío y ruta producen P0409', async () => {
+   const f = await fixture();
+   for (const status of ['approved', 'preparing', 'shipped', 'cancelled']) {
+    await db.query('UPDATE abastece.orders SET status = $1 WHERE id = $2', [status, f.order]);
+    await rejectUnchanged(f);
+   }
+   await db.query("UPDATE abastece.orders SET status = 'ready' WHERE id = $1", [f.order]);
+   for (const status of ['delivered_unchecked', 'reconciled', 'with_difference']) {
+    await db.query('UPDATE abastece.shipments SET status = $1 WHERE id = $2', [status, f.shipment]);
+    await rejectUnchanged(f);
+   }
+   await db.query("UPDATE abastece.shipments SET status = 'created' WHERE id = $1", [f.shipment]);
+   for (const status of ['draft', 'finished']) {
+    await db.query('UPDATE abastece.route_plans SET status = $1 WHERE id = $2', [status, f.route]);
+    await rejectUnchanged(f);
+   }
+  });
+  await t.test('Reservas insuficientes o ya cumplidas no se despachan', async () => {
+   const f = await fixture();
+   await db.query('UPDATE abastece.inventory_reservations SET quantity = 2 WHERE id = $1', [f.reservations[0]]);
+   await rejectUnchanged(f);
+   await db.query("UPDATE abastece.inventory_reservations SET status = 'fulfilled' WHERE id = $1", [f.reservations[0]]);
+   await rejectUnchanged(f);
+  });
+  await t.test('Pedido ready con cantidades no finitas, sin líneas o sin cantidades positivas se rechaza', async () => {
+   const f = await fixture();
+   await db.query("UPDATE abastece.order_items SET prepared_qty = 'NaN', approved_qty = 'NaN' WHERE id = $1", [f.item]);
+   await rejectUnchanged(f);
+   await db.query("UPDATE abastece.inventory_reservations SET status = 'released' WHERE order_item_id = $1", [f.item]);
+   await db.query('UPDATE abastece.order_items SET prepared_qty = 0, approved_qty = 0 WHERE id = $1', [f.item]);
+   await rejectUnchanged(f);
+   await db.query('DELETE FROM abastece.inventory_reservations WHERE order_item_id = $1', [f.item]);
+   await db.query('DELETE FROM abastece.order_items WHERE id = $1', [f.item]);
+   await rejectUnchanged(f);
+  });
+  await t.test('Reservas de otra ubicación y sobreasignación inconsistente se rechazan', async () => {
+   const f = await fixture();
+   await db.query(`INSERT INTO abastece.stock_movements
+    (location_id, product_id, lot_id, delta_qty, occurred_at, reason, recorded_by)
+    SELECT $1, $2, $3, 100, reference_at - interval '1 day', 'opening', $4
+    FROM abastece.demo_metadata WHERE id`, [transit, product, f.lots[0], warehouse]);
+   await db.query('UPDATE abastece.inventory_reservations SET location_id = $1 WHERE id = $2',
+    [transit, f.reservations[0]]);
+   await rejectUnchanged(f);
+   await db.query('UPDATE abastece.inventory_reservations SET location_id = $1 WHERE id = $2',
+    [bodega, f.reservations[0]]);
+   // Simulación local de corrupción previa: los triggers normales impiden esta fila.
+   await db.exec('ALTER TABLE abastece.inventory_reservations DISABLE TRIGGER reservation_integrity');
+   try {
+    await db.query(`INSERT INTO abastece.inventory_reservations
+     (order_item_id, location_id, product_id, lot_id, quantity, status, created_at)
+     SELECT $1, $2, $3, $4, 1, 'active', reference_at FROM abastece.demo_metadata WHERE id`,
+     [f.item, bodega, product, f.lots[0]]);
+   } finally { await db.exec('ALTER TABLE abastece.inventory_reservations ENABLE TRIGGER reservation_integrity'); }
+   await rejectUnchanged(f);
+  });
+  await t.test('Stock físico alterado externamente se detecta antes de cumplir reservas', async () => {
+   const f = await fixture();
+   await db.exec('ALTER TABLE abastece.stock_movements DISABLE TRIGGER stock_nonnegative');
+   try {
+    await db.query(`INSERT INTO abastece.stock_movements
+     (location_id, product_id, lot_id, delta_qty, occurred_at, reason, recorded_by)
+     SELECT $1, $2, $3, -99, reference_at - interval '1 hour', 'adjustment', $4
+     FROM abastece.demo_metadata WHERE id`, [bodega, product, f.lots[0], warehouse]);
+   } finally { await db.exec('ALTER TABLE abastece.stock_movements ENABLE TRIGGER stock_nonnegative'); }
+   await rejectUnchanged(f);
+  });
+  await t.test('Lote vencido rechaza; en su fecha de vencimiento todavía permite despacho', async () => {
+   const f = await fixture({expires: '2026-10-10'});
+   await db.exec("UPDATE abastece.demo_metadata SET reference_at = '2026-10-11T22:00:00Z' WHERE id");
+   try { await rejectUnchanged(f); }
+   finally { await db.exec("UPDATE abastece.demo_metadata SET reference_at = '2026-10-10T22:00:00Z' WHERE id"); }
+   assert.equal((await dispatch(f.shipment)).status, 'dispatched');
+  });
+  await t.test('Líneas previas, envíos duplicados y parada ajena no se corrigen en silencio', async () => {
+   const f = await fixture();
+   await db.query(`INSERT INTO abastece.shipment_items
+    (shipment_id, order_id, order_item_id, product_id, lot_id, shipped_qty)
+    VALUES ($1, $2, $3, $4, $5, 3)`, [f.shipment, f.order, f.item, product, f.lots[0]]);
+   await rejectUnchanged(f);
+   const g = await fixture();
+   await db.query(`INSERT INTO abastece.shipments
+    (code, order_id, location_id, mode, carrier_name, guide_code, qr_token, status)
+    VALUES ('ENV-D23-CLONE', $1, $2, 'courier', 'Ficticio', 'GUIA-D23-CLONE', gen_random_uuid(), 'created')`,
+    [g.order, point]);
+   await rejectUnchanged(g);
+   const h = await fixture();
+   await db.query('DELETE FROM abastece.route_stops WHERE route_id = $1', [h.route]);
+   await rejectUnchanged(h);
+  });
+  await t.test('Fallo en entrada TRA hace rollback de reservas, líneas y salida BOD', async () => {
+   const f = await fixture();
+   await db.exec(`CREATE FUNCTION abastece.d23_fail_transit() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN IF NEW.reason = 'dispatch' AND NEW.location_id = '${transit}' THEN
+     RAISE EXCEPTION 'Fallo TRA simulado'; END IF; RETURN NEW; END; $$;
+    CREATE TRIGGER d23_fail_transit BEFORE INSERT ON abastece.stock_movements
+    FOR EACH ROW EXECUTE FUNCTION abastece.d23_fail_transit()`);
+   try { await rejectUnchanged(f); }
+   finally { await db.exec('DROP TRIGGER d23_fail_transit ON abastece.stock_movements; DROP FUNCTION abastece.d23_fail_transit()'); }
+   assert.equal((await dispatch(f.shipment)).status, 'dispatched');
+  });
+  await t.test('Fallo de auditoría revierte toda la transacción y permite reintentar', async () => {
+   const f = await fixture();
+   await db.exec(`CREATE FUNCTION abastece.d23_fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN IF NEW.action = 'shipment_dispatch' THEN RAISE EXCEPTION 'Fallo auditoría simulado';
+     END IF; RETURN NEW; END; $$;
+    CREATE TRIGGER d23_fail_audit BEFORE INSERT ON abastece.audit_events
+    FOR EACH ROW EXECUTE FUNCTION abastece.d23_fail_audit()`);
+   try { await rejectUnchanged(f, 'P0001'); }
+   finally { await db.exec('DROP TRIGGER d23_fail_audit ON abastece.audit_events; DROP FUNCTION abastece.d23_fail_audit()'); }
+   assert.equal((await dispatch(f.shipment)).status, 'dispatched');
+  });
+  await t.test('Dos llamadas cercanas se serializan sin repetir efectos; falta carrera PostgreSQL real', async () => {
+   const f = await fixture();
+   // PGlite usa una sola conexión. Las llamadas SQL se encolan: esta prueba
+   // comprueba repetición, no demuestra concurrencia entre conexiones reales.
+   const results = await Promise.all([
+    db.query('SELECT abastece.fn_despachar($1, $2) AS result', [warehouse, f.shipment]),
+    db.query('SELECT abastece.fn_despachar($1, $2) AS result', [warehouse, f.shipment]),
+   ]);
+   assert.deepEqual(results[0].rows, results[1].rows);
+   assert.equal((await one(`SELECT count(*)::integer AS n FROM abastece.audit_events
+    WHERE entity_id = $1 AND action = 'shipment_dispatch'`, [f.shipment])).n, 1);
+   await checkPairs(f);
+  });
+  await t.test('PED-DEMO-001: decidir → preparar → confirmar ruta → despachar con funciones reales', async () => {
+   const order = (await one("SELECT id FROM abastece.orders WHERE code = 'PED-DEMO-001'")).id;
+   const ins5 = (await one("SELECT id FROM abastece.products WHERE sku = 'INS-005'")).id;
+   await db.query(`SELECT abastece.fn_decidir_pedido($1, $2, 'approve', $3,
+    'Esperar compra de demostración')`, [admin, order, JSON.stringify([{product_id: ins5, approved_qty: 1}])]);
+   const items = (await db.query(`SELECT product_id, approved_qty FROM abastece.order_items
+    WHERE order_id = $1 ORDER BY product_id`, [order])).rows.map(i =>
+    ({product_id: i.product_id, prepared_qty: Number(i.approved_qty)}));
+   assert.equal((await one('SELECT abastece.fn_preparar($1, $2, $3, false) AS r',
+    [warehouse, order, JSON.stringify(items)])).r.status, 'ready');
+   const route = (await one('SELECT abastece.fn_confirmar_ruta($1,$2,$3,$4,$5,$6,$7) AS r',
+    [logistics, vehicle, '2026-10-11', JSON.stringify([{location_id: point, sequence: 1, order_ids: [order]}]),
+     '10.000', '30.000', 'ortools_vrptw'])).r;
+   const shipment = route.shipments[0].id;
+   assert.equal((await dispatch(shipment)).order_status, 'shipped');
+   const {lines} = await checkPairs({shipment});
+   assert.equal(lines.length, 16);
+   assert.equal((await one(`SELECT count(*)::integer AS n FROM abastece.shipment_items i
+    JOIN abastece.product_lots l ON l.id = i.lot_id
+    WHERE i.shipment_id = $1 AND l.batch_code = 'DEMO-002-VENC'`, [shipment])).n, 0);
+  });
+ } finally { await db.close(); }
+});
