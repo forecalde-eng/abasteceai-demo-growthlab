@@ -1126,3 +1126,186 @@ test('D-1.3: fn_decidir_pedido (POST /orders/{id}/decision)', async t => {
   await db.close();
  }
 });
+
+test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`
+   CREATE ROLE anon;
+   CREATE ROLE authenticated;
+   CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth;
+   CREATE TABLE auth.users(id uuid PRIMARY KEY);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
+   REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC, anon, authenticated;
+   GRANT USAGE ON SCHEMA auth TO authenticated;
+   GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+  `);
+  for (const file of [
+   '01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql',
+   '03_datos_ficticios.sql', '08_proveedor_openai.sql', '09_fn_pedidos.sql',
+   '10_fn_bodega.sql',
+  ]) await db.exec(readSql(file));
+
+  const staff = (await db.query('SELECT id, role FROM abastece.staff_members')).rows;
+  const warehouse = staff.find(row => row.role === 'bodega').id;
+  const auxiliary = staff.find(row => row.role === 'auxiliar').id;
+  const orderByCode = async code => (await db.query(
+   'SELECT id, code, status FROM abastece.orders WHERE code = $1', [code])).rows[0];
+  const order = await orderByCode('PED-DEMO-010');
+  const second = await orderByCode('PED-DEMO-026');
+  const itemsFor = async id => (await db.query(`
+   SELECT product_id, approved_qty FROM abastece.order_items
+   WHERE order_id = $1 ORDER BY product_id`, [id])).rows.map(row =>
+    ({product_id: row.product_id, prepared_qty: Number(row.approved_qty)}));
+  const all = await itemsFor(order.id);
+  const call = (id = order.id, items = all, dry = true, actor = warehouse) => db.query(`
+   SELECT abastece.fn_preparar($1::uuid, $2::uuid, $3::jsonb, $4::boolean) AS result
+  `, [actor, id, JSON.stringify(items), dry]);
+  const snapshot = async () => (await db.query(`SELECT
+   (SELECT count(*)::integer FROM abastece.inventory_reservations) AS reservations,
+   (SELECT count(*)::integer FROM abastece.stock_movements) AS movements,
+   (SELECT count(*)::integer FROM abastece.incidents) AS incidents,
+   (SELECT count(*)::integer FROM abastece.audit_events) AS audits,
+   (SELECT coalesce(sum(prepared_qty),0)::numeric FROM abastece.order_items
+    WHERE order_id = $1) AS prepared,
+   (SELECT status FROM abastece.orders WHERE id = $1) AS status
+  `, [order.id])).rows[0];
+
+  await t.test('EXECUTE pertenece solo al backend autorizado', async () => {
+   const row = (await db.query(`SELECT
+    has_function_privilege('service_role',
+     'abastece.fn_preparar(uuid,uuid,jsonb,boolean)', 'EXECUTE') AS server,
+    has_function_privilege('anon',
+     'abastece.fn_preparar(uuid,uuid,jsonb,boolean)', 'EXECUTE') AS anon,
+    has_function_privilege('authenticated',
+     'abastece.fn_preparar(uuid,uuid,jsonb,boolean)', 'EXECUTE') AS client,
+    p.prosecdef AS security_definer,
+    p.proconfig = ARRAY['search_path=""'] AS empty_search_path
+    FROM pg_catalog.pg_proc p
+    WHERE p.oid = 'abastece.fn_preparar(uuid,uuid,jsonb,boolean)'::regprocedure
+   `)).rows[0];
+   assert.deepEqual(row, {server: true, anon: false, client: false,
+    security_definer: false, empty_search_path: true});
+  });
+  await t.test('Comprueba rol, pedido y estado', async () => {
+   await assert.rejects(() => call(order.id, all, false, auxiliary), {code: 'P0403'});
+   await assert.rejects(() => call('00000000-0000-0000-0000-000000000000'), {code: 'P0404'});
+   const submitted = await orderByCode('PED-DEMO-001');
+   await assert.rejects(() => call(submitted.id), {code: 'P0409'});
+  });
+  await t.test('Exige todas las líneas y cantidades numeric(12,3) válidas', async () => {
+   await assert.rejects(() => call(order.id, all.slice(1)), {code: 'P0422'});
+   await assert.rejects(() => call(order.id, [all[0], ...all.slice(0, -1)]), {code: 'P0422'});
+   await assert.rejects(() => call(order.id, [{...all[0], prepared_qty: -1}, ...all.slice(1)]), {code: 'P0422'});
+   await assert.rejects(() => call(order.id, [{...all[0], prepared_qty: 1.0001}, ...all.slice(1)]), {code: 'P0422'});
+   await assert.rejects(() => call(order.id, [{...all[0], prepared_qty: all[0].prepared_qty + 1}, ...all.slice(1)]), {code: 'P0422'});
+  });
+  await t.test('Rechaza inconsistencias de reservas del seed sin repararlas', async () => {
+   for (const code of ['PED-DEMO-003', 'PED-DEMO-006']) {
+    const row = await orderByCode(code);
+    const items = await itemsFor(row.id);
+    await assert.rejects(() => call(row.id, items), {code: 'P0409'});
+   }
+  });
+
+  // Lote de prueba local con vencimiento anterior al válido del seed.
+  const ins002 = (await db.query("SELECT id FROM abastece.products WHERE sku = 'INS-002'")).rows[0].id;
+  const bodega = (await db.query("SELECT id FROM abastece.locations WHERE code = 'BOD-DEMO'")).rows[0].id;
+  const early = (await db.query(`INSERT INTO abastece.product_lots
+   (product_id, batch_code, expires_on, received_on)
+   VALUES ($1, 'D22-INS002-FEFO', '2026-10-15', '2026-10-01') RETURNING id`,
+   [ins002])).rows[0].id;
+  await db.query(`INSERT INTO abastece.stock_movements
+   (location_id, product_id, lot_id, delta_qty, occurred_at, reason, recorded_by)
+   SELECT $1, $2, $3, 2, reference_at - interval '1 day', 'opening', $4
+   FROM abastece.demo_metadata WHERE id`, [bodega, ins002, early, warehouse]);
+
+  await t.test('dry_run propone FEFO, excluye vencidos y no escribe', async () => {
+   const before = await snapshot();
+   const result = (await call()).rows[0].result;
+   assert.equal(result.dry_run, true);
+   assert.equal(result.status, 'preparing');
+   assert.equal(result.lines.length, all.length);
+   const ins2 = result.lines.find(line => line.sku === 'INS-002');
+   assert.equal(ins2.lots[0].lot_id, early);
+   assert.equal(Number(ins2.lots[0].qty), 2);
+   assert.ok(ins2.lots.every(lot => lot.batch_code !== 'DEMO-002-VENC'));
+   const ins5 = result.lines.find(line => line.sku === 'INS-005');
+   assert.ok(ins5.prepared_qty < ins5.approved_qty);
+   assert.deepEqual(await snapshot(), before);
+  });
+  await t.test('Preparación parcial crea reservas e incidencia sin mover stock', async () => {
+   const before = await snapshot();
+   const result = (await call(order.id, all, false)).rows[0].result;
+   assert.equal(result.status, 'preparing');
+   assert.equal(result.dry_run, false);
+   assert.match(result.incident_code, /^INC-\d+$/);
+   const after = await snapshot();
+   assert.equal(after.movements, before.movements);
+   assert.equal(after.status, 'preparing');
+   assert.ok(after.reservations > before.reservations);
+   assert.equal(after.incidents, before.incidents + 1);
+   assert.equal(after.audits, before.audits + 1);
+   const mismatches = (await db.query(`SELECT count(*)::integer AS n
+    FROM abastece.order_items i LEFT JOIN (
+     SELECT order_item_id, sum(quantity) AS qty FROM abastece.inventory_reservations
+     WHERE status = 'active' GROUP BY order_item_id
+    ) r ON r.order_item_id = i.id
+    WHERE i.order_id = $1 AND i.prepared_qty <> coalesce(r.qty,0)`, [order.id])).rows[0].n;
+   assert.equal(mismatches, 0);
+   assert.equal((await db.query(`SELECT a.occurred_at = m.reference_at AS demo_clock
+    FROM abastece.audit_events a CROSS JOIN abastece.demo_metadata m
+    WHERE a.entity_id = $1 ORDER BY a.id DESC LIMIT 1`, [order.id])).rows[0].demo_clock, true);
+  });
+  await t.test('Repetir sin nuevo stock no duplica reservas ni auditoría', async () => {
+   const before = await snapshot();
+   const result = (await call(order.id, all, false)).rows[0].result;
+   assert.equal(result.status, 'preparing');
+   assert.deepEqual(await snapshot(), before);
+   const reduced = all.map(item => ({...item}));
+   const partial = result.lines.find(line => line.prepared_qty > 0);
+   reduced.find(item => item.product_id === partial.product_id).prepared_qty = 0;
+   await assert.rejects(() => call(order.id, reduced, false), {code: 'P0422'});
+   assert.deepEqual(await snapshot(), before);
+  });
+  await t.test('Reanudar usa solo el faltante y resuelve la incidencia', async () => {
+   const ins005 = (await db.query("SELECT id FROM abastece.products WHERE sku = 'INS-005'")).rows[0].id;
+   const lot = (await db.query(`SELECT id FROM abastece.product_lots
+    WHERE product_id = $1 AND expires_on >= '2026-10-10' ORDER BY expires_on LIMIT 1`,
+    [ins005])).rows[0].id;
+   await db.query(`INSERT INTO abastece.stock_movements
+    (location_id, product_id, lot_id, delta_qty, occurred_at, reason, recorded_by)
+    SELECT $1, $2, $3, 5, reference_at, 'adjustment', $4
+    FROM abastece.demo_metadata WHERE id`, [bodega, ins005, lot, warehouse]);
+   const result = (await call(order.id, all, false)).rows[0].result;
+   assert.equal(result.status, 'ready');
+   assert.equal(result.incident_code, null);
+   assert.ok(result.lines.every(line => line.prepared_qty === line.approved_qty));
+   const unresolved = (await db.query(`SELECT count(*)::integer AS n FROM abastece.incidents
+    WHERE order_id = $1 AND kind = 'packing_difference' AND status <> 'resolved'`,
+    [order.id])).rows[0].n;
+   assert.equal(unresolved, 0);
+   await assert.rejects(() => call(order.id, all, false), {code: 'P0409'});
+  });
+  await t.test('Un fallo de auditoría revierte toda la preparación', async () => {
+   await db.exec(`CREATE FUNCTION abastece.fail_prepare_audit_test() RETURNS trigger
+    LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fallo local'; END; $$;
+    CREATE TRIGGER fail_prepare_audit_test BEFORE INSERT ON abastece.audit_events
+    FOR EACH ROW EXECUTE FUNCTION abastece.fail_prepare_audit_test();`);
+   const before = await snapshot();
+   const otherItems = await itemsFor(second.id);
+   await assert.rejects(() => call(second.id, otherItems, false));
+   assert.deepEqual(await snapshot(), before);
+   assert.equal((await orderByCode(second.code)).status, 'approved');
+   assert.equal((await db.query(`SELECT count(*)::integer AS n
+    FROM abastece.inventory_reservations r JOIN abastece.order_items i ON i.id = r.order_item_id
+    WHERE i.order_id = $1`, [second.id])).rows[0].n, 0);
+   await db.exec(`DROP TRIGGER fail_prepare_audit_test ON abastece.audit_events;
+    DROP FUNCTION abastece.fail_prepare_audit_test();`);
+  });
+ } finally {
+  await db.close();
+ }
+});
