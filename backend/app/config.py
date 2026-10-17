@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     database_url: str = ""
     supabase_url: str = ""
     typesafe_api_key: str = ""
+    openai_api_key: str = ""
+    openai_chat_model: str = "gpt-6-luna"
     supabase_jwt_secret: str = ""  # solo si el proyecto aún usa la clave legacy HS256
     cors_origins: str = "http://localhost:5173"
     ai_calls_enabled: bool = False

@@ -171,6 +171,7 @@ def test_plan_de_rutas_con_un_pedido_listo(api):
 def test_planificar_y_confirmar_la_ruta_crea_el_envio_con_guia_y_qr(api):
     """Lo que hará la pantalla de Bruno: confirma tal cual la propuesta de /routes/plan."""
     oid = api.ords["PED-DEMO-007"]
+    _limpiar_envios(oid)  # la base se prepara una vez: sin esto la 2.ª corrida daría 409
     plan = api.cliente.post(
         "/routes/plan",
         json={"dispatch_date": "2026-10-11", "order_ids": [oid]},
@@ -199,3 +200,51 @@ def test_planificar_y_confirmar_la_ruta_crea_el_envio_con_guia_y_qr(api):
         api.cliente.post("/routes/confirm", json=confirmar, headers=api.h("bodega")).status_code
         == 403
     )
+
+
+def _limpiar_envios(order_id):
+    """Deja el pedido sin envío (y sin sus rutas huérfanas) para que la prueba sea repetible."""
+    with psycopg.connect(URL, autocommit=True) as c:
+        c.execute("DELETE FROM abastece.shipment_items WHERE order_id = %s", [order_id])
+        c.execute("DELETE FROM abastece.shipments WHERE order_id = %s", [order_id])
+        c.execute(
+            "DELETE FROM abastece.route_stops WHERE route_id NOT IN"
+            " (SELECT route_id FROM abastece.shipments WHERE route_id IS NOT NULL)"
+        )
+        c.execute(
+            "DELETE FROM abastece.route_plans WHERE id NOT IN"
+            " (SELECT route_id FROM abastece.shipments WHERE route_id IS NOT NULL)"
+        )
+
+
+def preguntar(api, rol, q):
+    return api.cliente.post("/assistant", json={"question": q}, headers=api.h(rol))
+
+
+def test_asistente_cita_segun_el_rol_y_deja_log(api):
+    r = preguntar(api, "auxiliar", "¿Cuál es la regla de recepción?")
+    assert r.status_code == 200, r.text
+    j = r.json()
+    assert j["source"] == "SIMULADO"
+    assert ("Recepción con diferencias DEMO", "DEMO-1.1") in [
+        (c["title"], c["version"]) for c in j["citations"]
+    ]
+    with psycopg.connect(URL) as c:
+        fila = c.execute(
+            "SELECT task, provider, input_tokens FROM abastece.decision_logs WHERE id = %s",
+            [j["decision_log_id"]],
+        ).fetchone()
+    assert fila == ("assistant", "mock", 0)
+
+
+def test_asistente_no_filtra_documentos_de_otro_rol(api):
+    q = "costos y compras"
+    aux = preguntar(api, "auxiliar", q).json()
+    assert "Costos y compras DEMO" not in [c["title"] for c in aux["citations"]]
+    comp = preguntar(api, "compras", q).json()
+    assert "Costos y compras DEMO" in [c["title"] for c in comp["citations"]]
+
+
+def test_asistente_sin_fuente(api):
+    j = preguntar(api, "auxiliar", "zzzqqq xylofono").json()
+    assert j["answer"] == "No tengo una fuente para eso." and j["citations"] == []
