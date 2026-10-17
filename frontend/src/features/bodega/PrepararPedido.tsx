@@ -1,8 +1,7 @@
 import { useSession, useMocks } from "@/data";
 import { Form, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeftIcon, PackageSearchIcon } from "lucide-react";
-// temporal: reemplazar por @/data
-import { useOrder, useOrders } from "@/app/dev/apiDemo";
+import { useOrder, useOrders } from "@/data";
 import { Button, EmptyState, ErrorState, Input, Label, LoadingState, PageHeader } from "@/ui";
 import { PreparacionEditor } from "./PreparacionEditor";
 

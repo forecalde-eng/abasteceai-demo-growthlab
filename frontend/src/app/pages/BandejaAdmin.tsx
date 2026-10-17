@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/ui";
 import type { Incident } from "@/mocks";
-import { useIncidents, useLocations, useOrders } from "@/app/dev/apiDemo";
+import { useIncidents, useLocations, useOrders } from "@/data";
 
 /**
  * J-1.3 · Bandeja de aprobación (administrador).

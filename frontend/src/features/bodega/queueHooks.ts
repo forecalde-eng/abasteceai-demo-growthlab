@@ -7,10 +7,9 @@ import {
   useLocations as useDemoLocations,
   type FiltroPedidos,
   type FiltroIncidencias,
-} from "@/app/dev/apiDemo";
+} from "@/data";
 
-// temporal: reemplazar por @/data
-// Reutiliza el estado compartido de la demo para ver las decisiones del administrador.
+// C2 comparte pedidos, cantidades e incidencias con las decisiones del administrador.
 // No duplica pedidos ni inventa cambios sobre los CSV.
 function useQueueQuery<T>(query: UseQueryResult<T, Error>) {
   const session = useSession();
