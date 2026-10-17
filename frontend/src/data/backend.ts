@@ -21,11 +21,30 @@ export async function postBackend<T>(
 ): Promise<T> {
   const base = import.meta.env.VITE_BACKEND_URL?.trim().replace(/\/+$/, "");
   if (!base) throw new ErrorApi(0, "CONFIGURATION", "Falta VITE_BACKEND_URL");
-  const url = new URL(base);
+  let url: URL;
+  try {
+    url = new URL(base);
+  } catch {
+    throw new ErrorApi(
+      0,
+      "CONFIGURATION",
+      "VITE_BACKEND_URL no es una URL válida",
+    );
+  }
   // HTTP solo para localhost/LAN de ensayo; HTTPS para destinos remotos.
+  const octets = /^\d{1,3}(\.\d{1,3}){3}$/.test(url.hostname)
+    ? url.hostname.split(".").map(Number)
+    : [];
+  const privateIPv4 =
+    octets.length === 4 &&
+    octets.every(
+      (part) => Number.isInteger(part) && part >= 0 && part <= 255,
+    ) &&
+    (octets[0] === 10 ||
+      (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+      (octets[0] === 192 && octets[1] === 168));
   const local =
-    /^(localhost|127\.0\.0\.1|\[::1\])$/.test(url.hostname) ||
-    /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url.hostname);
+    ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) || privateIPv4;
   if (
     url.username ||
     url.password ||

@@ -9,6 +9,15 @@ import type { AnalysisResult, DetallePedido } from "./models";
 const state = vi.hoisted(() => ({
   detail: null as DetallePedido | null,
   analysis: null as AnalysisResult | null,
+  analysisSuccess: true,
+  analysisError: false,
+  analysisFetching: false,
+  incidentsSuccess: true,
+  incidentsError: false,
+  incidentsFetching: false,
+  retry: null as (() => void) | null,
+  reloadAnalysis: vi.fn(),
+  reloadIncidents: vi.fn(),
 }));
 vi.mock("@/data", () => ({
   useOrders: () => ({
@@ -21,13 +30,35 @@ vi.mock("@/data", () => ({
     isLoading: false,
     isError: false,
   }),
-  useAnalysis: () => ({ data: state.analysis, isSuccess: true }),
-  useIncidents: () => ({ data: [] }),
+  useAnalysis: () => ({
+    data: state.analysis,
+    isSuccess: state.analysisSuccess,
+    isError: state.analysisError,
+    isFetching: state.analysisFetching,
+    refetch: state.reloadAnalysis,
+  }),
+  useIncidents: () => ({
+    data: [],
+    isSuccess: state.incidentsSuccess,
+    isError: state.incidentsError,
+    isFetching: state.incidentsFetching,
+    refetch: state.reloadIncidents,
+  }),
   refreshOperationalData: vi.fn(),
   analyzeOrder: vi.fn(),
   decideOrder: vi.fn(),
   ErrorApi: class extends Error {},
 }));
+vi.mock("@/ui", async (original) => {
+  const actual = await original<typeof import("@/ui")>();
+  return {
+    ...actual,
+    ErrorState: (props: Parameters<typeof actual.ErrorState>[0]) => {
+      state.retry = props.onRetry ?? null;
+      return <actual.ErrorState {...props} />;
+    },
+  };
+});
 
 function render() {
   const client = new QueryClient({
@@ -47,6 +78,15 @@ function render() {
 }
 
 beforeEach(() => {
+  state.analysisSuccess = true;
+  state.analysisError = false;
+  state.analysisFetching = false;
+  state.incidentsSuccess = true;
+  state.incidentsError = false;
+  state.incidentsFetching = false;
+  state.retry = null;
+  state.reloadAnalysis.mockClear();
+  state.reloadIncidents.mockClear();
   const order = orders.find((value) => value.code === "PED-DEMO-001")!;
   state.detail = {
     order,
@@ -73,6 +113,45 @@ beforeEach(() => {
 });
 
 describe("D-1.4: propuesta visible para decisión humana", () => {
+  it.each(["analysis", "incidents"] as const)(
+    "si falla %s bloquea las tres decisiones, informa del error y reintenta ambas lecturas",
+    (query) => {
+      if (query === "analysis") {
+        state.analysisError = true;
+        state.analysisSuccess = false;
+      } else {
+        state.incidentsError = true;
+        state.incidentsSuccess = false;
+      }
+      const markup = render();
+      expect(markup).toContain("No se pudieron cargar las alertas");
+      expect(markup).not.toContain("Sin alertas abiertas.");
+      for (const label of ["Aprobar", "Devolver", "Cancelar"]) {
+        const button = markup
+          .match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!
+          .find((html) => html.replace(/<[^>]*>/g, "").trim() === label);
+        expect(button).toMatch(/\bdisabled=""/);
+      }
+      state.retry!();
+      expect(state.reloadAnalysis).toHaveBeenCalledOnce();
+      expect(state.reloadIncidents).toHaveBeenCalledOnce();
+    },
+  );
+  it.each(["analysis", "incidents"] as const)(
+    "durante el refetch de %s no permite decidir ni afirma ausencia de alertas",
+    (query) => {
+      if (query === "analysis") state.analysisFetching = true;
+      else state.incidentsFetching = true;
+      const markup = render();
+      expect(markup).toContain("Comprobando análisis e incidencias");
+      expect(markup).not.toContain("Sin alertas abiertas.");
+      const buttons = markup.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!;
+      for (const label of ["Aprobar", "Devolver", "Cancelar"])
+        expect(
+          buttons.find((html) => html.replace(/<[^>]*>/g, "").trim() === label),
+        ).toMatch(/\bdisabled=""/);
+    },
+  );
   it.each(["SIMULADO", "API_REAL"] as const)(
     "muestra %s incluso si la IA no aportó respuestas",
     (source) => {

@@ -131,10 +131,19 @@ export function DetalleAdmin() {
   const pedido = detalle?.order;
   const items = detalle?.items ?? [];
 
-  const { data: analisis, isSuccess: analisisLeido } = useAnalysis(pedido?.id);
+  const {
+    data: analisis, isSuccess: analisisLeido, isError: errorAnalisis,
+    isFetching: consultandoAnalisis, refetch: recargarAnalisis,
+  } = useAnalysis(pedido?.id);
   const duplicado = analisis?.duplicates[0];
   const { data: detalleDuplicado } = useOrder(duplicado?.order_id);
-  const { data: incidencias = [] } = useIncidents({ orderId: pedido?.id, status: "open" });
+  const {
+    data: incidencias = [], isSuccess: incidenciasLeidas, isError: errorIncidencias,
+    isFetching: consultandoIncidencias, refetch: recargarIncidencias,
+  } = useIncidents({ orderId: pedido?.id, status: "open" });
+  const errorRevision = errorAnalisis || errorIncidencias;
+  const cargandoRevision = !errorRevision && (!analisisLeido || !incidenciasLeidas || consultandoAnalisis || consultandoIncidencias);
+  const revisionLista = !errorRevision && !cargandoRevision && analisis != null;
 
   // Cantidades aprobadas editadas a mano (por `product_id`); el resto va con la solicitada.
   const [aprobadas, setAprobadas] = useState<Record<string, number>>({});
@@ -157,11 +166,11 @@ export function DetalleAdmin() {
   // Una consulta pendiente o fallida nunca debe provocar una escritura automática.
   const analisisLanzado = useRef<string | null>(null);
   useEffect(() => {
-    if (!pedido || pedido.status !== "submitted" || !analisisLeido || analisis !== null) return;
+    if (!pedido || pedido.status !== "submitted" || !analisisLeido || analisis !== null || !incidenciasLeidas || errorIncidencias || consultandoIncidencias) return;
     if (analisisLanzado.current === pedido.id) return;
     analisisLanzado.current = pedido.id;
     analizar.mutate(pedido.id);
-  }, [pedido, analisis, analisisLeido, analizar]);
+  }, [pedido, analisis, analisisLeido, incidenciasLeidas, errorIncidencias, consultandoIncidencias, analizar]);
 
   const decidir = useMutation({
     mutationFn: (datos: DecisionInput) => decideOrder(pedido?.id as string, datos),
@@ -218,6 +227,7 @@ export function DetalleAdmin() {
   const tieneRespuestas = Object.keys(respuestas).length > 0;
 
   function abrirDecision(tipo: Decision) {
+    if (!revisionLista || analizar.isPending || decidir.isPending) return;
     // Aprobar sin cambios no necesita motivo: se registra directo.
     if (tipo === "approve" && !hayCambios) {
       decidir.mutate({ decision: "approve", items: cantidades });
@@ -228,7 +238,7 @@ export function DetalleAdmin() {
   }
 
   function confirmarDecision() {
-    if (!decision) return;
+    if (!decision || !revisionLista || analizar.isPending || decidir.isPending) return;
     decidir.mutate({
       decision,
       reason: motivo.trim(),
@@ -377,8 +387,16 @@ export function DetalleAdmin() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {analizar.isPending && !analisis ? (
+              {errorRevision ? (
+                <ErrorState title="No se pudieron cargar las alertas"
+                  description="No puedes decidir hasta comprobar el análisis y las incidencias."
+                  onRetry={() => { void recargarAnalisis(); void recargarIncidencias(); }} />
+              ) : cargandoRevision ? (
+                <LoadingState label="Comprobando análisis e incidencias…" />
+              ) : analizar.isPending && !analisis ? (
                 <p className="text-sm text-muted-foreground">Analizando el pedido…</p>
+              ) : !analisis ? (
+                <p className="text-sm text-muted-foreground">El análisis todavía está pendiente.</p>
               ) : incidencias.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sin alertas abiertas.</p>
               ) : (
@@ -393,7 +411,7 @@ export function DetalleAdmin() {
                 ))
               )}
 
-              {esDuplicado && duplicado ? (
+              {revisionLista && esDuplicado && duplicado ? (
                 <div className="space-y-2 rounded-md border bg-muted/30 p-3">
                   <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     Comparación {pedido.code} vs {duplicado.order_code}
@@ -440,7 +458,7 @@ export function DetalleAdmin() {
                 </div>
               ) : null}
 
-              {esOmision ? (
+              {revisionLista && esOmision ? (
                 <p className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
                   El insumo marcado figura en el kit ficticio del punto y no aparece en el pedido.
                 </p>
@@ -450,7 +468,7 @@ export function DetalleAdmin() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={analizar.isPending}
+                  disabled={analizar.isPending || cargandoRevision || !!errorRevision}
                   onClick={() => analizar.mutate(pedido.id)}
                 >
                   <SparklesIcon /> Analizar pedido
@@ -514,7 +532,7 @@ export function DetalleAdmin() {
                 <>
                   <Button
                     className="w-full"
-                    disabled={decidir.isPending}
+                    disabled={decidir.isPending || analizar.isPending || !revisionLista}
                     onClick={() => abrirDecision("approve")}
                   >
                     <CheckIcon /> Aprobar
@@ -522,7 +540,7 @@ export function DetalleAdmin() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    disabled={decidir.isPending}
+                    disabled={decidir.isPending || analizar.isPending || !revisionLista}
                     onClick={() => abrirDecision("return")}
                   >
                     <RotateCcwIcon /> Devolver
@@ -530,7 +548,7 @@ export function DetalleAdmin() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    disabled={decidir.isPending}
+                    disabled={decidir.isPending || analizar.isPending || !revisionLista}
                     onClick={() => abrirDecision("cancel")}
                   >
                     <XIcon /> Cancelar
@@ -563,7 +581,7 @@ export function DetalleAdmin() {
             </Button>
             <Button
               onClick={confirmarDecision}
-              disabled={decidir.isPending || motivo.trim() === ""}
+              disabled={decidir.isPending || analizar.isPending || !revisionLista || motivo.trim() === ""}
             >
               {decidir.isPending ? "Guardando…" : "Confirmar"}
             </Button>
