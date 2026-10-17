@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""  # solo si el proyecto aún usa la clave legacy HS256
     cors_origins: str = "http://localhost:5173"
     ai_calls_enabled: bool = False
+    reset_demo_enabled: bool = False  # POST /admin/reset-demo borra la demo: activarlo a mano
 
     @property
     def cors_list(self) -> list[str]:

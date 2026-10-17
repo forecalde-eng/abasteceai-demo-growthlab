@@ -267,8 +267,13 @@ def test_asistente_respeta_la_negacion(api):
     assert excluido["citations"] == []
 
 
-def test_reset_demo_vuelve_a_la_semilla(api):
+def test_reset_demo_vuelve_a_la_semilla(api, monkeypatch, tmp_path):
     """Último de la suite: borra lo que crearon las pruebas anteriores y recarga la semilla."""
+    from app import admin
+
+    monkeypatch.setenv("RESET_DEMO_ENABLED", "true")
+    monkeypatch.setattr(admin, "MARCA", tmp_path / ".reset_en_curso")
+    get_settings.cache_clear()
     oid = api.ords["PED-DEMO-001"]
     d = {"decision": "approve", "reason": "ensayo"}
     api.cliente.post(f"/orders/{oid}/decision", json=d, headers=api.h("administrador"))
