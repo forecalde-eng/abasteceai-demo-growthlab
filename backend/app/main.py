@@ -6,6 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app import admin
+from app.admin import router as admin_router
 from app.asistente import router as asistente_router
 from app.auth import Me, get_me
 from app.config import get_settings
@@ -24,6 +26,23 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(title="AbasteceAI API (DEMO FICTICIA)", version="1.0.0", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def mantenimiento(request: Request, call_next):
+        # Durante el reset ninguna otra escritura (todas son POST) puede colarse entre sus pasos.
+        if request.method != "POST" or request.url.path == "/admin/reset-demo":
+            return await call_next(request)
+        if not admin.admitir_escritura():
+            error = ApiError(
+                409, "CONFLICT", "Reinicio de la demo en curso; intenta en unos segundos."
+            )
+            return JSONResponse(error.body(), status_code=409)
+        try:
+            return await call_next(request)
+        finally:
+            admin.terminar_escritura()
+
+    # CORS se registra después: así envuelve también al 409 de mantenimiento.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=get_settings().cors_list,
@@ -52,6 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(asistente_router)
     app.include_router(envios_router)
     app.include_router(routes_router)
+    app.include_router(admin_router)
 
     @app.get("/me", operation_id="getMe", tags=["sistema"])
     def me(actual: Annotated[Me, Depends(get_me)]) -> dict[str, Any]:
