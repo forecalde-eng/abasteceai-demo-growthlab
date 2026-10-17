@@ -36,3 +36,11 @@ SQL
 El ensayo local automatizado de `node db/verificar_13_reconciliacion.mjs` usa PGlite y también termina en `ROLLBACK`. Ese ensayo no sustituye la comprobación remota previa, el respaldo ni una prueba de concurrencia con dos conexiones PostgreSQL reales.
 
 La ejecución definitiva requerirá un procedimiento aprobado aparte: identificar inequívocamente el proyecto, comprobar la base y el historial de migraciones, verificar el respaldo restaurable, comparar las 32 líneas y el inventario con las precondiciones de este archivo, ejecutar una sola transacción con `ON_ERROR_STOP`, y verificar el resultado antes de aceptar el commit. Ante una discrepancia o un error de serialización, detenerse e inspeccionar el estado; no reintentar automáticamente.
+
+## Revisión previa a integración
+
+La repetición verifica la ubicación, producto y lote de **todas** las reservas esperadas de los pedidos 003 y 006. Se añadió una regresión: después de conciliar, mover una reserva de INS-001 del 003 a C-003, que tiene stock suficiente, es válido para los triggers generales pero invalida esta conciliación. Una nueva ejecución debe rechazarlo con P0409 sin escribir. Antes de corregir la validación, esa prueba detectó que solo se verificaban las reservas del 006.
+
+Integrar este archivo en main no autoriza su ejecución ni confirma el estado remoto. Se mantienen las condiciones de respaldo restaurable, inspección y autorización separada antes de aplicar la conciliación.
+
+Verificación local sobre main `f4cb2cd`: conciliación **10/10**, funciones **160/160**, integridad **29/29** y base **61/61**; diff --check limpio. Solo bases PGlite desechables; ninguna llamada a Supabase.

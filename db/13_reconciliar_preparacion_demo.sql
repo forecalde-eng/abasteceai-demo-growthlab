@@ -173,13 +173,13 @@ BEGIN
    RAISE EXCEPTION USING ERRCODE = 'P0409',
     MESSAGE = 'Lotes FEFO del seed cambiaron', DETAIL = v_item.sku;
   END IF;
-  IF v_item.code = 'PED-DEMO-006' AND EXISTS (
+  IF v_expected_reserved > 0 AND EXISTS (
    SELECT 1 FROM abastece.inventory_reservations AS r
    WHERE r.order_item_id = v_item.item_id
     AND (r.location_id <> v_bodega OR r.product_id <> v_item.product_id
      OR r.lot_id <> v_lot.id)) THEN
    RAISE EXCEPTION USING ERRCODE = 'P0409',
-    MESSAGE = 'Reserva de PED-DEMO-006 en lote o ubicación inesperados', DETAIL = v_item.sku;
+    MESSAGE = 'Reserva en lote o ubicación inesperados', DETAIL = v_item.code || '/' || v_item.sku;
   END IF;
   IF v_item.code = 'PED-DEMO-003' THEN
    v_needed := CASE WHEN v_item.sku = 'INS-005' THEN 1

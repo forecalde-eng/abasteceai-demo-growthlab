@@ -137,6 +137,22 @@ test('D-2.2: conciliación puntual de PED-DEMO-003 y 006', async t => {
   } finally { await db.close(); }
  });
 
+ await t.test('repetición rechaza una reserva del 003 trasladada fuera de BOD-DEMO', async () => {
+  const db = await fixture();
+  try {
+   await db.exec(reconcileSql);
+   // C-003 tiene dos unidades físicas de DEMO-001-A. El trigger permite
+   // esta reserva, pero ya no corresponde a la conciliación aprobada.
+   await db.exec(`UPDATE abastece.inventory_reservations SET location_id=(
+    SELECT id FROM abastece.locations WHERE code='C-003')
+    WHERE order_item_id=(SELECT i.id FROM abastece.order_items i
+     JOIN abastece.orders o ON o.id=i.order_id
+     JOIN abastece.products p ON p.id=i.product_id
+     WHERE o.code='PED-DEMO-003' AND p.sku='INS-001')`);
+   await expectErrorWithoutEffects(db);
+  } finally { await db.close(); }
+ });
+
  await t.test('stock insuficiente impide cualquier corrección', async () => {
   const db = await fixture();
   try {
