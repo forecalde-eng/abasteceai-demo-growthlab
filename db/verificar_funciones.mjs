@@ -1169,6 +1169,121 @@ test('D-1.3: fn_decidir_pedido (POST /orders/{id}/decision)', async t => {
  }
 });
 
+test('D-2.4: fn_marcar_entregado sin mover stock (HU-2.3)', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';`);
+  for (const f of ['01_esquema.sql','02_reglas_y_accesos.sql','07_integridad_preseed.sql',
+   '03_datos_ficticios.sql','08_proveedor_openai.sql','09_fn_pedidos.sql','11_fn_envios.sql']) await db.exec(readSql(f));
+  const one = async (sql, params=[]) => (await db.query(sql, params)).rows[0];
+  const staff = (await db.query('SELECT id, role FROM abastece.staff_members')).rows;
+  const supervisor = staff.find(s => s.role === 'supervisor').id;
+  const seed = await one("SELECT s.*, o.status AS order_status FROM abastece.shipments s JOIN abastece.orders o ON o.id=s.order_id WHERE s.code='ENV-DEMO-008'");
+  const mark = async (actor=supervisor, shipment=seed.id) => (await one('SELECT abastece.fn_marcar_entregado($1,$2) r',[actor, shipment])).r;
+  const snapshot = async () => (await one(`SELECT
+   (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM abastece.shipments s) shipments,
+   (SELECT jsonb_agg(to_jsonb(o) ORDER BY id) FROM abastece.orders o) orders,
+   (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM abastece.stock_movements m) ledger,
+   (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM abastece.inventory_reservations r) reservations,
+   (SELECT jsonb_agg(to_jsonb(a) ORDER BY id) FROM abastece.audit_events a) audit,
+   (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM abastece.receipts r) receipts`));
+  const rejected = async (actor, shipment, code) => {
+   const before = await snapshot();
+   await assert.rejects(() => mark(actor, shipment), {code});
+   assert.deepEqual(await snapshot(), before);
+  };
+  await t.test('Solo service_role: INVOKER, search_path vacío y permisos SQL efectivos', async () => {
+   const f = await one(`SELECT prosecdef, proconfig,
+    has_function_privilege('service_role',oid,'EXECUTE') backend,
+    has_function_privilege('anon',oid,'EXECUTE') anon,
+    has_function_privilege('authenticated',oid,'EXECUTE') authenticated
+    FROM pg_proc WHERE oid='abastece.fn_marcar_entregado(uuid,uuid)'::regprocedure`);
+   assert.equal(f.prosecdef,false); assert.deepEqual(f.proconfig,['search_path=""']);
+   assert.equal(f.backend,true); assert.equal(f.anon,false); assert.equal(f.authenticated,false);
+   for (const role of ['anon','authenticated']) {
+    await db.exec(`SET ROLE ${role}`);
+    try { await assert.rejects(() => mark(),{code:'42501'}); }
+    finally { await db.exec('RESET ROLE'); }
+   }
+  });
+  await t.test('Rechaza los otros seis roles, perfil desconocido e inactivo', async () => {
+   for (const s of staff.filter(s=>s.role!=='supervisor')) await rejected(s.id,seed.id,'P0403');
+   await rejected('00000000-0000-4000-8000-000000000000',seed.id,'P0403');
+   await db.query('UPDATE abastece.staff_members SET active=false WHERE id=$1',[supervisor]);
+   try { await rejected(supervisor,seed.id,'P0403'); }
+   finally { await db.query('UPDATE abastece.staff_members SET active=true WHERE id=$1',[supervisor]); }
+  });
+  await t.test('P0404 para envío inexistente o nulo', async () => {
+   await rejected(supervisor,'00000000-0000-4000-8000-000000000000','P0404');
+   await rejected(supervisor,null,'P0404');
+  });
+  await t.test('Punto no asignado devuelve P0403 incluso al repetir una entrega', async () => {
+   const delivered = await one("SELECT id,location_id FROM abastece.shipments WHERE code='ENV-DEMO-004'");
+   for (const shipment of [seed,delivered]) {
+    await db.query('DELETE FROM abastece.point_assignments WHERE staff_id=$1 AND location_id=$2',[supervisor,shipment.location_id]);
+    try { await rejected(supervisor,shipment.id,'P0403'); }
+    finally { await db.query('INSERT INTO abastece.point_assignments VALUES ($1,$2)',[supervisor,shipment.location_id]); }
+   }
+  });
+  await t.test('Estados finales y created son P0409, sin cambios', async () => {
+   for (const code of ['ENV-DEMO-005','ENV-DEMO-009']) {
+    await rejected(supervisor,(await one('SELECT id FROM abastece.shipments WHERE code=$1',[code])).id,'P0409');
+   }
+   await db.query("UPDATE abastece.shipments SET status='created' WHERE id=$1",[seed.id]);
+   try { await rejected(supervisor,seed.id,'P0409'); }
+   finally { await db.query("UPDATE abastece.shipments SET status='dispatched' WHERE id=$1",[seed.id]); }
+  });
+  await t.test('Pedido incompatible y despacho posterior al reloj se rechazan', async () => {
+   await db.query("UPDATE abastece.orders SET status='ready' WHERE id=$1",[seed.order_id]);
+   try { await rejected(supervisor,seed.id,'P0409'); }
+   finally { await db.query("UPDATE abastece.orders SET status='shipped' WHERE id=$1",[seed.order_id]); }
+   await db.query("UPDATE abastece.demo_metadata SET reference_at='2026-01-01Z' WHERE id");
+   try { await rejected(supervisor,seed.id,'P0409'); }
+   finally { await db.query("UPDATE abastece.demo_metadata SET reference_at='2026-10-10T22:00:00Z' WHERE id"); }
+  });
+  await t.test('Fallo de auditoría revierte envío, pedido y fecha de entrega', async () => {
+   await db.exec(`CREATE FUNCTION public.d24_fail() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'Auditoría fallida de prueba'; END; $$;
+    CREATE TRIGGER d24_fail BEFORE INSERT ON abastece.audit_events FOR EACH ROW EXECUTE FUNCTION public.d24_fail()`);
+   try { await rejected(supervisor,seed.id,'P0001'); }
+   finally { await db.exec('DROP TRIGGER d24_fail ON abastece.audit_events; DROP FUNCTION public.d24_fail()'); }
+  });
+  await t.test('Supervisor asignado marca courier, audita y usa reference_at sin tocar stock', async () => {
+   const before = await snapshot();
+   await db.exec('SET ROLE service_role');
+   let r;
+   try { r = await mark(); } finally { await db.exec('RESET ROLE'); }
+   assert.deepEqual(r,{id:seed.id,code:seed.code,status:'delivered_unchecked',order_id:seed.order_id,
+    order_status:'delivered_unchecked',guide_code:seed.guide_code});
+   const after = await snapshot();
+   for (const k of ['ledger','reservations','receipts']) assert.deepEqual(after[k],before[k]);
+   assert.equal(after.audit.length,before.audit.length+1);
+   const audit = await one(`SELECT a.*, a.occurred_at=m.reference_at clock FROM abastece.audit_events a
+    CROSS JOIN abastece.demo_metadata m WHERE entity_id=$1 AND action='shipment_delivered'`,[seed.id]);
+   assert.equal(audit.actor_id,supervisor); assert.equal(audit.location_id,seed.location_id); assert.equal(audit.clock,true);
+   assert.deepEqual(audit.before_state,{status:'dispatched',order_status:'shipped'});
+   assert.equal(audit.after_state.status,'delivered_unchecked');
+   assert.equal((await one('SELECT delivered_at=reference_at clock FROM abastece.shipments CROSS JOIN abastece.demo_metadata WHERE shipments.id=$1',[seed.id])).clock,true);
+  });
+  await t.test('Repetición e histórico own devuelven estado actual sin escrituras', async () => {
+   const before = await snapshot();
+   assert.equal((await mark()).status,'delivered_unchecked');
+   assert.equal((await mark(supervisor,(await one("SELECT id FROM abastece.shipments WHERE code='ENV-DEMO-004'")).id)).status,'delivered_unchecked');
+   assert.deepEqual(await snapshot(),before);
+  });
+  await t.test('Llamadas encoladas no duplican auditorías; dos conexiones reales quedan para Fase 0', async () => {
+   const before = await snapshot();
+   await Promise.all([mark(),mark()]); // PGlite serializa en una única conexión.
+   assert.deepEqual(await snapshot(),before);
+   assert.equal((await one("SELECT count(*)::integer n FROM abastece.audit_events WHERE entity_id=$1 AND action='shipment_delivered'",[seed.id])).n,1);
+  });
+ } finally { await db.close(); }
+});
+
+
 test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
  const db = new PGlite();
  try {
@@ -1806,120 +1921,6 @@ test('D-2.3: fn_despachar (POST /shipments/{id}/dispatch)', async t => {
    assert.equal((await one(`SELECT count(*)::integer AS n FROM abastece.shipment_items i
     JOIN abastece.product_lots l ON l.id = i.lot_id
     WHERE i.shipment_id = $1 AND l.batch_code = 'DEMO-002-VENC'`, [shipment])).n, 0);
-  });
- } finally { await db.close(); }
-});
-
-test('D-2.4: fn_marcar_entregado sin mover stock (HU-2.3)', async t => {
- const db = new PGlite();
- try {
-  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
-   CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
-   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
-    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';`);
-  for (const f of ['01_esquema.sql','02_reglas_y_accesos.sql','07_integridad_preseed.sql',
-   '03_datos_ficticios.sql','08_proveedor_openai.sql','09_fn_pedidos.sql','11_fn_envios.sql']) await db.exec(readSql(f));
-  const one = async (sql, params=[]) => (await db.query(sql, params)).rows[0];
-  const staff = (await db.query('SELECT id, role FROM abastece.staff_members')).rows;
-  const supervisor = staff.find(s => s.role === 'supervisor').id;
-  const seed = await one("SELECT s.*, o.status AS order_status FROM abastece.shipments s JOIN abastece.orders o ON o.id=s.order_id WHERE s.code='ENV-DEMO-008'");
-  const mark = async (actor=supervisor, shipment=seed.id) => (await one('SELECT abastece.fn_marcar_entregado($1,$2) r',[actor, shipment])).r;
-  const snapshot = async () => (await one(`SELECT
-   (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM abastece.shipments s) shipments,
-   (SELECT jsonb_agg(to_jsonb(o) ORDER BY id) FROM abastece.orders o) orders,
-   (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM abastece.stock_movements m) ledger,
-   (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM abastece.inventory_reservations r) reservations,
-   (SELECT jsonb_agg(to_jsonb(a) ORDER BY id) FROM abastece.audit_events a) audit,
-   (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM abastece.receipts r) receipts`));
-  const rejected = async (actor, shipment, code) => {
-   const before = await snapshot();
-   await assert.rejects(() => mark(actor, shipment), {code});
-   assert.deepEqual(await snapshot(), before);
-  };
-  await t.test('Solo service_role: INVOKER, search_path vacío y permisos SQL efectivos', async () => {
-   const f = await one(`SELECT prosecdef, proconfig,
-    has_function_privilege('service_role',oid,'EXECUTE') backend,
-    has_function_privilege('anon',oid,'EXECUTE') anon,
-    has_function_privilege('authenticated',oid,'EXECUTE') authenticated
-    FROM pg_proc WHERE oid='abastece.fn_marcar_entregado(uuid,uuid)'::regprocedure`);
-   assert.equal(f.prosecdef,false); assert.deepEqual(f.proconfig,['search_path=""']);
-   assert.equal(f.backend,true); assert.equal(f.anon,false); assert.equal(f.authenticated,false);
-   for (const role of ['anon','authenticated']) {
-    await db.exec(`SET ROLE ${role}`);
-    try { await assert.rejects(() => mark(),{code:'42501'}); }
-    finally { await db.exec('RESET ROLE'); }
-   }
-  });
-  await t.test('Rechaza los otros seis roles, perfil desconocido e inactivo', async () => {
-   for (const s of staff.filter(s=>s.role!=='supervisor')) await rejected(s.id,seed.id,'P0403');
-   await rejected('00000000-0000-4000-8000-000000000000',seed.id,'P0403');
-   await db.query('UPDATE abastece.staff_members SET active=false WHERE id=$1',[supervisor]);
-   try { await rejected(supervisor,seed.id,'P0403'); }
-   finally { await db.query('UPDATE abastece.staff_members SET active=true WHERE id=$1',[supervisor]); }
-  });
-  await t.test('P0404 para envío inexistente o nulo', async () => {
-   await rejected(supervisor,'00000000-0000-4000-8000-000000000000','P0404');
-   await rejected(supervisor,null,'P0404');
-  });
-  await t.test('Punto no asignado devuelve P0403 incluso al repetir una entrega', async () => {
-   const delivered = await one("SELECT id,location_id FROM abastece.shipments WHERE code='ENV-DEMO-004'");
-   for (const shipment of [seed,delivered]) {
-    await db.query('DELETE FROM abastece.point_assignments WHERE staff_id=$1 AND location_id=$2',[supervisor,shipment.location_id]);
-    try { await rejected(supervisor,shipment.id,'P0403'); }
-    finally { await db.query('INSERT INTO abastece.point_assignments VALUES ($1,$2)',[supervisor,shipment.location_id]); }
-   }
-  });
-  await t.test('Estados finales y created son P0409, sin cambios', async () => {
-   for (const code of ['ENV-DEMO-005','ENV-DEMO-009']) {
-    await rejected(supervisor,(await one('SELECT id FROM abastece.shipments WHERE code=$1',[code])).id,'P0409');
-   }
-   await db.query("UPDATE abastece.shipments SET status='created' WHERE id=$1",[seed.id]);
-   try { await rejected(supervisor,seed.id,'P0409'); }
-   finally { await db.query("UPDATE abastece.shipments SET status='dispatched' WHERE id=$1",[seed.id]); }
-  });
-  await t.test('Pedido incompatible y despacho posterior al reloj se rechazan', async () => {
-   await db.query("UPDATE abastece.orders SET status='ready' WHERE id=$1",[seed.order_id]);
-   try { await rejected(supervisor,seed.id,'P0409'); }
-   finally { await db.query("UPDATE abastece.orders SET status='shipped' WHERE id=$1",[seed.order_id]); }
-   await db.query("UPDATE abastece.demo_metadata SET reference_at='2026-01-01Z' WHERE id");
-   try { await rejected(supervisor,seed.id,'P0409'); }
-   finally { await db.query("UPDATE abastece.demo_metadata SET reference_at='2026-10-10T22:00:00Z' WHERE id"); }
-  });
-  await t.test('Fallo de auditoría revierte envío, pedido y fecha de entrega', async () => {
-   await db.exec(`CREATE FUNCTION public.d24_fail() RETURNS trigger LANGUAGE plpgsql AS $$
-    BEGIN RAISE EXCEPTION 'Auditoría fallida de prueba'; END; $$;
-    CREATE TRIGGER d24_fail BEFORE INSERT ON abastece.audit_events FOR EACH ROW EXECUTE FUNCTION public.d24_fail()`);
-   try { await rejected(supervisor,seed.id,'P0001'); }
-   finally { await db.exec('DROP TRIGGER d24_fail ON abastece.audit_events; DROP FUNCTION public.d24_fail()'); }
-  });
-  await t.test('Supervisor asignado marca courier, audita y usa reference_at sin tocar stock', async () => {
-   const before = await snapshot();
-   await db.exec('SET ROLE service_role');
-   let r;
-   try { r = await mark(); } finally { await db.exec('RESET ROLE'); }
-   assert.deepEqual(r,{id:seed.id,code:seed.code,status:'delivered_unchecked',order_id:seed.order_id,
-    order_status:'delivered_unchecked',guide_code:seed.guide_code});
-   const after = await snapshot();
-   for (const k of ['ledger','reservations','receipts']) assert.deepEqual(after[k],before[k]);
-   assert.equal(after.audit.length,before.audit.length+1);
-   const audit = await one(`SELECT a.*, a.occurred_at=m.reference_at clock FROM abastece.audit_events a
-    CROSS JOIN abastece.demo_metadata m WHERE entity_id=$1 AND action='shipment_delivered'`,[seed.id]);
-   assert.equal(audit.actor_id,supervisor); assert.equal(audit.location_id,seed.location_id); assert.equal(audit.clock,true);
-   assert.deepEqual(audit.before_state,{status:'dispatched',order_status:'shipped'});
-   assert.equal(audit.after_state.status,'delivered_unchecked');
-   assert.equal((await one('SELECT delivered_at=reference_at clock FROM abastece.shipments CROSS JOIN abastece.demo_metadata WHERE shipments.id=$1',[seed.id])).clock,true);
-  });
-  await t.test('Repetición e histórico own devuelven estado actual sin escrituras', async () => {
-   const before = await snapshot();
-   assert.equal((await mark()).status,'delivered_unchecked');
-   assert.equal((await mark(supervisor,(await one("SELECT id FROM abastece.shipments WHERE code='ENV-DEMO-004'")).id)).status,'delivered_unchecked');
-   assert.deepEqual(await snapshot(),before);
-  });
-  await t.test('Llamadas encoladas no duplican auditorías; dos conexiones reales quedan para Fase 0', async () => {
-   const before = await snapshot();
-   await Promise.all([mark(),mark()]); // PGlite serializa en una única conexión.
-   assert.deepEqual(await snapshot(),before);
-   assert.equal((await one("SELECT count(*)::integer n FROM abastece.audit_events WHERE entity_id=$1 AND action='shipment_delivered'",[seed.id])).n,1);
   });
  } finally { await db.close(); }
 });
