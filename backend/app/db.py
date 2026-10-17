@@ -5,6 +5,7 @@ Cada llamada es una transacción (si la función falla, no queda nada a medias).
 """
 
 import re
+from decimal import Decimal
 from typing import Any
 
 import psycopg
@@ -45,6 +46,10 @@ def cerrar_pool() -> None:
 
 
 def _param(valor: Any) -> Any:
+    if isinstance(valor, float):
+        # Las funciones piden `numeric` (cantidades, km): un float viajaría como double precision
+        # y Postgres no encontraría la firma.
+        return Decimal(str(valor))
     return Jsonb(valor) if isinstance(valor, dict | list) else valor
 
 
