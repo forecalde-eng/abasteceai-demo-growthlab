@@ -89,3 +89,12 @@ def test_uso_mal_formado_va_por_el_fallo(monkeypatch, uso):
     resp = {**copy.deepcopy(jev._SIMULADO["response"]), "usage": uso}
     monkeypatch.setattr(jev, "_llamar_jev", lambda _: resp)
     assert jev.proponer(ESTADO)["response"] == {"error": "timeout"}
+
+
+@pytest.mark.parametrize(
+    ("real", "clave", "esperado"), [(False, "k", False), (True, "", False), (True, "k", True)]
+)
+def test_modo_real_exige_ia_activa_y_llave(monkeypatch, real, clave, esperado):
+    # orders._sobre_previo usa el mismo criterio para reutilizar el análisis anterior.
+    ajustes(monkeypatch, real=real, clave=clave)
+    assert jev.modo_real() is esperado
