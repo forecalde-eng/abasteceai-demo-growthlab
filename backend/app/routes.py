@@ -59,9 +59,13 @@ def plan_routes(body: PlanIn, _: Annotated[Me, Depends(require_roles("logistica"
     vehiculos = [
         Vehiculo(str(v[0]), v[1], float(v[2]), float(v[3]), _min(v[4], 0), _min(v[5], 1439))
         for v in fetch_all(
-            "SELECT id, code, capacity_kg, capacity_m3, available_from, available_until"
-            " FROM abastece.vehicles ORDER BY code",
-            [],
+            # Igual que fn_confirmar_ruta: un plan aprobado/despachado/terminado ocupa el día.
+            "SELECT v.id, v.code, v.capacity_kg, v.capacity_m3, v.available_from,"
+            " v.available_until FROM abastece.vehicles v WHERE NOT EXISTS ("
+            " SELECT 1 FROM abastece.route_plans rp WHERE rp.vehicle_id = v.id"
+            " AND rp.dispatch_date = %s"
+            " AND rp.status IN ('approved', 'dispatched', 'finished')) ORDER BY v.code",
+            [body.dispatch_date],
         )
     ]
 
