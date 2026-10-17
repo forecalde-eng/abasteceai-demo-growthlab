@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -30,8 +32,8 @@ def llamadas(monkeypatch):
     return registro
 
 
-def cliente(monkeypatch, rol="auxiliar", puntos=PUNTOS):
-    me = auth.Me("s-1", "Ana Demo", "a@x", rol, puntos)
+def cliente(monkeypatch, rol="auxiliar", puntos=PUNTOS, me=None):
+    me = me or auth.Me("s-1", "Ana Demo", "a@x", rol, puntos)
     monkeypatch.setattr(auth, "verificar_jwt", lambda _: "u-1")
     monkeypatch.setattr(auth, "cargar_me", lambda _: me)
     return TestClient(create_app())
@@ -125,3 +127,132 @@ def test_p0422_regular_con_motivo_conserva_el_campo(monkeypatch):
         "message": "Un pedido regular no tiene reason",
         "details": {"field": "reason"},
     }
+
+
+# ---- /orders/{id}/decision y /orders/{id}/analyze ----
+ORD = "44444444-4444-4444-8444-444444444444"
+ADMIN = auth.Me("s-9", "Carla Demo", "c@x", "administrador", [])
+AUX = auth.Me("s-1", "Ana Demo", "a@x", "auxiliar", PUNTOS)
+
+
+def test_decision_devuelve_order_result_exacto(monkeypatch):
+    visto = []
+
+    def falso(nombre, *args):
+        visto.append((nombre, args))
+        return {"id": ORD, "code": "PED-DEMO-001", "status": "approved", "extra": 1}
+
+    monkeypatch.setattr(orders, "call_fn", falso)
+    cuerpo = {
+        "decision": "approve",
+        "reason": "esperar compra",
+        "items": [{"product_id": PROD, "approved_qty": 1}],
+    }
+    r = cliente(monkeypatch, me=ADMIN).post(f"/orders/{ORD}/decision", json=cuerpo, headers=H)
+    assert r.status_code == 200 and r.json() == {
+        "id": ORD,
+        "code": "PED-DEMO-001",
+        "status": "approved",
+    }
+    nombre, args = visto[0]
+    assert nombre == "fn_decidir_pedido" and args[0] == "s-9" and str(args[1]) == ORD
+    assert args[2] == "approve" and args[3] == [{"product_id": PROD, "approved_qty": 1}]
+    assert args[4] == "esperar compra"
+
+
+def test_decision_sin_items_pasa_null(monkeypatch):
+    visto = []
+    monkeypatch.setattr(
+        orders, "call_fn", lambda *a: visto.append(a) or {"id": 1, "code": "c", "status": "draft"}
+    )
+    cliente(monkeypatch, me=ADMIN).post(
+        f"/orders/{ORD}/decision", json={"decision": "return", "reason": "x"}, headers=H
+    )
+    assert visto[0][4] is None
+
+
+@pytest.mark.parametrize("rol", ["auxiliar", "supervisor", "bodega", "gerencia"])
+def test_decision_solo_administrador(monkeypatch, llamadas, rol):
+    r = cliente(monkeypatch, rol=rol).post(
+        f"/orders/{ORD}/decision", json={"decision": "approve"}, headers=H
+    )
+    assert r.status_code == 403 and llamadas == []
+
+
+@pytest.mark.parametrize(
+    "cuerpo",
+    [
+        {"decision": "otra"},
+        {"decision": "approve", "items": [{"product_id": PROD, "approved_qty": -1}]},
+        {"decision": "approve", "items": [{"product_id": "x", "approved_qty": 1}]},
+    ],
+)
+def test_decision_invalida_es_422(monkeypatch, llamadas, cuerpo):
+    r = cliente(monkeypatch, me=ADMIN).post(f"/orders/{ORD}/decision", json=cuerpo, headers=H)
+    assert r.status_code == 422 and llamadas == []
+
+
+def test_decision_p0409_es_409(monkeypatch):
+    def falla(*_):
+        raise desde_sqlstate("P0409", "Pedido fuera de submitted", None)
+
+    monkeypatch.setattr(orders, "call_fn", falla)
+    r = cliente(monkeypatch, me=ADMIN).post(
+        f"/orders/{ORD}/decision", json={"decision": "cancel", "reason": "x"}, headers=H
+    )
+    assert r.status_code == 409 and r.json()["error"]["code"] == "INVALID_STATE"
+
+
+AUTOR = "s-1"
+SOBRE = {"provider": "mock", "response": {"answers": {}}}
+RESULTADO = {
+    "order_id": ORD,
+    "duplicates": [],
+    "missing_kit": [],
+    "incidents": [],
+    "proposal": {"decision_log_id": "L-1"},
+}
+
+
+def analizar(monkeypatch, fila, me=AUX, sobre=SOBRE, resultado=RESULTADO):
+    visto = {"jev": [], "fn": []}
+    monkeypatch.setattr(orders, "fetch_one", lambda *_: fila)
+    monkeypatch.setattr(orders, "proponer", lambda e: visto["jev"].append(e) or sobre)
+    monkeypatch.setattr(orders, "call_fn", lambda *a: visto["fn"].append(a) or resultado)
+    r = cliente(monkeypatch, me=me).post(f"/orders/{ORD}/analyze", headers=H)
+    return r, visto
+
+
+def test_analyze_submitted_llama_a_jev_y_pasa_el_sobre(monkeypatch):
+    r, v = analizar(monkeypatch, ("submitted", AUTOR, "PED-DEMO-001", "Q-001", "Falta cloro"))
+    assert r.status_code == 200 and r.json() == RESULTADO
+    assert v["jev"][0]["order_code"] == "PED-DEMO-001" and v["jev"][0]["point_code"] == "Q-001"
+    assert v["fn"] == [("fn_analizar_reglas", "s-1", UUID(ORD), SOBRE)]
+
+
+def test_analyze_no_submitted_no_llama_a_jev(monkeypatch):
+    r, v = analizar(monkeypatch, ("approved", AUTOR, "PED-DEMO-001", "Q-001", None))
+    assert r.status_code == 200 and v["jev"] == [] and v["fn"][0][3] is None
+
+
+def test_analyze_ajeno_es_403_sin_jev_ni_base(monkeypatch):
+    r, v = analizar(monkeypatch, ("submitted", "otro", "PED-DEMO-001", "Q-001", ""))
+    assert r.status_code == 403 and v == {"jev": [], "fn": []}
+
+
+def test_analyze_administrador_puede_con_pedido_ajeno(monkeypatch):
+    r, v = analizar(monkeypatch, ("submitted", "otro", "PED-DEMO-001", "Q-001", ""), me=ADMIN)
+    assert r.status_code == 200 and len(v["jev"]) == 1
+
+
+def test_analyze_pedido_inexistente_es_404(monkeypatch):
+    r, v = analizar(monkeypatch, None)
+    assert r.status_code == 404 and v == {"jev": [], "fn": []}
+
+
+def test_analyze_con_jev_caido_es_502_con_la_propuesta_guardada(monkeypatch):
+    caido = {"provider": "typesafe", "response": {"error": "timeout"}}
+    r, v = analizar(monkeypatch, ("submitted", AUTOR, "PED-DEMO-001", "Q-001", ""), sobre=caido)
+    assert r.status_code == 502 and len(v["fn"]) == 1  # SQL guardó human_review antes del 502
+    e = r.json()["error"]
+    assert e["code"] == "UPSTREAM_AI" and e["details"] == {"decision_log_id": "L-1"}
