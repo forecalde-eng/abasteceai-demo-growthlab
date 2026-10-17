@@ -117,6 +117,7 @@ test('D-2.1: fn_confirmar_ruta (POST /routes/confirm)', async t => {
   const logistics = staff.find(s => s.role === 'logistica').id;
   const auxiliary = staff.find(s => s.role === 'auxiliar').id;
   const vehicle = (await db.query("SELECT id FROM abastece.vehicles WHERE code = 'VEH-DEMO-2'")).rows[0].id;
+  const dispatchedVehicle = (await db.query("SELECT id FROM abastece.vehicles WHERE code = 'VEH-DEMO-1'")).rows[0].id;
   const order = (await db.query("SELECT id, location_id FROM abastece.orders WHERE code = 'PED-DEMO-007'")).rows[0];
   const stop = {location_id: order.location_id, sequence: 1,
    planned_arrival: '2026-10-11T14:00:00Z', order_ids: [order.id]};
@@ -161,10 +162,36 @@ test('D-2.1: fn_confirmar_ruta (POST /routes/confirm)', async t => {
    await reject({stops: {}}, 'P0422');
   });
   await t.test('Rechaza secuencias, puntos y pedidos repetidos', async () => {
+   const {sequence: _omitted, ...withoutSequence} = stop;
+   await reject({stops: [withoutSequence]}, 'P0422');
+   await reject({stops: [{...stop, sequence: null}]}, 'P0422');
+   await reject({stops: [{...stop, sequence: 0}]}, 'P0422');
+   await reject({stops: [{...stop, sequence: -1}]}, 'P0422');
+   await reject({stops: [{...stop, sequence: 1.5}]}, 'P0422');
+   await reject({stops: [{...stop, sequence: '1'}]}, 'P0422');
    await reject({stops: [{...stop, sequence: 2}]}, 'P0422');
    await reject({stops: [stop, {...stop, sequence: 2}]}, 'P0422');
+   const q6 = (await db.query("SELECT id FROM abastece.locations WHERE code = 'Q-006'")).rows[0].id;
+   await reject({stops: [stop, {location_id: q6, sequence: 1, order_ids: []}]}, 'P0422');
    await reject({stops: [{...stop, order_ids: [order.id, order.id]}]}, 'P0409');
    await reject({stops: [{...stop, order_ids: ['bad-uuid']}]}, 'P0422');
+  });
+  await t.test('Dispatched y finished ocupan la fecha; draft no la reserva', async () => {
+   const sameDayStop = {...stop, planned_arrival: '2026-10-10T14:00:00Z'};
+   await reject({vehicle: dispatchedVehicle, date: '2026-10-10',
+    stops: [sameDayStop]}, 'P0409');
+   await db.query("UPDATE abastece.route_plans SET status = 'finished' WHERE code = 'RUTA-DEMO-1'");
+   await reject({vehicle: dispatchedVehicle, date: '2026-10-10',
+    stops: [sameDayStop]}, 'P0409');
+   await db.query("UPDATE abastece.route_plans SET status = 'dispatched' WHERE code = 'RUTA-DEMO-1'");
+   await db.exec('BEGIN');
+   try {
+    const result = (await confirm({date: '2026-10-10', stops: [sameDayStop]})).rows[0].result;
+    assert.equal(result.status, 'approved');
+   } finally {
+    await db.exec('ROLLBACK');
+   }
+   assert.deepEqual(await counts(), before);
   });
   await t.test('Rechaza pedido no ready, punto ajeno y ventana incumplida', async () => {
    const submitted = (await db.query("SELECT id FROM abastece.orders WHERE status = 'submitted' LIMIT 1")).rows[0].id;
@@ -226,6 +253,21 @@ test('D-2.1: fn_confirmar_ruta (POST /routes/confirm)', async t => {
    const saved = await counts();
    await assert.rejects(() => confirm(), {code: 'P0409'});
    assert.deepEqual(await counts(), saved);
+  });
+  await t.test('Dos pedidos distintos no pueden ocupar el mismo vehículo y fecha', async () => {
+   const second = (await db.query("SELECT id, location_id FROM abastece.orders WHERE code = 'PED-DEMO-006'")).rows[0];
+   await db.query('UPDATE abastece.order_items SET prepared_qty = approved_qty WHERE order_id = $1', [second.id]);
+   await db.query("UPDATE abastece.orders SET status = 'ready' WHERE id = $1", [second.id]);
+   const saved = await counts();
+   const otherStop = {location_id: second.location_id, sequence: 1,
+    planned_arrival: '2026-10-11T14:00:00Z', order_ids: [second.id]};
+   await assert.rejects(() => confirm({stops: [otherStop]}),
+    {code: 'P0409', message: 'Vehículo ya asignado para la fecha'});
+   assert.deepEqual(await counts(), saved);
+   const state = (await db.query(`SELECT o.status,
+    (SELECT count(*)::integer FROM abastece.shipments WHERE order_id = o.id) AS shipments
+    FROM abastece.orders o WHERE id = $1`, [second.id])).rows[0];
+   assert.deepEqual(state, {status: 'ready', shipments: 0});
   });
  } finally {
   await db.close();

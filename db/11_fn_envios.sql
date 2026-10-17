@@ -59,11 +59,21 @@ BEGIN
  IF NOT FOUND THEN
   RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Vehículo no disponible';
  END IF;
+ -- Un borrador no reserva el vehículo. Un plan aprobado, despachado o
+ -- terminado ya ocupó esta fecha; se consulta bajo el bloqueo de confirmación.
+ IF EXISTS (
+  SELECT 1 FROM abastece.route_plans
+  WHERE vehicle_id = p_vehicle AND dispatch_date = p_dispatch_date
+   AND status IN ('approved', 'dispatched', 'finished')
+ ) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Vehículo ya asignado para la fecha';
+ END IF;
 
  FOR v_stop IN SELECT value FROM pg_catalog.jsonb_array_elements(p_stops)
  LOOP
   v_stop_number := v_stop_number + 1;
   IF pg_catalog.jsonb_typeof(v_stop) <> 'object' OR
+     NOT (v_stop ? 'sequence') OR
      pg_catalog.jsonb_typeof(v_stop->'sequence') <> 'number' OR
      v_stop->>'sequence' !~ '^[1-9][0-9]*$' OR
      (v_stop->>'sequence')::numeric <> v_stop_number OR
