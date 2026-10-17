@@ -8,7 +8,6 @@ import {
   StatusBadge, Table, TableBody, TableCaption, TableCell, TableHead, TableHeader,
   TableRow, TONO,
 } from "@/ui";
-// temporal: reemplazar por @/data
 import { useIncidents, useLocations, useOrders } from "./queueHooks";
 import { PrepararPedido } from "./PrepararPedido";
 

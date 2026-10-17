@@ -4,7 +4,6 @@ import { CameraIcon, QrCodeIcon } from "lucide-react";
 
 import { useSession } from "@/data";
 import { Button, EmptyState, ErrorState, Input, Label, LoadingState, PageHeader } from "@/ui";
-// temporal: reemplazar por @/data
 import { useShipmentByGuide, useShipmentByQr } from "./useShipmentByQr";
 import { ConteoRecepcion } from "./ConteoRecepcion";
 

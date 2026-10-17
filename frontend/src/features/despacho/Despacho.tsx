@@ -7,7 +7,6 @@ import {
   EmptyState, ErrorState, Label, LoadingState, PageHeader, Select, StatusBadge,
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/ui";
-// temporal: reemplazar por @/data
 import { useShipments } from "./useShipments";
 import { PanelDespacho } from "./PanelDespacho";
 

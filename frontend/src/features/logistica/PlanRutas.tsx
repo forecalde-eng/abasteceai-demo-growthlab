@@ -1,7 +1,6 @@
 import { RouteIcon } from 'lucide-react'
 import { ErrorState, LoadingState, PageHeader } from '@/ui'
 import { PlanificadorRutas } from './PlanificadorRutas'
-// temporal: reemplazar por @/data
 import { useRoutingData } from './useRoutingData'
 
 export function PlanRutas() {
