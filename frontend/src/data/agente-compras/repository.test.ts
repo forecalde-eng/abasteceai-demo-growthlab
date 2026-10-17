@@ -67,6 +67,7 @@ describe("lectura opcional Supabase de la demo", () => {
     const { client, calls } = setup();
     const snapshot = await readLiveSnapshot(client);
     expect(snapshot.source).toBe("supabase");
+    expect(snapshot.authUserId).toBe("fictitious-user");
     expect(snapshot.referenceAt).toBe("2026-10-10T22:00:00Z");
     expect(calls).toHaveLength(4);
     expect(

@@ -30,6 +30,7 @@ export function useAgentDemo() {
   const [liveSelected, setLiveSelected] = useState(false);
   const [validLiveSession, setValidLiveSession] = useState(true);
   const readGeneration = useRef(0);
+  const liveUserId = useRef<string | null>(null);
   const allNeeds = useMemo(() => collectNeeds(snapshot), [snapshot]);
   const needs = useMemo(
     () => allNeeds.filter((need) => selected.includes(need.sku)),
@@ -64,13 +65,14 @@ export function useAgentDemo() {
 
   useEffect(() => {
     if (!liveSelected || !hasSupabaseConfig()) return;
-    const { data } = getSupabaseClient().auth.onAuthStateChange((event) => {
+    const { data } = getSupabaseClient().auth.onAuthStateChange((event, session) => {
       if (
         event === "SIGNED_OUT" ||
-        event === "SIGNED_IN" ||
+        (event === "SIGNED_IN" && session?.user.id !== liveUserId.current) ||
         event === "USER_UPDATED"
       ) {
         readGeneration.current += 1;
+        liveUserId.current = null;
         reset();
         setSnapshot(seedSnapshot);
         setSelected(initialSkus);
@@ -105,6 +107,7 @@ export function useAgentDemo() {
       const data = await readLiveSnapshot(getSupabaseClient());
       if (generation !== readGeneration.current) return;
       const found = collectNeeds(data);
+      liveUserId.current = data.authUserId;
       setSnapshot(data);
       setSelected(
         found
@@ -125,6 +128,7 @@ export function useAgentDemo() {
   };
   const useSeed = () => {
     readGeneration.current += 1;
+    liveUserId.current = null;
     reset();
     setLiveSelected(false);
     setValidLiveSession(true);
@@ -144,6 +148,8 @@ export function useAgentDemo() {
     reset();
     setMaxDays(value);
   };
+  const selectionBlocked =
+    isLoading || running || (liveSelected && !validLiveSession);
   const blocked =
     isLoading || (liveSelected && !validLiveSession) || !needs.length;
   return {
@@ -162,6 +168,7 @@ export function useAgentDemo() {
     error,
     liveSelected,
     blocked,
+    selectionBlocked,
     loadLive,
     useSeed,
     reset,

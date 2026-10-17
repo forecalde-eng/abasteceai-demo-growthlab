@@ -21,7 +21,7 @@ npm run build
 npm run preview -- --host 0.0.0.0
 ```
 
-La compilación incluye ambos HTML. El script `npm test` de main solo ejecuta useSession; usar `npx vitest run` para toda la suite.
+La compilación incluye ambos HTML. `npm test` y `npx vitest run` ejecutan la suite completa.
 
 ## Guion de presentación (1 minuto)
 
@@ -52,4 +52,12 @@ La captura es para presentar una lectura, no una transacción consistente de tod
 
 ## Aislamiento para revisión del equipo
 
-Rama `back/david/demo-agente-compras`, basada en main. No incorpora manualmente los PR #143–#145. No modifica `src/app/`, `src/ui/`, `src/mocks/`, los contratos congelados, SQL, Auth ni Data API. La única modificación compartida es agregar la entrada HTML a Vite, para revisión de Jorge. El resto son archivos nuevos. No se autoriza despliegue ni envíos reales.
+Rama `back/david/demo-agente-compras`, basada en main. Actualizada con main `f4cb2cd`, que ya contiene los PR #143–#145 y #149–#152. No modifica `src/app/`, `src/ui/`, `src/mocks/`, los contratos congelados, SQL, Auth ni Data API. La única modificación compartida es agregar la entrada HTML a Vite, para revisión de Jorge. El resto son archivos nuevos. No se autoriza despliegue ni envíos reales.
+
+## Revisión previa a integración
+
+- La selección permanece habilitada sin productos elegidos, incluidos datos reales sin los tres SKU iniciales. Solo se bloquea al cargar, ejecutar o invalidarse la sesión. Iniciar el agente sigue requiriendo al menos un producto.
+- La etiqueta SIMULADO usa la familia neutra, conforme a la guía de diseño.
+- Se conserva la identidad verificada de la captura solo en memoria. Un SIGNED_IN repetido de la misma cuenta no borra datos ni avance; cerrar sesión, cambiar identidad o actualizar el usuario sigue invalidando la captura.
+- Ocho pruebas de interacción React con happy-dom cubren esos casos, incluida recuperación de selección, carga y pausa. La dependencia está fijada como desarrollo y no se incluye en la aplicación publicada.
+- TypeScript OK; suite completa **274/274**; build con ambas entradas OK; diff --check limpio. Sin verificación remota de login ni cambios en Supabase.

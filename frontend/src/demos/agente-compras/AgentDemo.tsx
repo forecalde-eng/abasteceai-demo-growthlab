@@ -165,7 +165,7 @@ export function AgentDemo() {
                 muestra la mejor opción.
               </p>
             </div>
-            <Tag kind="violet">
+            <Tag kind="neutral">
               <Bot size={14} /> Agente IA · SIMULADO
             </Tag>
           </section>
@@ -622,11 +622,7 @@ export function AgentDemo() {
                           type="checkbox"
                           checked={agent.selected.includes(need.sku)}
                           onChange={() => agent.toggle(need.sku)}
-                          disabled={
-                            agent.isLoading ||
-                            agent.running ||
-                            (agent.liveSelected && agent.blocked)
-                          }
+                          disabled={agent.selectionBlocked}
                         />
                       </td>
                       <td>

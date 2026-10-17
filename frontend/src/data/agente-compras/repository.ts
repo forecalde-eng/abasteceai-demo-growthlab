@@ -8,7 +8,7 @@ const columns =
 /** Exclusivamente SELECT con JWT del navegador. No recibe ni usa claves administrativas. */
 export async function readLiveSnapshot(
   client: SupabaseClient<Database, "abastece">,
-): Promise<Snapshot> {
+): Promise<Snapshot & { authUserId: string }> {
   const { data: auth, error: authError } = await client.auth.getUser();
   if (authError || !auth.user)
     throw new Error(
@@ -75,6 +75,7 @@ export async function readLiveSnapshot(
     );
   return {
     source: "supabase",
+    authUserId: auth.user.id,
     referenceAt: clock.reference_at,
     products,
     rows,
