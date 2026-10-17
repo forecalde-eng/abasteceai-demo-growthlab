@@ -141,6 +141,8 @@ def autorizar_reset(authorization: Annotated[str | None, Header()] = None) -> st
     # Recuperación: el mismo sub que inició el reset y la misma base (staff puede estar vacío).
     if _marca_actual() == (sub, _identidad(get_settings().database_url)):
         return sub
+    if _en_curso.locked():  # en plena fase destructiva staff puede estar vacío: 409, no 403
+        raise ApiError(409, "CONFLICT", "Ya hay un reinicio en curso.")
     me = auth.cargar_me(sub)
     if me is None or me.role != "administrador":
         raise ApiError(403, "FORBIDDEN", "Tu rol no puede hacer esta acción.")

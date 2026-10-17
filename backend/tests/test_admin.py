@@ -154,3 +154,14 @@ def test_rotar_la_clave_no_cambia_la_identidad_de_la_base():
     a = admin._identidad("postgresql://u:clave1@h:5432/postgres?sslmode=require")
     assert a == admin._identidad("postgresql://u:clave2@h:5432/postgres?sslmode=require")
     assert a != admin._identidad("postgresql://u:clave1@otro:5432/postgres")
+
+
+def test_reset_concurrente_da_409_antes_de_mirar_el_perfil(monkeypatch):
+    c = cliente(monkeypatch, "administrador")
+    monkeypatch.setattr(auth, "cargar_me", lambda _: None)  # staff vacío durante el borrado
+    admin._en_curso.acquire()
+    try:
+        r = c.post("/admin/reset-demo", headers=H)
+    finally:
+        admin._en_curso.release()
+    assert r.status_code == 409
