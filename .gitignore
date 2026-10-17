@@ -14,3 +14,7 @@ __pycache__/
 
 # Sistema
 .DS_Store
+
+# Respaldos de la base (pg_dump): nunca al repo (docs/equipo/fase0_despliegue_y_respaldo.md)
+respaldos/
+*.dump
