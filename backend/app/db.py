@@ -77,3 +77,9 @@ def fetch_one(consulta: str, params: list[Any]) -> tuple | None:
     """Una fila de una lectura (SELECT) con el pool del backend; `None` si no hay."""
     with get_pool().connection() as conn:
         return conn.execute(consulta, params).fetchone()
+
+
+def fetch_all(consulta: str, params: list[Any]) -> list[tuple]:
+    """Todas las filas de una lectura (SELECT) con el pool del backend."""
+    with get_pool().connection() as conn:
+        return conn.execute(consulta, params).fetchall()
