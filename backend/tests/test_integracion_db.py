@@ -248,3 +248,10 @@ def test_asistente_no_filtra_documentos_de_otro_rol(api):
 def test_asistente_sin_fuente(api):
     j = preguntar(api, "auxiliar", "zzzqqq xylofono").json()
     assert j["answer"] == "No tengo una fuente para eso." and j["citations"] == []
+
+
+def test_asistente_respeta_la_negacion(api):
+    q = "recepción diferencias"
+    assert preguntar(api, "auxiliar", q).json()["citations"]
+    excluido = preguntar(api, "auxiliar", q + " -recepción -diferencias -conteo").json()
+    assert excluido["citations"] == []

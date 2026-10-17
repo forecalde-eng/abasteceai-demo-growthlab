@@ -7,14 +7,23 @@ El backend se conecta con permisos amplios, así que el filtro del rol y del pun
 
 from app.db import fetch_all
 
-# OR entre las palabras: una pregunta en lenguaje natural casi nunca contiene todos los términos.
+# OR entre las palabras positivas (una pregunta casi nunca las contiene todas); los `-excluidos`
+# siguen en AND NOT.
 CONSULTA = """
 SELECT id, title, version, body FROM (
   SELECT DISTINCT ON (d.id) d.id, d.title, d.version, c.body,
          ts_rank(c.search_vector, q.q) AS rango
   FROM abastece.document_chunks c
   JOIN abastece.documents d ON d.id = c.document_id,
-  LATERAL (SELECT replace(websearch_to_tsquery('spanish', %s)::text, '&', '|')::tsquery AS q) q
+  LATERAL (
+    SELECT CASE WHEN pos IS NULL THEN NULL
+           ELSE ('(' || pos || ')' || coalesce(' & ' || neg, ''))::tsquery END AS q
+    FROM (
+      SELECT array_to_string(array_agg(t) FILTER (WHERE t <> '' AND left(t, 1) <> '!'), ' | ') pos,
+             array_to_string(array_agg(t) FILTER (WHERE left(t, 1) = '!'), ' & ') neg
+      FROM unnest(string_to_array(websearch_to_tsquery('spanish', %s)::text, ' & ')) t
+    ) partes
+  ) q
   WHERE c.search_vector @@ q.q
     AND %s = ANY(d.allowed_roles)
     AND (d.location_id IS NULL OR d.location_id = ANY(%s::uuid[]))

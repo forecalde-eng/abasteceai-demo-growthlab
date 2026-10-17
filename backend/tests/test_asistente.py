@@ -78,7 +78,16 @@ def test_openai_real_registra_tokens(estado):
     assert estado.logs[0][0] == "openai" and estado.logs[0][-1] == 321
 
 
-@pytest.mark.parametrize("fallo", [urllib.error.URLError("x"), TimeoutError(), KeyError("choices")])
+@pytest.mark.parametrize(
+    "fallo",
+    [
+        urllib.error.URLError("x"),
+        TimeoutError(),
+        KeyError("choices"),
+        IndexError(),
+        AttributeError(),
+    ],
+)
 def test_openai_caido_es_502_sin_log(estado, fallo):
     def cae(*_):
         raise fallo
@@ -128,3 +137,9 @@ def test_llamar_openai_arma_la_peticion(monkeypatch, estado):
     cuerpo = json.loads(visto["req"].data)
     assert cuerpo["model"] == "gpt-6-luna" and "¿q?" in cuerpo["messages"][1]["content"]
     assert visto["req"].get_header("Authorization") == "Bearer k" and visto["timeout"] == 15
+
+
+def test_openai_sin_fuente_no_cita_candidatos(estado):
+    estado.real, estado.openai = True, lambda *a: ("No tengo una fuente para eso.", 5)
+    j = preguntar(estado).json()
+    assert j["citations"] == [] and j["source"] == "API_REAL"

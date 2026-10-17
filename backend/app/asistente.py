@@ -90,11 +90,19 @@ def ask_assistant(body: PreguntaIn, me: Annotated[Me, Depends(require_roles(*ROL
             TimeoutError,
             ValueError,
             KeyError,
+            IndexError,
+            AttributeError,
+            TypeError,
             json.JSONDecodeError,
         ) as e:
             raise ApiError(502, "UPSTREAM_AI", "El asistente no pudo responder ahora.") from e
         modelo = cfg.openai_chat_model
-    citas = [{k: f[k] for k in ("document_id", "title", "version")} for f in fuentes]
+    # Si el modelo dice que no hay fuente, no se presentan los candidatos como evidencia.
+    citas = (
+        []
+        if texto.startswith(SIN_FUENTE)
+        else [{k: f[k] for k in ("document_id", "title", "version")} for f in fuentes]
+    )
     fila = fetch_one(
         "INSERT INTO abastece.decision_logs (task, provider, model_version, input_state, response,"
         " proposed_action, status, input_tokens, estimated_cost_usd, created_at)"
