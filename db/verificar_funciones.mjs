@@ -1224,6 +1224,15 @@ test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
 
   await t.test('dry_run propone FEFO, excluye vencidos y no escribe', async () => {
    const before = await snapshot();
+   const sequenceBefore = (await db.query(`SELECT schemaname, sequencename, last_value
+    FROM pg_catalog.pg_sequences ORDER BY schemaname, sequencename`)).rows;
+   await db.exec(`CREATE FUNCTION abastece.reject_dry_run_write_test() RETURNS trigger
+    LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'dry_run intentó escribir'; END; $$;`);
+   for (const table of ['orders', 'order_items', 'inventory_reservations',
+    'incidents', 'audit_events', 'stock_movements']) {
+    await db.exec(`CREATE TRIGGER reject_dry_run_write_test BEFORE INSERT OR UPDATE OR DELETE
+     ON abastece.${table} FOR EACH ROW EXECUTE FUNCTION abastece.reject_dry_run_write_test();`);
+   }
    const result = (await call()).rows[0].result;
    assert.equal(result.dry_run, true);
    assert.equal(result.status, 'preparing');
@@ -1235,6 +1244,31 @@ test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
    const ins5 = result.lines.find(line => line.sku === 'INS-005');
    assert.ok(ins5.prepared_qty < ins5.approved_qty);
    assert.deepEqual(await snapshot(), before);
+   assert.deepEqual((await db.query(`SELECT schemaname, sequencename, last_value
+    FROM pg_catalog.pg_sequences ORDER BY schemaname, sequencename`)).rows, sequenceBefore);
+   const definition = (await db.query(`SELECT pg_catalog.pg_get_functiondef(
+    'abastece.fn_preparar(uuid,uuid,jsonb,boolean)'::regprocedure) AS sql`)).rows[0].sql;
+   assert.doesNotMatch(definition, /\bnextval\s*\(/i);
+   for (const table of ['orders', 'order_items', 'inventory_reservations',
+    'incidents', 'audit_events', 'stock_movements']) {
+    await db.exec(`DROP TRIGGER reject_dry_run_write_test ON abastece.${table};`);
+   }
+   await db.exec(`DROP FUNCTION abastece.reject_dry_run_write_test();`);
+  });
+  await t.test('FEFO excluye un lote al superar su fecha de caducidad', async () => {
+   const before = await snapshot();
+   await db.exec(`UPDATE abastece.demo_metadata
+    SET reference_at = '2026-10-16T22:00:00Z' WHERE id = true;`);
+   try {
+    const result = (await call()).rows[0].result;
+    const ins2 = result.lines.find(line => line.sku === 'INS-002');
+    assert.ok(ins2.lots.every(lot => lot.lot_id !== early));
+    assert.ok(ins2.lots.some(lot => lot.batch_code === 'DEMO-002-A'));
+    assert.deepEqual(await snapshot(), before);
+   } finally {
+    await db.exec(`UPDATE abastece.demo_metadata
+     SET reference_at = '2026-10-10T22:00:00Z' WHERE id = true;`);
+   }
   });
   await t.test('Preparación parcial crea reservas e incidencia sin mover stock', async () => {
    const before = await snapshot();
@@ -1248,6 +1282,16 @@ test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
    assert.ok(after.reservations > before.reservations);
    assert.equal(after.incidents, before.incidents + 1);
    assert.equal(after.audits, before.audits + 1);
+   const ins5 = result.lines.find(line => line.sku === 'INS-005');
+   assert.equal(ins5.prepared_qty, 1);
+   const ins5Reservations = (await db.query(`SELECT count(*)::integer AS n,
+    sum(r.quantity) AS qty FROM abastece.inventory_reservations r
+    JOIN abastece.order_items i ON i.id = r.order_item_id
+    JOIN abastece.products p ON p.id = i.product_id
+    WHERE i.order_id = $1 AND p.sku = 'INS-005' AND r.status = 'active'`,
+    [order.id])).rows[0];
+   assert.equal(ins5Reservations.n, 1);
+   assert.equal(Number(ins5Reservations.qty), 1);
    const mismatches = (await db.query(`SELECT count(*)::integer AS n
     FROM abastece.order_items i LEFT JOIN (
      SELECT order_item_id, sum(quantity) AS qty FROM abastece.inventory_reservations
@@ -1283,6 +1327,14 @@ test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
    assert.equal(result.status, 'ready');
    assert.equal(result.incident_code, null);
    assert.ok(result.lines.every(line => line.prepared_qty === line.approved_qty));
+   const ins5Reservations = (await db.query(`SELECT count(*)::integer AS n,
+    sum(r.quantity) AS qty FROM abastece.inventory_reservations r
+    JOIN abastece.order_items i ON i.id = r.order_item_id
+    JOIN abastece.products p ON p.id = i.product_id
+    WHERE i.order_id = $1 AND p.sku = 'INS-005' AND r.status = 'active'`,
+    [order.id])).rows[0];
+   assert.equal(ins5Reservations.n, 2);
+   assert.equal(Number(ins5Reservations.qty), 3);
    const unresolved = (await db.query(`SELECT count(*)::integer AS n FROM abastece.incidents
     WHERE order_id = $1 AND kind = 'packing_difference' AND status <> 'resolved'`,
     [order.id])).rows[0].n;
