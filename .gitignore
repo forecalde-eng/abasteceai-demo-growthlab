@@ -18,3 +18,4 @@ __pycache__/
 # Respaldos de la base (pg_dump): nunca al repo (docs/equipo/fase0_despliegue_y_respaldo.md)
 respaldos/
 *.dump
+backend/.reset_en_curso

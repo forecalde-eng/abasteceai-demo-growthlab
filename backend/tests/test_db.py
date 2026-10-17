@@ -86,3 +86,10 @@ def test_sin_database_url_falla_claro(monkeypatch):
     monkeypatch.setattr(db, "get_settings", lambda: SimpleNamespace(database_url=""))
     with pytest.raises(RuntimeError, match="DATABASE_URL"):
         db.get_pool()
+
+
+def test_los_float_viajan_como_numeric():
+    from decimal import Decimal
+
+    assert db._param(12.5) == Decimal("12.5") and isinstance(db._param(90.0), Decimal)
+    assert db._param(3) == 3 and db._param("x") == "x"

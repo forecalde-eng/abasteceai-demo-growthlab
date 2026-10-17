@@ -15,11 +15,22 @@ async (page) => {
   check(await confirm.isEnabled(), "Plan válido habilita confirmación humana");
   const amount = page.getByLabel("Preparado INS-001", { exact: true });
   await amount.fill("999");
+  await page.getByText("Preparado no puede superar lo aprobado.", { exact: true }).waitFor();
+  check(await amount.getAttribute("aria-invalid") === "true", "El campo inválido explica el bloqueo");
   check(await confirm.isDisabled() && await preview.isDisabled(), "No supera aprobación y la edición invalida el plan");
   check(await page.getByRole("table", { name: "Plan FEFO", exact: true }).count() === 0, "No conserva un plan obsoleto");
   await amount.fill("-1"); check(await preview.isDisabled(), "No admite negativos");
+  await page.getByText("Preparado debe ser una cantidad válida mayor o igual a cero.", { exact: true }).waitFor();
   await amount.fill("0.0001"); check(await preview.isDisabled(), "No admite más de tres decimales");
+  await page.getByText("Preparado admite como máximo tres decimales.", { exact: true }).waitFor();
+  await amount.fill("");
+  await page.getByText("Completa la cantidad preparada.", { exact: true }).waitFor();
+  check(await preview.isDisabled(), "Vacío no se trata como cero preparado");
+  await page.setViewportSize({ width: 375, height: 812 });
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "Errores por insumo no desbordan a 375 px");
   await amount.fill("2");
+  check(await amount.getAttribute("aria-invalid") === "false", "Corregir la cantidad recupera el campo");
+  check(await preview.isEnabled() && await confirm.isDisabled(), "La corrección exige nueva vista previa");
   await preview.click();
   await page.getByRole("table", { name: "Plan FEFO", exact: true }).waitFor();
   await confirm.evaluate((button) => { button.click(); button.click(); });
@@ -40,6 +51,13 @@ async (page) => {
   await preview.click();
   await page.getByText("El pedido cambió de estado. Solicita una nueva vista previa.", { exact: true }).waitFor();
   check(await confirm.isDisabled(), "El error no se interpreta como confirmación");
+  await page.reload();
+  await page.evaluate(async () => (await import("/src/features/bodega/pruebas/fixture.ts")).setMode("missing-expiry"));
+  await preview.click();
+  await page.getByRole("table", { name: "Plan FEFO", exact: true }).waitFor();
+  check(await page.getByText("Vence: Sin fecha informada", { exact: true }).count() > 0, "Fecha omitida no se presenta como lote sin vencimiento");
+  check(await page.getByText("Vence: Sin vencimiento", { exact: true }).count() === 0, "No inventa ausencia de vencimiento");
+  check(await confirm.isEnabled(), "Respuesta válida con fecha opcional habilita confirmación");
   await page.goto(base + path + "?pedido=PED-DEMO-006");
   await preview.click();
   await page.getByRole("table", { name: "Plan FEFO", exact: true }).waitFor();
@@ -47,5 +65,5 @@ async (page) => {
   await page.getByText("Listo", { exact: true }).first().waitFor();
   await page.setViewportSize({ width: 375, height: 812 });
   check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "Sin desbordamiento de página a 375 px");
-  console.log("UI B-2.2: vista previa, invalidación, confirmación única, errores y estados del contrato OK. No prueba fn_preparar real.");
+  console.log("B-3.2: errores por insumo, recuperación, fecha opcional C1, FEFO, confirmación única y móvil OK. No prueba fn_preparar real.");
 }

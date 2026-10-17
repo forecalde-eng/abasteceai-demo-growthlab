@@ -16,6 +16,11 @@ async (page) => {
   await page.getByText("Selecciona un envío", { exact: true }).waitFor();
   check(await page.getByRole("button", { name: "Abrir cámara", exact: true }).isVisible(), "Botón de cámara presente en móvil");
 
+  // El escenario inventado anterior no forma parte de los mocks de aplicación.
+  await page.getByLabel("Código de guía", { exact: true }).fill("GUIA-TEMP-001");
+  await page.getByText("Envío no encontrado", { exact: true }).waitFor();
+  check(await page.getByRole("button", { name: "Registrar recepción", exact: true }).count() === 0, "Guía temporal no ofrece un envío inventado");
+
   // El seed ya recibió ENV-DEMO-005: resolvemos la guía y mostramos honestidad.
   await page.getByLabel("Código de guía", { exact: true }).fill("GUIA-DEMO-005");
   await page.getByText("Este envío ya fue recibido", { exact: true }).waitFor();
@@ -53,9 +58,20 @@ async (page) => {
   await page.getByLabel("Contado INS-001", { exact: true }).fill("2");
   await page.getByLabel("Aceptado INS-001", { exact: true }).fill("9");
   check(await submit.isDisabled(), "Aceptado mayor que contado bloquea");
+  await page.getByText("Aceptado no puede superar contado.", { exact: true }).waitFor();
   await page.getByLabel("Contado INS-001", { exact: true }).fill("99");
   await page.getByLabel("Aceptado INS-001", { exact: true }).fill("1");
   check(await submit.isDisabled(), "Contado mayor que enviado bloquea");
+  await page.getByText("Contado no puede superar lo enviado.", { exact: true }).waitFor();
+  await page.getByLabel("Contado INS-001", { exact: true }).fill("4");
+  await page.getByLabel("Aceptado INS-001", { exact: true }).fill("4");
+  check(await submit.isEnabled(), "Corregir los valores recupera el botón");
+  check(await page.locator('[aria-invalid="true"]').count() === 0, "Avisos desaparecen tras corregir");
+
+  // QR de ensayo con el token oficial: no un envío ni token nuevos.
+  await page.goto(base + "/src/features/recepcion/pruebas/qr-temporal.html");
+  await page.getByText("ENV-DEMO-005 · GUIA-DEMO-005", { exact: true }).waitFor();
+  check(await page.locator("svg").count() === 1, "QR oficial disponible para la prueba física");
 
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Sin desbordamiento a 390 px");
   check(errors.length === 0, `Errores JavaScript: ${errors.join(", ")}`);

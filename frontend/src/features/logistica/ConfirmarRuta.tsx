@@ -1,3 +1,4 @@
+import { refreshOperationalData } from "@/data";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RouteIcon, SendIcon } from "lucide-react";
@@ -88,8 +89,7 @@ export function ConfirmarRuta({ readyOrders, locations, vehicles, proposal, serv
       const response = validateRouteResult(await service(requestBody), requestBody);
       if (!mounted.current) return;
       setResult(response);
-      void client.invalidateQueries({ queryKey: ["demo"] });
-      void client.invalidateQueries({ queryKey: ["bruno"] });
+      void refreshOperationalData(client);
       toast.success("Ruta confirmada por el servicio.");
       onConfirmed?.(response);
     } catch (cause) {

@@ -34,6 +34,14 @@ playwright-cli close
 
 Cubre: acceso auxiliar, botón de cámara en móvil, guía ya recibida con aviso honesto, PITCH-8 (INS-002 10 → contado 8 → faltante 2), conteo inválido bloqueado, doble clic como una sola llamada, error no presentado como éxito, sin UUID y 390 px sin desbordamiento. La página `pruebas/recepcion.html` usa un envío en estado `dispatched` controlado, solo para probar la UI; no escribe ni modifica fixtures.
 
+## Corrección de revisión de #136
+
+El lector normal `/recepcion` solo consume los envíos e ítems oficiales de `@/mocks`; no incorpora envíos fabricados. Se retiraron `ENV-TEMP-001`, `GUIA-TEMP-001` y sus identificadores. La guía temporal ahora devuelve **Envío no encontrado**.
+
+Para probar la cámara, abre `pruebas/qr-temporal.html` en el PC (solo desarrollo + mocks). El QR contiene el token oficial de **ENV-DEMO-005**, por lo que `/recepcion` muestra **Este envío ya fue recibido**, conservando PITCH-8. Esa página enlaza a `pruebas/recepcion.html` para practicar el conteo con estado controlado, separado de la aplicación y sin escrituras. No prueba una recepción real.
+
+El formulario muestra el motivo de bloqueo junto a contado/aceptado, con `aria-invalid` y `aria-describedby`; los avisos desaparecen al corregir las cantidades. La prueba de navegador comprueba guía temporal inexistente, guía oficial recibida, conteo aislado, mensajes y recuperación, QR y móvil.
+
 ## Pendiente
 
 - `fn_recibir` en la base y envíos `dispatched` reales para validar PITCH 8 de punta a punta.
