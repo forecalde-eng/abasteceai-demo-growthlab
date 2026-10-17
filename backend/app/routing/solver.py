@@ -173,5 +173,21 @@ def planificar(
         )
     for k, p in enumerate(candidatas, start=1):
         if k not in asignadas:
-            plan.sin_asignar.append((p, "capacity"))  # la flota junta no la alcanza
+            plan.sin_asignar.append((p, _motivo_colectivo(p, plan.rutas, vehiculos)))
     return plan
+
+
+def _motivo_colectivo(p: Parada, rutas: list[dict], vehiculos: list[Vehiculo]) -> str:
+    """Por qué el solver descartó una parada que sola sí cabe: carga de la flota u horarios.
+
+    Si algún vehículo aún tiene capacidad (peso y volumen) para ella, lo que la dejó fuera es el
+    calendario (ventanas que chocan o falta de horas): `window`. Si no, la flota está llena.
+    """
+    carga = {r["vehiculo"].id: r["paradas"] for r in rutas}
+    for v in vehiculos:
+        asignadas = [x for x, _ in carga.get(v.id, [])]
+        kg = sum(x.peso_kg for x in asignadas) + p.peso_kg
+        m3 = sum(x.volumen_m3 for x in asignadas) + p.volumen_m3
+        if kg <= v.cap_kg and m3 <= v.cap_m3:
+            return "window"
+    return "capacity"

@@ -57,3 +57,12 @@ def test_flota_saturada_deja_los_que_sobran_como_capacity():
     asignadas = sum(len(r["paradas"]) for r in p.rutas)
     assert asignadas == 1 and len(p.sin_asignar) == 2
     assert {m for _, m in p.sin_asignar} == {"capacity"}
+
+
+def test_ventanas_que_chocan_son_window_no_capacity():
+    # Hay peso de sobra, pero un solo vehículo no puede estar en dos puntos lejanos a las 10:00.
+    a = parada("Q-030", -0.18, -78.48, ini=600, fin=610, ordenes=("a",))
+    b = parada("Q-031", -0.33, -78.48, ini=600, fin=610, ordenes=("b",))
+    p = planificar(BOD, [a, b], [V1])
+    assert sum(len(r["paradas"]) for r in p.rutas) == 1
+    assert [m for _, m in p.sin_asignar] == ["window"]
