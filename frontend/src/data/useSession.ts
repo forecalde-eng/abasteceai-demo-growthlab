@@ -171,6 +171,13 @@ export function useSession(): {
     if (!hasSupabaseConfig()) return;
     const { data: listener } = getSupabaseClient().auth.onAuthStateChange((event) => {
       if (event === "INITIAL_SESSION") return;
+      // Evitar que otra cuenta vea datos de la sesión anterior durante el refetch.
+      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
+        void queryClient.cancelQueries({ queryKey: SESSION_QUERY_KEY });
+        void queryClient.cancelQueries({ queryKey: ["abastece"] });
+        queryClient.removeQueries({ queryKey: ["abastece"] });
+        queryClient.setQueriesData({ queryKey: SESSION_QUERY_KEY }, null);
+      }
       // Supabase recomienda diferir las llamadas async fuera del callback Auth.
       window.setTimeout(() => {
         void queryClient.invalidateQueries({ queryKey: SESSION_QUERY_KEY });

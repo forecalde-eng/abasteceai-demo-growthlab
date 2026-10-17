@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   ErrorApi,
+  refreshOperationalData,
   analyzeOrder,
   decideOrder,
   useAnalysis,
@@ -21,7 +22,7 @@ import {
   useOrder,
   useOrders,
   type DecisionInput,
-} from "@/app/dev/apiDemo";
+} from "@/data";
 import {
   AiSourceBadge,
   Badge,
@@ -142,11 +143,12 @@ export function DetalleAdmin() {
 
   const analizar = useMutation({
     mutationFn: (orderId: string) => analyzeOrder(orderId),
-    onSuccess: (_resultado, orderId) => {
-      void queryClient.invalidateQueries({ queryKey: ["demo", "analisis", orderId] });
-      void queryClient.invalidateQueries({ queryKey: ["demo", "incidencias"] });
+    onSuccess: () => {
+      void refreshOperationalData(queryClient);
     },
     onError: (error) => {
+      // HTTP 502 puede tener el log human_review ya persistido: releer sin reintentar POST.
+      void refreshOperationalData(queryClient);
       toast.error(error instanceof ErrorApi ? error.message : "No se pudo analizar el pedido.");
     },
   });
@@ -166,9 +168,7 @@ export function DetalleAdmin() {
       toast.success(`Pedido ${resultado.code}: decisión registrada.`);
       setDecision(null);
       setMotivo("");
-      void queryClient.invalidateQueries({ queryKey: ["demo", "pedidos"] });
-      void queryClient.invalidateQueries({ queryKey: ["demo", "pedido", resultado.id] });
-      void queryClient.invalidateQueries({ queryKey: ["demo", "incidencias"] });
+      void refreshOperationalData(queryClient);
     },
     onError: (error) => {
       toast.error(error instanceof ErrorApi ? error.message : "No se pudo registrar la decisión.");
@@ -212,7 +212,7 @@ export function DetalleAdmin() {
   }, [items, detalleDuplicado]);
 
   const coincidencias = comparacion.filter((fila) => fila.a === fila.b).length;
-  const respuestas = (analisis?.proposal.answers ?? {}) as Record<string, RespuestaIA>;
+  const respuestas = (analisis?.proposal?.answers ?? {}) as Record<string, RespuestaIA>;
   const confianza = respuestas.urgency?.confidence;
   const tieneRespuestas = Object.keys(respuestas).length > 0;
 
