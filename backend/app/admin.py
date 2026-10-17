@@ -14,6 +14,7 @@ from typing import Annotated
 import psycopg
 from fastapi import APIRouter, Depends, Header
 from psycopg import sql
+from psycopg.conninfo import conninfo_to_dict
 
 from app import auth
 from app.config import get_settings
@@ -37,9 +38,19 @@ _activas = 0
 ESPERA_ESCRITURAS_S = 30
 
 
-def _marca(sub: str, url: str) -> str:
-    # Quién inició el reset y contra qué base (hash: la URL lleva la contraseña).
-    return f"{sub}\n{hashlib.sha256(url.encode()).hexdigest()}"
+def _identidad(url: str) -> str:
+    """Base destino estable: host, puerto, base y usuario; sin la contraseña (puede rotar)."""
+    d = conninfo_to_dict(url) if url else {}
+    clave = f"{d.get('host')}:{d.get('port')}/{d.get('dbname')}@{d.get('user')}"
+    return hashlib.sha256(clave.encode()).hexdigest()
+
+
+def _marca_actual() -> tuple[str, str] | None:
+    """(sub que inició el reset, identidad de su base) si hay un reset a medias."""
+    if not MARCA.exists():
+        return None
+    sub, _, ident = MARCA.read_text(encoding="utf-8").partition("\n")
+    return sub, ident
 
 
 def reset_en_curso() -> bool:
@@ -127,7 +138,8 @@ def autorizar_reset(authorization: Annotated[str | None, Header()] = None) -> st
     if not authorization or not authorization.lower().startswith("bearer "):
         raise ApiError(401, "UNAUTHORIZED", "Falta la sesión (Authorization: Bearer).")
     sub = auth.verificar_jwt(authorization[7:].strip())
-    if MARCA.exists() and MARCA.read_text(encoding="utf-8").split("\n")[0] == sub:
+    # Recuperación: el mismo sub que inició el reset y la misma base (staff puede estar vacío).
+    if _marca_actual() == (sub, _identidad(get_settings().database_url)):
         return sub
     me = auth.cargar_me(sub)
     if me is None or me.role != "administrador":
@@ -144,9 +156,11 @@ def reset_demo(sub: Annotated[str, Depends(autorizar_reset)]) -> dict:
         esperar_escrituras()
         url = get_settings().database_url
         # Solo se omite al recuperar un reset a medias sobre la MISMA base (puede estar vacía).
-        if not (MARCA.exists() and MARCA.read_text(encoding="utf-8").endswith(_marca("", url))):
+        marca = _marca_actual()
+        if marca is None or marca[1] != _identidad(url):
             verificar_destino(url)
-        MARCA.write_text(_marca(sub, url), encoding="utf-8")  # desde aquí empieza lo destructivo
+        # Desde aquí empieza lo destructivo.
+        MARCA.write_text(f"{sub}\n{_identidad(url)}", encoding="utf-8")
         ref = ejecutar_reset(url)
         MARCA.unlink()  # solo un reset verificado reabre las escrituras
         return {"ok": True, "reference_at": ref}

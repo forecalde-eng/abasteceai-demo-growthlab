@@ -131,10 +131,26 @@ def test_si_cambia_la_base_la_recuperacion_vuelve_a_verificar_el_destino(monkeyp
     c = cliente(monkeypatch, "administrador")
     monkeypatch.setattr(admin, "ejecutar_reset", falla)
     assert c.post("/admin/reset-demo", headers=H).status_code == 409
-    monkeypatch.setenv("DATABASE_URL", "postgresql://otra-base")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u@otra-base:5432/postgres")
     get_settings.cache_clear()
     destino = []
     monkeypatch.setattr(admin, "verificar_destino", destino.append)
     monkeypatch.setattr(admin, "ejecutar_reset", lambda *_: OK)
     assert c.post("/admin/reset-demo", headers=H).status_code == 200
-    assert destino == ["postgresql://otra-base"]
+    assert destino == ["postgresql://u@otra-base:5432/postgres"]
+
+
+def test_tras_cambiar_de_base_el_atajo_de_recuperacion_no_aplica(monkeypatch):
+    c = cliente(monkeypatch, "administrador")
+    monkeypatch.setattr(admin, "ejecutar_reset", falla)
+    assert c.post("/admin/reset-demo", headers=H).status_code == 409
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u@otra-base:5432/postgres")
+    get_settings.cache_clear()
+    monkeypatch.setattr(auth, "cargar_me", lambda _: None)  # sin perfil en la base nueva
+    assert c.post("/admin/reset-demo", headers=H).status_code == 403
+
+
+def test_rotar_la_clave_no_cambia_la_identidad_de_la_base():
+    a = admin._identidad("postgresql://u:clave1@h:5432/postgres?sslmode=require")
+    assert a == admin._identidad("postgresql://u:clave2@h:5432/postgres?sslmode=require")
+    assert a != admin._identidad("postgresql://u:clave1@otro:5432/postgres")
