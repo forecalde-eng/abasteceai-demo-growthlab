@@ -5,7 +5,6 @@ import {
   CardDescription, CardHeader, CardTitle, EmptyState, ErrorState, Label,
   LoadingState, PageHeader, Select,
 } from '@/ui'
-// temporal: reemplazar por @/data
 import { useLocations } from './useMapLocations'
 import { MAP_STYLE, focusPoints, mapPoints, pointKind, type MapPointKind } from './mapa-model'
 

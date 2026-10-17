@@ -18,7 +18,6 @@ import {
   StatusBadge,
 } from "@/ui";
 import { TraceTimeline } from "./TraceTimeline";
-// temporal: reemplazar por @/data
 import { useOrderTrace } from "./useOrderTrace";
 
 export function Trazabilidad() {
