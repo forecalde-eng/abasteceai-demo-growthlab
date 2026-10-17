@@ -1809,3 +1809,121 @@ test('D-2.3: fn_despachar (POST /shipments/{id}/dispatch)', async t => {
   });
  } finally { await db.close(); }
 });
+
+test('D-3.1: reset → semilla original → re-vinculación sin tocar Auth ni estructura', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth;
+   CREATE TABLE auth.users(id uuid PRIMARY KEY, email text UNIQUE, email_confirmed_at timestamptz);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';`);
+  for (const f of ['01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql',
+   '03_datos_ficticios.sql', '08_proveedor_openai.sql', '09_fn_pedidos.sql',
+   '10_fn_bodega.sql', '11_fn_envios.sql']) await db.exec(readSql(f));
+  const one = async (sql, params = []) => (await db.query(sql, params)).rows[0];
+  const counts = JSON.parse(readSql('conteos_datos.json'));
+  const rows = async () => Object.fromEntries(await Promise.all(Object.keys(counts).map(async name =>
+   [name, (await one(`SELECT count(*)::integer AS n FROM abastece.${name}`)).n])));
+  const auth = async () => (await db.query('SELECT * FROM auth.users ORDER BY id')).rows;
+  const catalog = async () => (await one(`SELECT
+   (SELECT jsonb_agg(to_jsonb(x) ORDER BY x.oid) FROM
+    (SELECT oid, relname, relkind, relrowsecurity, relacl FROM pg_class
+     WHERE relnamespace IN ('abastece'::regnamespace, 'private'::regnamespace)) x) AS relations,
+   (SELECT jsonb_agg(to_jsonb(x) ORDER BY x.oid) FROM
+    (SELECT oid, proname, prosrc, proacl, prosecdef, proconfig FROM pg_proc
+     WHERE pronamespace IN ('abastece'::regnamespace, 'private'::regnamespace)) x) AS functions,
+   (SELECT jsonb_agg(to_jsonb(p) ORDER BY policyname) FROM pg_policies p
+    WHERE schemaname = 'abastece') AS policies,
+   (SELECT jsonb_agg(to_jsonb(x) ORDER BY x.oid) FROM
+    (SELECT oid, tgrelid, tgname, tgtype, tgenabled FROM pg_trigger
+     WHERE tgrelid IN (SELECT oid FROM pg_class WHERE relnamespace = 'abastece'::regnamespace)) x) AS triggers`));
+  await db.exec(`INSERT INTO auth.users SELECT gen_random_uuid(), demo_email,
+   '2026-10-01T00:00:00Z' FROM abastece.staff_members;
+   INSERT INTO auth.users VALUES
+    ('00000000-0000-4000-8000-000000000001','original1@example.test','2026-01-01Z'),
+    ('00000000-0000-4000-8000-000000000002','original2@example.test','2026-01-01Z');`);
+  await db.exec(readSql('12_revincular_cuentas.sql'));
+  const beforeAuth = await auth();
+  const structure = await catalog();
+  const staff = (await db.query('SELECT role, id FROM abastece.staff_members')).rows;
+  const actor = role => staff.find(s => s.role === role).id;
+  const order = await one("SELECT id, location_id FROM abastece.orders WHERE code = 'PED-DEMO-001'");
+
+  await t.test('Cambiar PED-DEMO-001 mediante aprobar, preparar y despachar reales', async () => {
+   const product = await one("SELECT id FROM abastece.products WHERE sku = 'INS-005'");
+   await db.query("SELECT abastece.fn_decidir_pedido($1,$2,'approve',$3,'Ajuste ficticio por stock')",
+    [actor('administrador'), order.id, JSON.stringify([{product_id: product.id, approved_qty: 1}])]);
+   const items = (await db.query('SELECT product_id, approved_qty AS prepared_qty FROM abastece.order_items WHERE order_id=$1', [order.id])).rows;
+   assert.equal((await one('SELECT abastece.fn_preparar($1,$2,$3,false) r',
+    [actor('bodega'), order.id, JSON.stringify(items.map(i => ({...i, prepared_qty: Number(i.prepared_qty)})))])).r.status, 'ready');
+   const vehicle = await one("SELECT id FROM abastece.vehicles WHERE code='VEH-DEMO-2'");
+   const route = (await one('SELECT abastece.fn_confirmar_ruta($1,$2,$3,$4,10,30,$5) r',
+    [actor('logistica'), vehicle.id, '2026-10-11', JSON.stringify([
+     {location_id: order.location_id, sequence: 1, order_ids: [order.id]}]), 'ortools_vrptw'])).r;
+   assert.equal((await one('SELECT abastece.fn_despachar($1,$2) r',
+    [actor('bodega'), route.shipments[0].id])).r.order_status, 'shipped');
+   assert.notDeepEqual(await rows(), counts);
+  });
+  await t.test('Reset vacía exactamente 27 tablas y conserva Auth, funciones, RLS y políticas', async () => {
+   await db.exec(readSql('12_reset_demo.sql'));
+   assert.deepEqual(await rows(), Object.fromEntries(Object.keys(counts).map(n => [n, 0])));
+   assert.deepEqual(await auth(), beforeAuth);
+   assert.deepEqual(await catalog(), structure);
+  });
+  await t.test('Recarga 9.377 filas, 703 ubicaciones y PED-DEMO-001 submitted', async () => {
+   await db.exec(readSql('03_datos_ficticios.sql'));
+   await db.exec(readSql('12_revincular_cuentas.sql'));
+   assert.deepEqual(await rows(), counts);
+   assert.equal(Object.values(counts).reduce((a,b) => a+b, 0), 9377);
+   assert.equal((await one("SELECT status FROM abastece.orders WHERE code='PED-DEMO-001'")).status, 'submitted');
+   assert.equal((await one('SELECT count(*)::integer n FROM abastece.staff_members WHERE auth_user_id IS NOT NULL')).n, 7);
+   assert.deepEqual(await auth(), beforeAuth);
+   assert.deepEqual(await catalog(), structure);
+   assert.equal((await one('SELECT max(analysis_sequence)::integer n FROM abastece.decision_logs')).n, 1);
+  });
+  await t.test('Re-vincular de nuevo no modifica ninguna fila ya vinculada', async () => {
+   const snapshot = (await db.query('SELECT *, xmin::text AS version FROM abastece.staff_members ORDER BY id')).rows;
+   await db.exec(readSql('12_revincular_cuentas.sql'));
+   assert.deepEqual((await db.query('SELECT *, xmin::text AS version FROM abastece.staff_members ORDER BY id')).rows, snapshot);
+   assert.deepEqual(await auth(), beforeAuth);
+  });
+  await t.test('No vincula correos sin confirmar ni sustituye un vínculo existente', async () => {
+   await db.exec('BEGIN');
+   try {
+    await db.query('UPDATE abastece.staff_members SET auth_user_id=NULL WHERE id=$1', [actor('auxiliar')]);
+    await db.query('UPDATE auth.users SET email_confirmed_at=NULL WHERE email=(SELECT demo_email FROM abastece.staff_members WHERE id=$1)', [actor('auxiliar')]);
+    // El cuerpo se usa dentro del ensayo local, sin sus BEGIN/COMMIT propios.
+    await db.exec(readSql('12_revincular_cuentas.sql').replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,''));
+    assert.equal((await one('SELECT auth_user_id FROM abastece.staff_members WHERE id=$1', [actor('auxiliar')])).auth_user_id, null);
+   } finally { await db.exec('ROLLBACK'); }
+   assert.deepEqual(await auth(), beforeAuth);
+  });
+  await t.test('Ensayo con ROLLBACK restaura datos e identidad', async () => {
+   await db.exec(readSql('12_reset_demo.sql').replace(/^COMMIT;$/m, 'ROLLBACK;'));
+   assert.deepEqual(await rows(), counts);
+   assert.deepEqual(await auth(), beforeAuth);
+   assert.equal((await one('SELECT max(analysis_sequence)::integer n FROM abastece.decision_logs')).n, 1);
+  });
+  for (const [name, setup, cleanup] of [
+   ['FK externa', 'CREATE TABLE public.external_ref(id uuid REFERENCES abastece.orders(id)); INSERT INTO public.external_ref SELECT id FROM abastece.orders LIMIT 1', 'DROP TABLE public.external_ref'],
+   ['tabla nueva no revisada', 'CREATE TABLE abastece.extra_table(id integer)', 'DROP TABLE abastece.extra_table'],
+   ['trigger TRUNCATE', `CREATE FUNCTION public.reset_trap() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'No debe ejecutarse'; END; $$;
+     CREATE TRIGGER reset_trap BEFORE TRUNCATE ON abastece.orders FOR EACH STATEMENT EXECUTE FUNCTION public.reset_trap()`, 'DROP TRIGGER reset_trap ON abastece.orders; DROP FUNCTION public.reset_trap()'],
+  ]) await t.test(`Rechaza ${name} sin borrar datos`, async () => {
+   await db.exec(setup);
+   try {
+    await assert.rejects(() => db.exec(readSql('12_reset_demo.sql')), /Reset cancelado/);
+    await db.exec('ROLLBACK');
+    assert.deepEqual(await rows(), counts);
+    assert.deepEqual(await auth(), beforeAuth);
+   } finally { await db.exec(cleanup); }
+  });
+  await t.test('Un segundo ciclo reset/seed/re-vincular conserva todos los recuentos', async () => {
+   for (const f of ['12_reset_demo.sql','03_datos_ficticios.sql','12_revincular_cuentas.sql']) await db.exec(readSql(f));
+   assert.deepEqual(await rows(), counts);
+   assert.deepEqual(await auth(), beforeAuth);
+   assert.deepEqual(await catalog(), structure);
+  });
+ } finally { await db.close(); }
+});
