@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.admin import router as admin_router
 from app.asistente import router as asistente_router
 from app.auth import Me, get_me
 from app.config import get_settings
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(asistente_router)
     app.include_router(envios_router)
     app.include_router(routes_router)
+    app.include_router(admin_router)
 
     @app.get("/me", operation_id="getMe", tags=["sistema"])
     def me(actual: Annotated[Me, Depends(get_me)]) -> dict[str, Any]:

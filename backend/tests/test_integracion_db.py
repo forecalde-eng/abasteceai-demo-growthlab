@@ -1,8 +1,8 @@
 """Pruebas contra un Postgres REAL con las funciones SQL de `db/` (sin simulaciones).
 
 Se saltan si no hay `TEST_DATABASE_URL`. Úsalas SOLO con una base desechable: crean pedidos y
-vinculan cuentas. Preparar la base (una vez): roles y `auth` ficticios + `db/01,02,07,03,08,09,11`;
-ver `backend/README.md`. Ejemplo:
+vinculan cuentas, y la última reinicia la demo. Preparar la base (una vez): roles y `auth`
+ficticios + `db/01,02,07,03,08,09,10,11`; ver `backend/README.md`. Ejemplo:
 
     export TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5544/abastece_test
     uv run pytest tests/test_integracion_db.py
@@ -10,6 +10,7 @@ ver `backend/README.md`. Ejemplo:
 
 import os
 import uuid
+from datetime import UTC, datetime
 
 import psycopg
 import pytest
@@ -264,3 +265,19 @@ def test_asistente_respeta_la_negacion(api):
     assert preguntar(api, "auxiliar", q).json()["citations"]
     excluido = preguntar(api, "auxiliar", q + " -recepción -diferencias -conteo").json()
     assert excluido["citations"] == []
+
+
+def test_reset_demo_vuelve_a_la_semilla(api):
+    """Último de la suite: borra lo que crearon las pruebas anteriores y recarga la semilla."""
+    oid = api.ords["PED-DEMO-001"]
+    d = {"decision": "approve", "reason": "ensayo"}
+    api.cliente.post(f"/orders/{oid}/decision", json=d, headers=api.h("administrador"))
+    assert api.cliente.post("/admin/reset-demo", headers=api.h("bodega")).status_code == 403
+    r = api.cliente.post("/admin/reset-demo", headers=api.h("administrador"))
+    assert r.status_code == 200, r.text
+    ref = datetime.fromisoformat(r.json()["reference_at"])
+    assert r.json()["ok"] is True and ref == datetime(2026, 10, 10, 22, tzinfo=UTC)
+    with psycopg.connect(URL) as c:
+        assert c.execute(
+            "SELECT status FROM abastece.orders WHERE code = 'PED-DEMO-001'"
+        ).fetchone() == ("submitted",)

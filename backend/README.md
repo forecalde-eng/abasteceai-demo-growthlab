@@ -23,7 +23,7 @@ contra las funciones SQL de `db/` en un Postgres de verdad. Se salta si no exist
 createdb abastece_test
 psql -v ON_ERROR_STOP=1 -d abastece_test -f tests/bd_desechable_stub.sql   # roles y auth ficticios
 for f in 01_esquema 02_reglas_y_accesos 07_integridad_preseed 03_datos_ficticios \
-         08_proveedor_openai 09_fn_pedidos 11_fn_envios; do
+         08_proveedor_openai 09_fn_pedidos 10_fn_bodega 11_fn_envios; do
   psql -v ON_ERROR_STOP=1 -d abastece_test -f ../db/$f.sql
 done
 export TEST_DATABASE_URL=postgresql://localhost/abastece_test
