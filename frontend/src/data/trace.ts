@@ -42,7 +42,8 @@ export function useOrderTrace(input: string) {
   const { data: session, isLoading, isError } = useSession();
   return useQuery<OrderTrace[]>({
     queryKey: [
-      "abastece",
+      // Preparación, despacho y recepción invalidan este prefijo heredado.
+      "bruno",
       "orderTrace",
       useMocks ? "mock" : "real",
       code,

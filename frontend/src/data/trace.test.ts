@@ -2,6 +2,7 @@ import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import type { Session as AuthSession } from "@supabase/supabase-js";
 import { orderTrace } from "@/mocks";
 import { getMockSession } from "./session.mock";
+import { QueryClient } from "@tanstack/react-query";
 const state = vi.hoisted(() => ({
   session: null as import("./useSession").Session | null,
 }));
@@ -59,6 +60,29 @@ afterEach(() => {
 });
 const options = (v: unknown) => v as Options;
 describe("C2 useOrderTrace", () => {
+  it.each(["preparación", "despacho", "recepción"])(
+    "la invalidación existente de %s refresca una trazabilidad ya cacheada",
+    async () => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { staleTime: 30000, retry: false } },
+      });
+      const query = options(layer.useOrderTrace("PED-DEMO-005"));
+      client.setQueryData(query.queryKey, [
+        { ...orderTrace[0], shipped_qty: 0 },
+      ]);
+      expect(client.getQueryState(query.queryKey)?.isInvalidated).toBe(false);
+      // Prefijos usados actualmente por las tres pantallas de escritura de Bruno.
+      await client.invalidateQueries({ queryKey: ["demo"] });
+      await client.invalidateQueries({ queryKey: ["bruno"] });
+      expect(client.getQueryState(query.queryKey)?.isInvalidated).toBe(true);
+      const fresh = await client.fetchQuery({
+        queryKey: query.queryKey,
+        queryFn: query.queryFn,
+      });
+      expect(fresh.find((row) => row.sku === "INS-002")?.shipped_qty).toBe(10);
+      client.clear();
+    },
+  );
   it("lee la vista real por código sin recalcular las seis cantidades", async () => {
     const rows = await options(layer.useOrderTrace(" PED-DEMO-005 ")).queryFn();
     const ins = rows.find((r) => r.sku === "INS-002")!;

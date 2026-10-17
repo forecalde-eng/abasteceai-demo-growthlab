@@ -175,7 +175,9 @@ export function useSession(): {
       if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
         void queryClient.cancelQueries({ queryKey: SESSION_QUERY_KEY });
         void queryClient.cancelQueries({ queryKey: ["abastece"] });
+        void queryClient.cancelQueries({ queryKey: ["bruno", "orderTrace"] });
         queryClient.removeQueries({ queryKey: ["abastece"] });
+        queryClient.removeQueries({ queryKey: ["bruno", "orderTrace"] });
         queryClient.setQueriesData({ queryKey: SESSION_QUERY_KEY }, null);
       }
       // Supabase recomienda diferir las llamadas async fuera del callback Auth.
