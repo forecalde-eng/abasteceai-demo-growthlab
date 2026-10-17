@@ -12,10 +12,21 @@ export type PrepareResult = {
   incident_code?: string | null;
   lines: {
     product_id: string; sku: string; approved_qty: number; prepared_qty: number;
-    lots: { lot_id: string; batch_code: string; expires_on: string | null; qty: number }[];
+    lots: { lot_id: string; batch_code: string; expires_on?: string | null; qty: number }[];
   }[];
 };
 export type PrepareService = (id: string, options: PrepareOptions) => Promise<PrepareResult>;
+
+/** Ayuda del formulario; no selecciona lotes ni calcula disponibilidad. */
+export function preparationQuantityError(value: string | undefined, approvedQty: number | null): string | null {
+  if (approvedQty === null || !Number.isFinite(approvedQty) || approvedQty < 0) return "Falta una cantidad aprobada válida para este insumo.";
+  if (value === undefined || value.trim() === "") return "Completa la cantidad preparada.";
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return "Preparado debe ser una cantidad válida mayor o igual a cero.";
+  if (amount > approvedQty) return "Preparado no puede superar lo aprobado.";
+  if (Math.abs(amount * 1000 - Math.round(amount * 1000)) > 0.000001) return "Preparado admite como máximo tres decimales.";
+  return null;
+}
 
 // La fecha sale del CSV oficial: no del reloj del dispositivo.
 export const referenceDate = metadata.trim().split(/\r?\n/)[1].split(',')[1].slice(0, 10);
@@ -75,8 +86,13 @@ export function validatePrepareResult(
     for (const lot of line.lots) {
       if (!lot || typeof lot.lot_id !== "string" || typeof lot.batch_code !== "string" ||
           !Number.isFinite(lot.qty) || lot.qty <= 0) return fail();
-      if (lot.expires_on !== null && (typeof lot.expires_on !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(lot.expires_on))) return fail();
-      if (lot.expires_on !== null && lot.expires_on < referenceDate) {
+      // C1 permite omitir expires_on. Ausencia no significa "sin vencimiento".
+      if (lot.expires_on !== undefined && lot.expires_on !== null) {
+        if (typeof lot.expires_on !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(lot.expires_on)) return fail();
+        const date = new Date(`${lot.expires_on}T00:00:00Z`);
+        if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== lot.expires_on) return fail();
+      }
+      if (lot.expires_on != null && lot.expires_on < referenceDate) {
         throw new Error("El servicio devolvió un lote vencido al reloj de demo. No se puede confirmar este plan.");
       }
       allocated += lot.qty;

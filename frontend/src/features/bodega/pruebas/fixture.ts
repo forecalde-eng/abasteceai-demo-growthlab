@@ -37,7 +37,7 @@ export function seedPreparation(code: "PED-DEMO-003" | "PED-DEMO-006" = "PED-DEM
 }
 
 export const calls: { id: string; dryRun: boolean }[] = [];
-export let mode: "normal" | "expired" | "error" = "normal";
+export let mode: "normal" | "expired" | "error" | "missing-expiry" = "normal";
 export function setMode(value: typeof mode) { mode = value; }
 
 // Se inyecta por props exclusivamente en preparar.html. No escribe en los fixtures.
@@ -55,6 +55,11 @@ export function controlledService(seed: ReturnType<typeof seedPreparation>): Pre
     if (mode === "expired") {
       const line = result.lines.find((row) => row.sku === "INS-002")!;
       line.lots[0] = { ...line.lots[0], lot_id: seed.expired.id, batch_code: seed.expired.batch_code, expires_on: seed.expired.expires_on };
+    }
+    if (mode === "missing-expiry") {
+      for (const line of result.lines) {
+        for (const lot of line.lots) delete lot.expires_on;
+      }
     }
     return result;
   };
