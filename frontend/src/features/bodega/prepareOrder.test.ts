@@ -5,7 +5,7 @@ vi.mock("@/data", () => ({
   get useMocks() { return auth.mocks; },
   getSupabaseClient: () => ({ auth: { getSession: auth.getSession } }),
 }));
-import { prepareOrder, validatePrepareResult } from "./prepareOrder";
+import { preparationQuantityError, prepareOrder, validatePrepareResult } from "./prepareOrder";
 import { seedPreparation } from "./pruebas/fixture";
 
 const seed = seedPreparation();
@@ -48,6 +48,22 @@ describe("adaptador prepareOrder (contrato C1)", () => {
 });
 
 describe("validación del resultado, sin recalcular FEFO", () => {
+  it("acepta expires_on omitido como permite C1, sin inventar una fecha", () => {
+    const response = structuredClone(seed.result);
+    delete response.lines[0].lots[0].expires_on;
+    expect(validatePrepareResult(response, seed.order, items, approved, true)).toBe(response);
+    expect(response.lines[0].lots[0]).not.toHaveProperty("expires_on");
+  });
+  it("acepta expires_on null como lote sin vencimiento", () => {
+    const response = structuredClone(seed.result);
+    response.lines[0].lots[0].expires_on = null;
+    expect(validatePrepareResult(response, seed.order, items, approved, true)).toBe(response);
+  });
+  it.each(["2027-02-29", "2026-10-32", "2026-13-01", "", "sin fecha"])("rechaza fecha inválida: %s", (date) => {
+    const response = structuredClone(seed.result);
+    response.lines[0].lots[0].expires_on = date;
+    expect(() => validatePrepareResult(response, seed.order, items, approved, true)).toThrow("no es válida");
+  });
   it("acepta la respuesta controlada con datos de PED-DEMO-003", () => {
     expect(validatePrepareResult(seed.result, seed.order, items, approved, true)).toBe(seed.result);
   });
@@ -64,5 +80,26 @@ describe("validación del resultado, sin recalcular FEFO", () => {
     if (kind === "duplicate") response.lines[1] = response.lines[0];
     if (kind === "amount") response.lines[0].lots[0].qty += 1;
     expect(() => validatePrepareResult(response, seed.order, items, approved, true)).toThrow("no es válida");
+  });
+});
+
+describe("cantidades del formulario de preparación", () => {
+  it.each([undefined, "", "   "])("no convierte una entrada vacía en cero: %s", (value) => {
+    expect(preparationQuantityError(value, 10)).toBe("Completa la cantidad preparada.");
+  });
+  it.each([null, NaN, Infinity, -1])("rechaza una aprobación ausente o inválida: %s", (approval) => {
+    expect(preparationQuantityError("1", approval)).toContain("aprobada válida");
+  });
+  it.each(["-1", "NaN", "Infinity", "texto"])("rechaza cantidades inválidas: %s", (value) => {
+    expect(preparationQuantityError(value, 10)).toContain("mayor o igual a cero");
+  });
+  it("explica una cantidad que supera la aprobada", () => {
+    expect(preparationQuantityError("11", 10)).toBe("Preparado no puede superar lo aprobado.");
+  });
+  it("explica una cantidad con más de tres decimales", () => {
+    expect(preparationQuantityError("0.0001", 10)).toContain("tres decimales");
+  });
+  it.each(["0", "0.001", "1.234", "10"])("acepta límites y precisión válidos: %s", (value) => {
+    expect(preparationQuantityError(value, 10)).toBeNull();
   });
 });

@@ -58,6 +58,14 @@ playwright-cli close
 
 Verifica vista previa sin confirmación, edición que invalida el plan, validación de cantidades, confirmación única, rechazo de lote vencido, mensaje de error y estados `preparing`/`ready` devueltos por el servicio controlado. No sustituye la prueba integrada de `fn_preparar`.
 
+### B-3.2 · Correcciones de integración (#69)
+
+- Cada cantidad inválida explica el bloqueo junto al insumo: campo vacío, negativo/no numérico, mayor que lo aprobado o más de tres decimales. `aria-invalid` y `aria-describedby` enlazan el aviso al campo. Al corregir se habilita una nueva vista previa, pero no se recupera el plan anterior.
+- C1 permite omitir `lots[].expires_on`. Esa respuesta se acepta y se muestra como **Sin fecha informada**, sin asumir que el lote no vence. `null` sigue mostrándose como **Sin vencimiento**. Una fecha informada debe existir en el calendario; si está vencida al reloj de demo, se sigue bloqueando la confirmación.
+- `preparar-browser-test.cjs` cubre estos casos y la recuperación del formulario, incluyendo 375 px. El modo `missing-expiry` del fixture aislado reproduce la respuesta sin fecha; no altera CSV ni reservas.
+
+Esta entrega es **Parte de #69**: no demuestra el ciclo I#3 real. Siguen pendientes las lecturas C2 de `@/data` y la ejecución integrada de las funciones SQL y los endpoints correspondientes. No se cierran #64 ni #69 con estas pruebas controladas.
+
 ## B-2.1 · Cola de bodega
 
 `ColaBodega.tsx` ocupa la ruta existente `/bodega/preparar`, con autorización de Bruno y revisión de Jorge. Mantiene el menú y los permisos originales (solo bodega) y permite abrir el detalle B-2.2 por código en la query.
