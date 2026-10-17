@@ -26,8 +26,9 @@ function resolve(identifier: string, byQr: boolean) {
   const pointIds = session.data?.points.map((point) => point.id) ?? [];
   const scoped = session.data?.role === "auxiliar" || session.data?.role === "supervisor";
   return useQuery<RecepcionEnvio | null>({
-    queryKey: ["bruno", "recepcion", byQr ? "qr" : "guia", identifier, session.data?.staff_id, session.data?.role, pointIds],
-    enabled: identifier.length > 0 && !!session.data && !session.isLoading,
+    queryKey: ["bruno", "recepcion", byQr ? "qr" : "guia", identifier, session.data?.staff_id, session.data?.role, pointIds, products.dataUpdatedAt],
+    // En real, las líneas se cruzan con el catálogo: esperar a que cargue o saldrían vacías.
+    enabled: identifier.length > 0 && !!session.data && !session.isLoading && (useMocks || products.isSuccess),
     retry: false,
     queryFn: async () => {
       if (!session.data) throw new Error("Cuenta sin perfil operativo.");
