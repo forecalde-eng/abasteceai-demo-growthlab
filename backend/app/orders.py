@@ -13,9 +13,8 @@ from fastapi import APIRouter, Depends, Header
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.ai.jev import proponer
+from app.ai.jev import modo_real, proponer
 from app.auth import Me, ensure_point, require_roles
-from app.config import get_settings
 from app.db import call_fn, fetch_one
 from app.errors import ApiError
 
@@ -99,11 +98,7 @@ def _sobre_previo(order_id: UUID) -> dict | None:
         " ORDER BY analysis_sequence DESC LIMIT 1",
         [order_id],
     )
-    if (
-        fila is None
-        or "error" in fila[3]
-        or (fila[0] == "mock") != (not get_settings().ai_calls_enabled)
-    ):
+    if fila is None or "error" in fila[3] or (fila[0] == "mock") != (not modo_real()):
         return None
     clave = ("provider", "model_version", "input_state", "response", "proposed_action", "status")
     # No se vuelve a contar el uso: no hubo llamada nueva.

@@ -46,7 +46,7 @@ def test_real_usa_typesafe_y_los_tokens_de_uso(monkeypatch):
     "error", [urllib.error.URLError("sin red"), TimeoutError(), ValueError("sin clave")]
 )
 def test_fallo_de_jev_es_el_sobre_de_timeout(monkeypatch, error):
-    ajustes(monkeypatch, real=True)
+    ajustes(monkeypatch, real=True, clave="k")
 
     def falla(_):
         raise error
@@ -57,9 +57,12 @@ def test_fallo_de_jev_es_el_sobre_de_timeout(monkeypatch, error):
     assert s["response"] == {"error": "timeout"} and s["status"] == "human_review"
 
 
-def test_real_sin_clave_es_fallo(monkeypatch):
+def test_real_sin_clave_de_typesafe_sigue_simulado(monkeypatch):
+    # AI_CALLS_ENABLED=true solo con la llave de OpenAI: el asistente es real, Jev no.
     ajustes(monkeypatch, real=True, clave="  ")
-    assert jev.proponer(ESTADO)["response"] == {"error": "timeout"}
+    monkeypatch.setattr(jev, "_llamar_jev", lambda _: pytest.fail("no debe llamar a TypeSafe"))
+    s = jev.proponer(ESTADO)
+    assert (s["provider"], s["input_tokens"], s["proposed_action"]) == ("mock", 0, "urgent")
 
 
 def test_respuesta_manipulada_se_rechaza(monkeypatch):
@@ -86,3 +89,12 @@ def test_uso_mal_formado_va_por_el_fallo(monkeypatch, uso):
     resp = {**copy.deepcopy(jev._SIMULADO["response"]), "usage": uso}
     monkeypatch.setattr(jev, "_llamar_jev", lambda _: resp)
     assert jev.proponer(ESTADO)["response"] == {"error": "timeout"}
+
+
+@pytest.mark.parametrize(
+    ("real", "clave", "esperado"), [(False, "k", False), (True, "", False), (True, "k", True)]
+)
+def test_modo_real_exige_ia_activa_y_llave(monkeypatch, real, clave, esperado):
+    # orders._sobre_previo usa el mismo criterio para reutilizar el análisis anterior.
+    ajustes(monkeypatch, real=real, clave=clave)
+    assert jev.modo_real() is esperado

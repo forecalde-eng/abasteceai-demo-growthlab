@@ -79,10 +79,16 @@ def _llamar_jev(solicitud: dict) -> dict:
         return json.loads(r.read())
 
 
+def modo_real() -> bool:
+    """Jev llama a TypeSafe solo con la IA activa Y su llave; si no, responde simulado."""
+    cfg = get_settings()
+    return cfg.ai_calls_enabled and bool(cfg.typesafe_api_key.strip())
+
+
 def proponer(estado: dict) -> dict:
     """Sobre `p_proposal` para este `estado` (código, punto y observaciones del pedido)."""
     solicitud = {"model": MODELO, "state": estado, "questions": _SIMULADO["questions"]}
-    real = get_settings().ai_calls_enabled
+    real = modo_real()
     try:
         respuesta = _llamar_jev(solicitud) if real else _SIMULADO["response"]
         validar_respuesta(solicitud, respuesta)

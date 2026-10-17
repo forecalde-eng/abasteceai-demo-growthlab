@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
@@ -217,7 +216,7 @@ RESULTADO = {
 
 def analizar(monkeypatch, fila, me=AUX, sobre=SOBRE, resultado=RESULTADO, previo=None, real=False):
     visto = {"jev": [], "fn": []}
-    monkeypatch.setattr(orders, "get_settings", lambda: SimpleNamespace(ai_calls_enabled=real))
+    monkeypatch.setattr(orders, "modo_real", lambda: real)
     monkeypatch.setattr(orders, "fetch_one", lambda q, _: previo if "decision_logs" in q else fila)
     monkeypatch.setattr(orders, "proponer", lambda e: visto["jev"].append(e) or sobre)
     monkeypatch.setattr(orders, "call_fn", lambda *a: visto["fn"].append(a) or resultado)
