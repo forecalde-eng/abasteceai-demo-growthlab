@@ -25,10 +25,10 @@ function resolve(identifier: string, byQr: boolean) {
   const products = useProducts();
   const pointIds = session.data?.points.map((point) => point.id) ?? [];
   const scoped = session.data?.role === "auxiliar" || session.data?.role === "supervisor";
-  return useQuery<RecepcionEnvio | null>({
+  const query = useQuery<RecepcionEnvio | null>({
     queryKey: ["bruno", "recepcion", byQr ? "qr" : "guia", identifier, session.data?.staff_id, session.data?.role, pointIds, products.dataUpdatedAt],
-    // En real, las líneas se cruzan con el catálogo: esperar a que cargue o saldrían vacías.
-    enabled: identifier.length > 0 && !!session.data && !session.isLoading && (useMocks || products.isSuccess),
+    // En real, las líneas se cruzan con el catálogo: sin catálogo cargado, esperar antes de consultar.
+    enabled: identifier.length > 0 && !!session.data && !session.isLoading && (useMocks || products.data !== undefined),
     retry: false,
     queryFn: async () => {
       if (!session.data) throw new Error("Cuenta sin perfil operativo.");
@@ -67,6 +67,23 @@ function resolve(identifier: string, byQr: boolean) {
       };
     },
   });
+  if (useMocks) return query;
+  // Un catálogo caído no es "envío no encontrado": el error se muestra con reintento que
+  // vuelve a pedir el catálogo y, con su nueva clave de caché, reevalúa el envío.
+  const catalogError = products.isError
+    ? products.error ?? new Error("No se pudo cargar el catálogo de insumos.")
+    : null;
+  return {
+    ...query,
+    data: catalogError ? undefined : query.data,
+    isLoading: query.isLoading || (!catalogError && products.isLoading),
+    isError: query.isError || !!catalogError,
+    error: query.error ?? catalogError,
+    refetch: async () => {
+      await products.refetch();
+      return query.refetch();
+    },
+  };
 }
 
 export function useShipmentByQr(qrToken: string) {
