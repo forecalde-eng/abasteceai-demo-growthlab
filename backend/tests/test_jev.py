@@ -46,7 +46,7 @@ def test_real_usa_typesafe_y_los_tokens_de_uso(monkeypatch):
     "error", [urllib.error.URLError("sin red"), TimeoutError(), ValueError("sin clave")]
 )
 def test_fallo_de_jev_es_el_sobre_de_timeout(monkeypatch, error):
-    ajustes(monkeypatch, real=True)
+    ajustes(monkeypatch, real=True, clave="k")
 
     def falla(_):
         raise error
@@ -57,9 +57,12 @@ def test_fallo_de_jev_es_el_sobre_de_timeout(monkeypatch, error):
     assert s["response"] == {"error": "timeout"} and s["status"] == "human_review"
 
 
-def test_real_sin_clave_es_fallo(monkeypatch):
+def test_real_sin_clave_de_typesafe_sigue_simulado(monkeypatch):
+    # AI_CALLS_ENABLED=true solo con la llave de OpenAI: el asistente es real, Jev no.
     ajustes(monkeypatch, real=True, clave="  ")
-    assert jev.proponer(ESTADO)["response"] == {"error": "timeout"}
+    monkeypatch.setattr(jev, "_llamar_jev", lambda _: pytest.fail("no debe llamar a TypeSafe"))
+    s = jev.proponer(ESTADO)
+    assert (s["provider"], s["input_tokens"], s["proposed_action"]) == ("mock", 0, "urgent")
 
 
 def test_respuesta_manipulada_se_rechaza(monkeypatch):

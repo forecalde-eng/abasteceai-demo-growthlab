@@ -82,7 +82,9 @@ def _llamar_jev(solicitud: dict) -> dict:
 def proponer(estado: dict) -> dict:
     """Sobre `p_proposal` para este `estado` (código, punto y observaciones del pedido)."""
     solicitud = {"model": MODELO, "state": estado, "questions": _SIMULADO["questions"]}
-    real = get_settings().ai_calls_enabled
+    cfg = get_settings()
+    # Sin llave de TypeSafe, Jev sigue simulado aunque la IA real esté activa para el asistente.
+    real = cfg.ai_calls_enabled and bool(cfg.typesafe_api_key.strip())
     try:
         respuesta = _llamar_jev(solicitud) if real else _SIMULADO["response"]
         validar_respuesta(solicitud, respuesta)
