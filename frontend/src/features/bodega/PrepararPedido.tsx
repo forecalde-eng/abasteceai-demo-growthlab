@@ -1,4 +1,4 @@
-import { useSession, useMocks } from "@/data";
+import { useSession } from "@/data";
 import { Form, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeftIcon, PackageSearchIcon } from "lucide-react";
 import { useOrder, useOrders } from "@/data";
@@ -16,7 +16,6 @@ export function PrepararPedido() {
   // Estados de la pantalla, de mayor a menor prioridad. Cada uno tiene un mensaje propio.
   const sessionPending = session.isLoading;
   const sessionDenied = session.isError || session.data?.role !== "bodega";
-  const realReadMissing = !useMocks;
   const noCodeEntered = !code;
   const pedidoLoading = orders.isLoading || (!!order && detail.isLoading);
   const pedidoFailed = orders.isError || detail.isError;
@@ -25,7 +24,6 @@ export function PrepararPedido() {
   let content;
   if (sessionPending) content = <LoadingState />;
   else if (sessionDenied) content = <ErrorState description="Necesitas una sesión operativa de bodega." />;
-  else if (realReadMissing) content = <ErrorState description="La lectura real del detalle aún no está disponible. Falta conectar useOrder de la capa de datos." />;
   else if (noCodeEntered) content = <EmptyState title="Selecciona un pedido" description="Escribe el código del pedido aprobado o en preparación." />;
   else if (pedidoLoading) content = <LoadingState label="Cargando pedido…" />;
   else if (pedidoFailed) content = <ErrorState description="No se pudo cargar el pedido." onRetry={() => { void orders.refetch(); void detail.refetch(); }} />;
