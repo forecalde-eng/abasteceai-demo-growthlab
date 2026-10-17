@@ -69,6 +69,22 @@ describe("C2 escrituras FastAPI", () => {
     );
     expect(JSON.parse(String(init?.body))).toHaveProperty("items", body.items);
   });
+  it("omite opcionales null del formulario para respetar CreateOrderRequest", async () => {
+    await api.createOrder({
+      location_id: "punto",
+      cycle_month: "2026-10-01",
+      order_type: "regular",
+      items: [{ product_id: "producto", requested_qty: 1 }],
+      idempotency_key: "clave",
+      related_order_id: null,
+      reason: null,
+      observations: null,
+    });
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+    expect(body).not.toHaveProperty("reason");
+    expect(body).not.toHaveProperty("related_order_id");
+    expect(body).not.toHaveProperty("observations");
+  });
   it("análisis y entrega usan sus endpoints sin cuerpo inventado", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       new Response(

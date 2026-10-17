@@ -41,8 +41,19 @@ const validAnalysis = (value: unknown) =>
 
 export async function createOrder(input: NuevoPedido): Promise<OrderResult> {
   if (useMocks) return (await import("./mock-state")).mockCreate(input);
-  const { idempotency_key, ...body } = input;
-  return postBackend("/orders", body, idempotency_key, validOrder);
+  // El formulario legado usa null; OpenAPI permite omitir estos campos, no null.
+  const body = {
+    location_id: input.location_id,
+    cycle_month: input.cycle_month,
+    order_type: input.order_type,
+    items: input.items,
+    ...(input.related_order_id != null
+      ? { related_order_id: input.related_order_id }
+      : {}),
+    ...(input.reason != null ? { reason: input.reason } : {}),
+    ...(input.observations != null ? { observations: input.observations } : {}),
+  };
+  return postBackend("/orders", body, input.idempotency_key, validOrder);
 }
 export async function analyzeOrder(id: string): Promise<AnalysisResult> {
   if (useMocks) return (await import("./mock-state")).mockAnalyze(id);
