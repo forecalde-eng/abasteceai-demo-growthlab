@@ -92,6 +92,146 @@ test('D-0.1: proveedor OpenAI y restricciones de decision_logs', async t => {
  }
 });
 
+test('D-2.1: fn_confirmar_ruta (POST /routes/confirm)', async t => {
+ const db = new PGlite();
+ try {
+  await db.exec(`
+   CREATE ROLE anon;
+   CREATE ROLE authenticated;
+   CREATE ROLE service_role BYPASSRLS;
+   CREATE SCHEMA auth;
+   CREATE TABLE auth.users(id uuid PRIMARY KEY);
+   CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
+    'SELECT nullif(current_setting(''request.jwt.claim.sub'',true),'''')::uuid';
+   REVOKE EXECUTE ON FUNCTION auth.uid() FROM PUBLIC, anon, authenticated;
+   GRANT USAGE ON SCHEMA auth TO authenticated;
+   GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+  `);
+  for (const file of [
+   '01_esquema.sql', '02_reglas_y_accesos.sql', '07_integridad_preseed.sql',
+   '03_datos_ficticios.sql', '08_proveedor_openai.sql', '09_fn_pedidos.sql',
+   '11_fn_envios.sql',
+  ]) await db.exec(readSql(file));
+
+  const staff = (await db.query('SELECT id, role FROM abastece.staff_members')).rows;
+  const logistics = staff.find(s => s.role === 'logistica').id;
+  const auxiliary = staff.find(s => s.role === 'auxiliar').id;
+  const vehicle = (await db.query("SELECT id FROM abastece.vehicles WHERE code = 'VEH-DEMO-2'")).rows[0].id;
+  const order = (await db.query("SELECT id, location_id FROM abastece.orders WHERE code = 'PED-DEMO-007'")).rows[0];
+  const stop = {location_id: order.location_id, sequence: 1,
+   planned_arrival: '2026-10-11T14:00:00Z', order_ids: [order.id]};
+  const confirm = (overrides = {}) => {
+   const p = {staff: logistics, vehicle, date: '2026-10-11', stops: [stop],
+    km: 12.5, minutes: 40, method: 'ortools_vrptw', ...overrides};
+   return db.query(`SELECT abastece.fn_confirmar_ruta(
+    $1::uuid, $2::uuid, $3::date, $4::jsonb, $5::numeric, $6::numeric, $7::text
+   ) AS result`, [p.staff, p.vehicle, p.date, JSON.stringify(p.stops), p.km,
+    p.minutes, p.method]);
+  };
+  const counts = async () => (await db.query(`
+   SELECT (SELECT count(*)::integer FROM abastece.route_plans) AS routes,
+          (SELECT count(*)::integer FROM abastece.route_stops) AS stops,
+          (SELECT count(*)::integer FROM abastece.shipments) AS shipments,
+          (SELECT count(*)::integer FROM abastece.audit_events) AS audits
+  `)).rows[0];
+  const before = await counts();
+  const reject = async (options, code) => {
+   await assert.rejects(() => confirm(options), {code});
+   assert.deepEqual(await counts(), before);
+  };
+
+  await t.test('Solo service_role tiene EXECUTE', async () => {
+   const result = (await db.query(`SELECT
+    has_function_privilege('service_role',
+     'abastece.fn_confirmar_ruta(uuid,uuid,date,jsonb,numeric,numeric,text)', 'EXECUTE') AS server,
+    has_function_privilege('anon',
+     'abastece.fn_confirmar_ruta(uuid,uuid,date,jsonb,numeric,numeric,text)', 'EXECUTE') AS anon,
+    has_function_privilege('authenticated',
+     'abastece.fn_confirmar_ruta(uuid,uuid,date,jsonb,numeric,numeric,text)', 'EXECUTE') AS client
+   `)).rows[0];
+   assert.deepEqual(result, {server: true, anon: false, client: false});
+  });
+  await t.test('Rechaza rol distinto de logística', () => reject({staff: auxiliary}, 'P0403'));
+  await t.test('Rechaza vehículo inexistente', () => reject({vehicle: '00000000-0000-0000-0000-000000000000'}, 'P0409'));
+  await t.test('Rechaza métricas y método inválidos', async () => {
+   await reject({km: -1}, 'P0422');
+   await reject({minutes: -1}, 'P0422');
+   await reject({method: 'manual'}, 'P0422');
+   await reject({stops: []}, 'P0422');
+   await reject({stops: {}}, 'P0422');
+  });
+  await t.test('Rechaza secuencias, puntos y pedidos repetidos', async () => {
+   await reject({stops: [{...stop, sequence: 2}]}, 'P0422');
+   await reject({stops: [stop, {...stop, sequence: 2}]}, 'P0422');
+   await reject({stops: [{...stop, order_ids: [order.id, order.id]}]}, 'P0409');
+   await reject({stops: [{...stop, order_ids: ['bad-uuid']}]}, 'P0422');
+  });
+  await t.test('Rechaza pedido no ready, punto ajeno y ventana incumplida', async () => {
+   const submitted = (await db.query("SELECT id FROM abastece.orders WHERE status = 'submitted' LIMIT 1")).rows[0].id;
+   await reject({stops: [{...stop, order_ids: [submitted]}]}, 'P0409');
+   const q6 = (await db.query("SELECT id FROM abastece.locations WHERE code = 'Q-006'")).rows[0].id;
+   await reject({stops: [{...stop, location_id: q6}]}, 'P0409');
+   await reject({stops: [{...stop, planned_arrival: '2026-10-11T22:00:00Z'}]}, 'P0409');
+  });
+  await t.test('Rechaza capacidad excedida', async () => {
+   await db.query('UPDATE abastece.vehicles SET capacity_kg = 0.01 WHERE id = $1', [vehicle]);
+   await reject({}, 'P0409');
+   await db.query('UPDATE abastece.vehicles SET capacity_kg = 350 WHERE id = $1', [vehicle]);
+  });
+  await t.test('Un fallo durante INSERT de envío revierte plan y paradas', async () => {
+   await db.exec(`
+    CREATE FUNCTION abastece.fail_shipment_test() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'fallo local de prueba'; END; $$;
+    CREATE TRIGGER fail_shipment_test BEFORE INSERT ON abastece.shipments
+    FOR EACH ROW EXECUTE FUNCTION abastece.fail_shipment_test();
+   `);
+   await assert.rejects(() => confirm());
+   assert.deepEqual(await counts(), before);
+   await db.exec('DROP TRIGGER fail_shipment_test ON abastece.shipments; DROP FUNCTION abastece.fail_shipment_test();');
+  });
+  await t.test('Crea plan, parada, envío, guía y QR coherentes', async () => {
+   const result = (await confirm()).rows[0].result;
+   assert.equal(result.code, 'RUTA-DEMO-3');
+   assert.equal(result.status, 'approved');
+   assert.equal(result.shipments.length, 1);
+   assert.equal(result.shipments[0].code, 'ENV-DEMO-010');
+   assert.equal(result.shipments[0].status, 'created');
+   assert.equal(result.shipments[0].order_status, 'ready');
+   assert.equal(result.shipments[0].guide_code, 'GUIA-DEMO-010');
+   assert.equal(result.shipments[0].order_id, order.id);
+   const rows = (await db.query(`SELECT r.status, r.matrix_source, r.planning_method,
+     r.approved_by, s.sequence, s.location_id, h.mode, h.status AS shipment_status,
+     h.order_id, h.guide_code, h.qr_token IS NOT NULL AS has_qr,
+     a.occurred_at = m.reference_at AS demo_clock
+    FROM abastece.route_plans r
+    JOIN abastece.route_stops s ON s.route_id = r.id
+    JOIN abastece.shipments h ON h.route_id = r.id
+    JOIN abastece.audit_events a ON a.entity_id = r.id
+    CROSS JOIN abastece.demo_metadata m
+    WHERE r.id = $1`, [result.route_plan_id])).rows;
+   assert.equal(rows.length, 1);
+   assert.equal(rows[0].approved_by, logistics);
+   assert.equal(rows[0].location_id, order.location_id);
+   assert.equal(rows[0].order_id, order.id);
+   assert.equal(rows[0].has_qr, true);
+   assert.equal(rows[0].demo_clock, true);
+   assert.equal(rows[0].status, 'approved');
+   assert.equal(rows[0].matrix_source, 'synthetic');
+   assert.equal(rows[0].planning_method, 'ortools_vrptw');
+   assert.equal(rows[0].shipment_status, 'created');
+   assert.equal(rows[0].mode, 'own');
+   assert.equal(rows[0].sequence, 1);
+  });
+  await t.test('Repetir no crea un segundo envío', async () => {
+   const saved = await counts();
+   await assert.rejects(() => confirm(), {code: 'P0409'});
+   assert.deepEqual(await counts(), saved);
+  });
+ } finally {
+  await db.close();
+ }
+});
+
 test('D-1.1: fn_crear_pedido (POST /orders)', async t => {
  const db = new PGlite();
  try {
