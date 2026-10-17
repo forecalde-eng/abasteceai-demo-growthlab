@@ -1,7 +1,7 @@
 -- D-2.1 (#33): confirma una propuesta de ruta recibida del backend.
 -- El cálculo de rutas se hace fuera de SQL; esta función valida y persiste
 -- el plan, sus paradas y un envío propio por pedido dentro de una transacción.
-CREATE FUNCTION abastece.fn_confirmar_ruta(
+CREATE OR REPLACE FUNCTION abastece.fn_confirmar_ruta(
  p_staff uuid, p_vehicle uuid, p_dispatch_date date, p_stops jsonb,
  p_km numeric, p_minutes numeric, p_method text
 ) RETURNS jsonb
