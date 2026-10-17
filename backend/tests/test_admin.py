@@ -165,3 +165,14 @@ def test_reset_concurrente_da_409_antes_de_mirar_el_perfil(monkeypatch):
     finally:
         admin._en_curso.release()
     assert r.status_code == 409
+
+
+def test_el_409_de_mantenimiento_lleva_cors(monkeypatch):
+    c = cliente(monkeypatch, "administrador")
+    origen = get_settings().cors_list[0]
+    admin._en_curso.acquire()
+    try:
+        r = c.post("/orders", json={}, headers={**H, "Origin": origen})
+    finally:
+        admin._en_curso.release()
+    assert r.status_code == 409 and r.headers.get("access-control-allow-origin") == origen

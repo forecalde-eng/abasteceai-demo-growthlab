@@ -26,12 +26,6 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(title="AbasteceAI API (DEMO FICTICIA)", version="1.0.0", lifespan=lifespan)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=get_settings().cors_list,
-        allow_methods=["GET", "POST"],
-        allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
-    )
 
     @app.middleware("http")
     async def mantenimiento(request: Request, call_next):
@@ -47,6 +41,14 @@ def create_app() -> FastAPI:
             return await call_next(request)
         finally:
             admin.terminar_escritura()
+
+    # CORS se registra después: así envuelve también al 409 de mantenimiento.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=get_settings().cors_list,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
+    )
 
     @app.exception_handler(ApiError)
     async def api_error(_: Request, exc: ApiError) -> JSONResponse:
