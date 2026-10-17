@@ -79,6 +79,14 @@ export function ConteoRecepcion({ envio, service = submitReceipt }: {
           <div className="grid gap-4">
             {envio.items.map((item) => {
               const counted = Number(values[item.id]?.counted ?? "");
+              const accepted = Number(values[item.id]?.accepted ?? "");
+              const countedError = !Number.isFinite(counted) || counted < 0
+                ? "Contado debe ser una cantidad válida mayor o igual a cero."
+                : counted > item.shipped_qty ? "Contado no puede superar lo enviado." : null;
+              const acceptedError = !Number.isFinite(accepted) || accepted < 0
+                ? "Aceptado debe ser una cantidad válida mayor o igual a cero."
+                : accepted > counted ? "Aceptado no puede superar contado." : null;
+              const errorId = `quantity-error-${item.id}`;
               const shortage = Number.isFinite(counted) ? item.shipped_qty - counted : 0;
               return (
                 <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 border-b border-border pb-3 last:border-0">
@@ -90,14 +98,15 @@ export function ConteoRecepcion({ envio, service = submitReceipt }: {
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col">
                       <Label htmlFor={`counted-${item.id}`} className="text-xs">Contado</Label>
-                      <Input id={`counted-${item.id}`} aria-label={`Contado ${item.product.sku}`} type="number" min="0" max={item.shipped_qty} step="1" inputMode="numeric" value={values[item.id]?.counted ?? ""} onChange={(event) => setField(item.id, "counted", event.target.value)} disabled={busy || result !== null} className="w-20 text-right tabular-nums" />
+                      <Input id={`counted-${item.id}`} aria-label={`Contado ${item.product.sku}`} aria-invalid={!!countedError} aria-describedby={countedError ? errorId : undefined} type="number" min="0" max={item.shipped_qty} step="1" inputMode="numeric" value={values[item.id]?.counted ?? ""} onChange={(event) => setField(item.id, "counted", event.target.value)} disabled={busy || result !== null} className="w-20 text-right tabular-nums" />
                     </div>
                     <div className="flex flex-col">
                       <Label htmlFor={`accepted-${item.id}`} className="text-xs">Aceptado</Label>
-                      <Input id={`accepted-${item.id}`} aria-label={`Aceptado ${item.product.sku}`} type="number" min="0" max={counted || 0} step="1" inputMode="numeric" value={values[item.id]?.accepted ?? ""} onChange={(event) => setField(item.id, "accepted", event.target.value)} disabled={busy || result !== null} className="w-20 text-right tabular-nums" />
+                      <Input id={`accepted-${item.id}`} aria-label={`Aceptado ${item.product.sku}`} aria-invalid={!!acceptedError} aria-describedby={acceptedError ? errorId : undefined} type="number" min="0" max={counted || 0} step="1" inputMode="numeric" value={values[item.id]?.accepted ?? ""} onChange={(event) => setField(item.id, "accepted", event.target.value)} disabled={busy || result !== null} className="w-20 text-right tabular-nums" />
                     </div>
                     {shortage > 0 ? <span className={`rounded border px-2 py-1 text-xs ${TONO.problema}`}>Faltante {quantity.format(shortage)}</span> : null}
                   </div>
+                  {countedError || acceptedError ? <p id={errorId} aria-live="polite" className="col-span-2 text-sm text-destructive">{[countedError, acceptedError].filter(Boolean).join(" ")}</p> : null}
                 </div>
               );
             })}
