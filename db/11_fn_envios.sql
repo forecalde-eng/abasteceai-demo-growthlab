@@ -412,3 +412,70 @@ $$;
 
 GRANT EXECUTE ON FUNCTION abastece.fn_despachar(uuid,uuid) TO service_role;
 REVOKE EXECUTE ON FUNCTION abastece.fn_despachar(uuid,uuid) FROM PUBLIC, anon, authenticated;
+
+-- D-2.4 (#36), HU-2.3: entrega sin conteo. No mueve ni reserva inventario.
+CREATE OR REPLACE FUNCTION abastece.fn_marcar_entregado(p_staff uuid, p_shipment uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+ v_role text;
+ v_order_id uuid;
+ v_order abastece.orders%ROWTYPE;
+ v_shipment abastece.shipments%ROWTYPE;
+ v_reference_at timestamptz;
+BEGIN
+ SELECT role INTO v_role FROM abastece.staff_members WHERE id = p_staff AND active;
+ IF v_role IS DISTINCT FROM 'supervisor' THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'Solo un supervisor activo puede marcar entrega';
+ END IF;
+ SELECT order_id INTO v_order_id FROM abastece.shipments WHERE id = p_shipment;
+ IF NOT FOUND THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0404', MESSAGE = 'Envío no encontrado';
+ END IF;
+ -- Orden compartido con despacho y recepción: pedido antes de envío.
+ SELECT * INTO v_order FROM abastece.orders WHERE id = v_order_id FOR UPDATE;
+ SELECT * INTO v_shipment FROM abastece.shipments WHERE id = p_shipment FOR UPDATE;
+ IF NOT FOUND THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0404', MESSAGE = 'Envío no encontrado';
+ END IF;
+ IF v_shipment.order_id IS DISTINCT FROM v_order.id THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'El pedido del envío cambió';
+ END IF;
+ IF NOT EXISTS (SELECT 1 FROM abastece.point_assignments
+  WHERE staff_id = p_staff AND location_id = v_shipment.location_id) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'Punto no asignado al supervisor';
+ END IF;
+ -- Autorizar antes de devolver el resultado idempotente, incluso para históricos.
+ IF v_shipment.status <> 'delivered_unchecked' THEN
+  IF v_shipment.status <> 'dispatched' OR v_order.status <> 'shipped' THEN
+   RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Envío o pedido no apto para marcar entrega';
+  END IF;
+  SELECT reference_at INTO STRICT v_reference_at FROM abastece.demo_metadata WHERE id;
+  IF v_shipment.dispatched_at IS NULL OR v_shipment.dispatched_at > v_reference_at OR
+     v_shipment.delivered_at IS NOT NULL OR
+     EXISTS (SELECT 1 FROM abastece.receipts WHERE shipment_id = p_shipment) THEN
+   RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Fechas o recepción incompatibles con marcar entrega';
+  END IF;
+  UPDATE abastece.shipments SET status = 'delivered_unchecked', delivered_at = v_reference_at
+  WHERE id = p_shipment;
+  UPDATE abastece.orders SET status = 'delivered_unchecked' WHERE id = v_order.id;
+  INSERT INTO abastece.audit_events
+   (actor_id, location_id, entity_type, entity_id, action, before_state, after_state, occurred_at)
+  VALUES (p_staff, v_shipment.location_id, 'shipment', p_shipment, 'shipment_delivered',
+   pg_catalog.jsonb_build_object('status', v_shipment.status, 'order_status', v_order.status),
+   pg_catalog.jsonb_build_object('status', 'delivered_unchecked', 'order_id', v_order.id,
+    'order_status', 'delivered_unchecked', 'delivered_at', v_reference_at), v_reference_at);
+  v_shipment.status := 'delivered_unchecked';
+  v_order.status := 'delivered_unchecked';
+ END IF;
+ RETURN pg_catalog.jsonb_build_object('id', v_shipment.id, 'code', v_shipment.code,
+  'status', v_shipment.status, 'order_id', v_order.id,
+  'order_status', v_order.status, 'guide_code', v_shipment.guide_code);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION abastece.fn_marcar_entregado(uuid,uuid) TO service_role;
+REVOKE EXECUTE ON FUNCTION abastece.fn_marcar_entregado(uuid,uuid) FROM PUBLIC, anon, authenticated;
