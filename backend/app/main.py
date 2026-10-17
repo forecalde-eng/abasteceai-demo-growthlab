@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app import admin
 from app.admin import router as admin_router
 from app.asistente import router as asistente_router
 from app.auth import Me, get_me
@@ -31,6 +32,20 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST"],
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
     )
+
+    @app.middleware("http")
+    async def mantenimiento(request: Request, call_next):
+        # Durante el reset ninguna otra escritura (todas son POST) puede colarse entre sus pasos.
+        if (
+            request.method == "POST"
+            and admin.reset_en_curso()
+            and request.url.path != "/admin/reset-demo"
+        ):
+            error = ApiError(
+                409, "CONFLICT", "Reinicio de la demo en curso; intenta en unos segundos."
+            )
+            return JSONResponse(error.body(), status_code=409)
+        return await call_next(request)
 
     @app.exception_handler(ApiError)
     async def api_error(_: Request, exc: ApiError) -> JSONResponse:

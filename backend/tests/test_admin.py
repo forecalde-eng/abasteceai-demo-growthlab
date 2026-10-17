@@ -35,3 +35,15 @@ def test_dos_resets_a_la_vez_dan_409(monkeypatch):
 
 def test_los_archivos_del_reset_existen():
     assert all((admin.DB / p).is_file() for p in [*admin.PASOS, "conteos_datos.json"])
+
+
+def test_durante_el_reset_se_rechazan_las_escrituras(monkeypatch):
+    c = cliente(monkeypatch, "administrador")
+    admin._en_curso.acquire()
+    try:
+        r = c.post("/orders", json={}, headers=H)
+        salud = c.get("/health")
+    finally:
+        admin._en_curso.release()
+    assert r.status_code == 409 and r.json()["error"]["code"] == "CONFLICT"
+    assert salud.status_code == 200

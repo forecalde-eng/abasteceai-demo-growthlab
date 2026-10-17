@@ -24,6 +24,10 @@ PASOS = ["12_reset_demo.sql", "03_datos_ficticios.sql", "12_revincular_cuentas.s
 _en_curso = threading.Lock()
 
 
+def reset_en_curso() -> bool:
+    return _en_curso.locked()
+
+
 def ejecutar_reset(url: str) -> str:
     """Corre los tres archivos y verifica la semilla. Devuelve `reference_at` en ISO."""
     conteos: dict[str, int] = json.loads((DB / "conteos_datos.json").read_text(encoding="utf-8"))
