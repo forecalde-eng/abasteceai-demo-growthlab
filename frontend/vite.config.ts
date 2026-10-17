@@ -27,6 +27,16 @@ export default defineConfig(({ mode }) => ({
     // La recepción móvil (spec §9) se prueba desde el teléfono por la IP LAN.
     host: true,
   },
+  build: {
+    rollupOptions: {
+      input: {
+        app: fileURLToPath(new URL("./index.html", import.meta.url)),
+        agenteCompras: fileURLToPath(
+          new URL("./agente-compras.html", import.meta.url),
+        ),
+      },
+    },
+  },
   test: {
     // generate.test.mjs es de node:test (no de vitest) y vive con los generadores de mocks.
     exclude: [...configDefaults.exclude, "src/mocks/**"],
