@@ -1301,7 +1301,7 @@ test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
    assert.equal(mismatches, 0);
    assert.equal((await db.query(`SELECT a.occurred_at = m.reference_at AS demo_clock
     FROM abastece.audit_events a CROSS JOIN abastece.demo_metadata m
-    WHERE a.entity_id = $1 ORDER BY a.id DESC LIMIT 1`, [order.id])).rows[0].demo_clock, true);
+    WHERE a.entity_id = $1 AND a.action = 'order_prepare'`, [order.id])).rows[0].demo_clock, true);
   });
   await t.test('Repetir sin nuevo stock no duplica reservas ni auditoría', async () => {
    const before = await snapshot();
@@ -1313,6 +1313,26 @@ test('D-2.2: fn_preparar (POST /orders/{id}/prepare)', async t => {
    reduced.find(item => item.product_id === partial.product_id).prepared_qty = 0;
    await assert.rejects(() => call(order.id, reduced, false), {code: 'P0422'});
    assert.deepEqual(await snapshot(), before);
+  });
+  await t.test('Reserva que vence antes de reanudar bloquea dry_run y preparación real', async () => {
+   const active = (await db.query(`SELECT count(*)::integer AS n
+    FROM abastece.inventory_reservations r
+    JOIN abastece.order_items i ON i.id = r.order_item_id
+    WHERE i.order_id = $1 AND r.lot_id = $2 AND r.status = 'active'`,
+    [order.id, early])).rows[0].n;
+   assert.ok(active > 0, 'La preparación parcial debe reservar el lote FEFO de prueba');
+   await db.exec(`UPDATE abastece.demo_metadata
+    SET reference_at = '2026-10-16T22:00:00Z' WHERE id = true;`);
+   try {
+    const before = await snapshot();
+    for (const dry of [true, false]) {
+     await assert.rejects(() => call(order.id, all, dry), {code: 'P0409'});
+     assert.deepEqual(await snapshot(), before);
+    }
+   } finally {
+    await db.exec(`UPDATE abastece.demo_metadata
+     SET reference_at = '2026-10-10T22:00:00Z' WHERE id = true;`);
+   }
   });
   await t.test('Reanudar usa solo el faltante y resuelve la incidencia', async () => {
    const ins005 = (await db.query("SELECT id FROM abastece.products WHERE sku = 'INS-005'")).rows[0].id;

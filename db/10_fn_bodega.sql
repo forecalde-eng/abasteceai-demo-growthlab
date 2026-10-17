@@ -1,6 +1,6 @@
 -- D-2.2 (#34): preparación por lote FEFO. El cuerpo JSONB es el arreglo
 -- PrepareRequest.items; prepared_qty expresa el total acumulado deseado.
-CREATE FUNCTION abastece.fn_preparar(
+CREATE OR REPLACE FUNCTION abastece.fn_preparar(
  p_staff uuid, p_order uuid, p_items jsonb, p_dry_run boolean
 ) RETURNS jsonb
 LANGUAGE plpgsql
@@ -81,6 +81,18 @@ BEGIN
  ) THEN
   RAISE EXCEPTION USING ERRCODE = 'P0409',
    MESSAGE = 'Cantidades preparadas sin reservas activas equivalentes';
+ END IF;
+ -- Al reanudar, una reserva previa vencida no puede contar como preparación válida.
+ -- Rechazar también en dry_run evita sugerir un estado ready con stock caducado.
+ IF EXISTS (
+  SELECT 1 FROM abastece.inventory_reservations AS r
+  JOIN abastece.order_items AS i ON i.id = r.order_item_id
+  JOIN abastece.product_lots AS l ON l.id = r.lot_id
+  WHERE i.order_id = p_order AND r.status = 'active'
+   AND l.expires_on < v_reference_at::date
+ ) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409',
+   MESSAGE = 'Reserva activa en lote vencido';
  END IF;
  SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
    'product_id', product_id, 'approved_qty', approved_qty,
