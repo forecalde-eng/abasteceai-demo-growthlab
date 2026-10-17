@@ -2423,5 +2423,38 @@ test('D-3.1: reset → semilla original → re-vinculación sin tocar Auth ni es
    assert.deepEqual(await auth(), beforeAuth);
    assert.deepEqual(await catalog(), structure);
   });
+  await t.test('Dos reinicios conservan conciliación, 9.395 filas, 703 ubicaciones y Auth', async () => {
+   const reconciled = {...counts, inventory_reservations: 48, audit_events: 28};
+   // Simula el estado corregido que el endpoint debe conservar al reiniciar.
+   await db.exec(readSql('13_reconciliar_preparacion_demo.sql'));
+   for (let cycle=0; cycle<2; cycle++) {
+    for (const file of ['12_reset_demo.sql','03_datos_ficticios.sql',
+     '13_reconciliar_preparacion_demo.sql','12_revincular_cuentas.sql']) {
+     await db.exec(readSql(file));
+    }
+    assert.deepEqual(await rows(), reconciled);
+    assert.equal(Object.values(await rows()).reduce((a,b)=>a+b,0),9395);
+    assert.equal((await one("SELECT status FROM abastece.orders WHERE code='PED-DEMO-001'")).status,'submitted');
+    const result = (await db.query(`SELECT o.code,o.status,count(*)::int AS lines,
+     sum(i.prepared_qty) AS prepared,
+     sum((SELECT coalesce(sum(r.quantity),0) FROM abastece.inventory_reservations r
+      WHERE r.order_item_id=i.id AND r.status='active')) AS reserved,
+     bool_and(i.prepared_qty=(SELECT coalesce(sum(r.quantity),0)
+      FROM abastece.inventory_reservations r
+      WHERE r.order_item_id=i.id AND r.status='active')) AS consistent
+     FROM abastece.orders o JOIN abastece.order_items i ON i.order_id=o.id
+     WHERE o.code IN ('PED-DEMO-003','PED-DEMO-006') GROUP BY o.code,o.status ORDER BY o.code`)).rows;
+    assert.deepEqual(result.map(r=>[r.code,r.status,r.lines,Number(r.prepared),Number(r.reserved),r.consistent]),
+     [['PED-DEMO-003','preparing',16,46,46,true],['PED-DEMO-006','ready',16,63,63,true]]);
+    assert.equal(Number((await one(`SELECT v.available_qty FROM abastece.v_inventory v
+     JOIN abastece.locations l ON l.id=v.location_id JOIN abastece.products p ON p.id=v.product_id
+     WHERE l.code='BOD-DEMO' AND p.sku='INS-005'`)).available_qty),0);
+    assert.equal((await one('SELECT count(DISTINCT code)::int n FROM abastece.locations')).n,703);
+    assert.equal((await one(`SELECT count(*)::int n FROM abastece.staff_members s JOIN auth.users u
+     ON u.id=s.auth_user_id WHERE u.email=s.demo_email AND u.email_confirmed_at IS NOT NULL`)).n,7);
+    assert.deepEqual(await auth(),beforeAuth);
+    assert.deepEqual(await catalog(),structure);
+   }
+  });
  } finally { await db.close(); }
 });

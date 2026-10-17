@@ -286,3 +286,12 @@ def test_reset_demo_vuelve_a_la_semilla(api, monkeypatch, tmp_path):
         assert c.execute(
             "SELECT status FROM abastece.orders WHERE code = 'PED-DEMO-001'"
         ).fetchone() == ("submitted",)
+
+        assert c.execute(
+            "SELECT count(*) FROM abastece.inventory_reservations"
+        ).fetchone() == (48,)
+        assert c.execute("SELECT count(*) FROM abastece.audit_events").fetchone() == (28,)
+        assert c.execute(
+            "SELECT code,status FROM abastece.orders WHERE code IN"
+            " ('PED-DEMO-003','PED-DEMO-006') ORDER BY code"
+        ).fetchall() == [("PED-DEMO-003", "preparing"), ("PED-DEMO-006", "ready")]

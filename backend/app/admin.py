@@ -1,7 +1,7 @@
 """POST /admin/reset-demo (HU-0.3): vuelve la demo a la semilla con los archivos de `db/`.
 
-Orden de `db/12_RESET_DEMO.md`: 12_reset_demo → 03_datos_ficticios → 12_revincular_cuentas.
-Cada archivo trae su BEGIN/COMMIT: son tres transacciones, no una (no se anidan).
+Orden: 12_reset_demo → 03_datos_ficticios → 13_reconciliar → 12_revincular_cuentas.
+Son cuatro transacciones: 13 es una sentencia DO; las otras incluyen BEGIN/COMMIT.
 """
 
 import hashlib
@@ -22,7 +22,12 @@ from app.errors import ApiError
 
 router = APIRouter(tags=["admin"])
 DB = Path(__file__).resolve().parents[2] / "db"
-PASOS = ["12_reset_demo.sql", "03_datos_ficticios.sql", "12_revincular_cuentas.sql"]
+PASOS = [
+    "12_reset_demo.sql",
+    "03_datos_ficticios.sql",
+    "13_reconciliar_preparacion_demo.sql",
+    "12_revincular_cuentas.sql",
+]
 # shortcut: candado y marca son de esta máquina; con un solo uvicorn basta. Con varios, guardar
 # el estado en la base (advisory lock + tabla de mantenimiento).
 _en_curso = threading.Lock()
@@ -98,12 +103,21 @@ def verificar_destino(url: str) -> None:
 
 
 def ejecutar_reset(url: str) -> str:
-    """Corre los tres archivos y verifica la semilla. Devuelve `reference_at` en ISO."""
-    conteos: dict[str, int] = json.loads((DB / "conteos_datos.json").read_text(encoding="utf-8"))
+    """Restaura y concilia la demo: 9.395 filas. No modifica la semilla original."""
+    # Leer todo antes del TRUNCATE: un despliegue incompleto no debe borrar datos.
+    try:
+        conteos: dict[str, int] = json.loads((DB / "conteos_datos.json").read_text("utf-8"))
+        scripts = [(paso, (DB / paso).read_text("utf-8")) for paso in PASOS]
+        conteos["inventory_reservations"] += 16
+        conteos["audit_events"] += 2
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise ApiError(
+            409, "INVALID_STATE", "Faltan archivos válidos del reinicio; no se borró nada."
+        ) from exc
     with psycopg.connect(url, autocommit=True, prepare_threshold=None) as conn:
-        for paso in PASOS:
+        for paso, contenido in scripts:
             try:
-                conn.execute((DB / paso).read_text(encoding="utf-8"))
+                conn.execute(contenido)
             except psycopg.Error as exc:
                 raise ApiError(
                     409,
@@ -119,13 +133,33 @@ def ejecutar_reset(url: str) -> str:
             ).fetchone()[0]
             != esperado
         ]
+        conciliados = conn.execute(
+            "SELECT o.code, o.status, count(*)::int, sum(i.prepared_qty),"
+            " sum((SELECT coalesce(sum(r.quantity),0) FROM abastece.inventory_reservations r"
+            " WHERE r.order_item_id=i.id AND r.status='active')),"
+            " bool_and(i.prepared_qty=(SELECT coalesce(sum(r.quantity),0)"
+            " FROM abastece.inventory_reservations r"
+            " WHERE r.order_item_id=i.id AND r.status='active'))"
+            " FROM abastece.orders o JOIN abastece.order_items i ON i.order_id=o.id"
+            " WHERE o.code IN ('PED-DEMO-003','PED-DEMO-006') GROUP BY o.code,o.status"
+            " ORDER BY o.code"
+        ).fetchall()
         ped001, vinculadas, ref = conn.execute(
             "SELECT (SELECT status FROM abastece.orders WHERE code = 'PED-DEMO-001'),"
             " (SELECT count(*) FROM abastece.staff_members WHERE auth_user_id IS NOT NULL),"
             " (SELECT reference_at FROM abastece.demo_metadata)"
         ).fetchone()
-    if malos or ped001 != "submitted" or vinculadas != 7:
-        detalle = {"tablas": malos, "ped_demo_001": ped001, "cuentas_vinculadas": vinculadas}
+    esperado_conciliado = [
+        ("PED-DEMO-003", "preparing", 16, 46, 46, True),
+        ("PED-DEMO-006", "ready", 16, 63, 63, True),
+    ]
+    if malos or ped001 != "submitted" or vinculadas != 7 or conciliados != esperado_conciliado:
+        detalle = {
+            "tablas": malos,
+            "ped_demo_001": ped001,
+            "cuentas_vinculadas": vinculadas,
+            "conciliacion_valida": conciliados == esperado_conciliado,
+        }
         raise ApiError(409, "INVALID_STATE", "La semilla no quedó como se esperaba.", detalle)
     return ref.isoformat()
 

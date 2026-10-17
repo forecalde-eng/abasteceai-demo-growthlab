@@ -1,3 +1,7 @@
+import json
+from datetime import datetime
+
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -176,3 +180,128 @@ def test_el_409_de_mantenimiento_lleva_cors(monkeypatch):
     finally:
         admin._en_curso.release()
     assert r.status_code == 409 and r.headers.get("access-control-allow-origin") == origen
+
+
+@pytest.fixture
+def orquestacion(monkeypatch, tmp_path):
+    # Solo archivos y conexión ficticios: nunca abre PostgreSQL.
+    counts = json.loads((admin.DB / "conteos_datos.json").read_text("utf-8"))
+    expected = {**counts, "inventory_reservations": 48, "audit_events": 28}
+    directory = tmp_path / "db"
+    directory.mkdir()
+    (directory / "conteos_datos.json").write_text(json.dumps(counts), "utf-8")
+    scripts = {}
+    for name in admin.PASOS:
+        content = f"-- SQL ficticio: {name}"
+        (directory / name).write_text(content, "utf-8")
+        scripts[content] = name
+    monkeypatch.setattr(admin, "DB", directory)
+    calls = []
+    state = {"fail": None, "counts": expected, "consistent": True}
+
+    class Result:
+        def __init__(self, value):
+            self.value = value
+
+        def fetchone(self):
+            return self.value
+
+        def fetchall(self):
+            return self.value
+
+    class Connection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+        def execute(self, statement):
+            if isinstance(statement, str) and statement in scripts:
+                name = scripts[statement]
+                calls.append(name)
+                if name == state["fail"]:
+                    raise psycopg.DatabaseError("detalle SQL privado de prueba")
+                return Result(None)
+            if not isinstance(statement, str):
+                table = statement.as_string().split('"')[-2]
+                return Result((state["counts"][table],))
+            if "GROUP BY o.code,o.status" in statement:
+                return Result([
+                    ("PED-DEMO-003", "preparing", 16, 46, 46, state["consistent"]),
+                    ("PED-DEMO-006", "ready", 16, 63, 63, True),
+                ])
+            if "PED-DEMO-001" in statement:
+                return Result(("submitted", 7, datetime.fromisoformat(OK)))
+            raise AssertionError("Consulta no prevista en la conexión ficticia")
+
+    connections = []
+
+    def connect(*_args, **kwargs):
+        assert kwargs == {"autocommit": True, "prepare_threshold": None}
+        connections.append(True)
+        return Connection()
+
+    monkeypatch.setattr(admin.psycopg, "connect", connect)
+    return state, calls, connections, counts
+
+
+def test_reset_concilia_antes_de_revincular_y_valida_9395(orquestacion):
+    _, calls, _, _ = orquestacion
+    assert admin.ejecutar_reset("") == OK
+    assert calls == [
+        "12_reset_demo.sql", "03_datos_ficticios.sql",
+        "13_reconciliar_preparacion_demo.sql", "12_revincular_cuentas.sql",
+    ]
+
+
+def test_reset_no_acepta_conteos_originales_sin_conciliar(orquestacion):
+    state, _, _, original = orquestacion
+    state["counts"] = original
+    with pytest.raises(ApiError) as error:
+        admin.ejecutar_reset("")
+    assert error.value.status == 409
+
+
+def test_reset_no_acepta_lineas_inconsistentes_aunque_coincidan_los_totales(orquestacion):
+    state, _, _, _ = orquestacion
+    state["consistent"] = False
+    with pytest.raises(ApiError) as error:
+        admin.ejecutar_reset("")
+    assert error.value.status == 409
+
+
+@pytest.mark.parametrize("phase", admin.PASOS)
+def test_error_de_etapa_no_continua_ni_expone_detalle_sql(orquestacion, phase):
+    state, calls, _, _ = orquestacion
+    state["fail"] = phase
+    with pytest.raises(ApiError) as error:
+        admin.ejecutar_reset("")
+    assert error.value.status == 409
+    assert error.value.details == {"paso": phase}
+    assert "detalle SQL privado" not in error.value.message
+    assert calls == admin.PASOS[:admin.PASOS.index(phase) + 1]
+
+
+def test_archivo_13_ausente_no_conecta_ni_ejecuta_truncate(orquestacion):
+    _, calls, connections, _ = orquestacion
+    (admin.DB / "13_reconciliar_preparacion_demo.sql").unlink()
+    with pytest.raises(ApiError) as error:
+        admin.ejecutar_reset("")
+    assert error.value.status == 409
+    assert calls == [] and connections == []
+
+
+def test_fallo_de_conciliacion_deja_mantenimiento_cerrado(monkeypatch, orquestacion):
+    state, calls, _, _ = orquestacion
+    execute = admin.ejecutar_reset
+    c = cliente(monkeypatch, "administrador")
+    monkeypatch.setattr(admin, "ejecutar_reset", execute)
+    state["fail"] = "13_reconciliar_preparacion_demo.sql"
+    response = c.post("/admin/reset-demo", headers=H)
+    assert response.status_code == 409
+    assert response.json()["error"]["details"] == {"paso": state["fail"]}
+    assert admin.MARCA.exists()
+    assert calls[-1] == state["fail"]
+    assert "12_revincular_cuentas.sql" not in calls
+    assert c.post("/orders", json={}, headers=H).status_code == 409
