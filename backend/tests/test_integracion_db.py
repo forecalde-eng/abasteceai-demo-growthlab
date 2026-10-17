@@ -168,6 +168,15 @@ def test_plan_de_rutas_con_un_pedido_listo(api):
     )
 
 
+def test_plan_no_propone_vehiculo_ya_ocupado_ese_dia(api):
+    # RUTA-DEMO-1 (dispatched) ocupa VEH-DEMO-1 el 2026-10-10, fecha del reloj de demo.
+    cuerpo_ = {"dispatch_date": "2026-10-10", "order_ids": [api.ords["PED-DEMO-007"]]}
+    r = api.cliente.post("/routes/plan", json=cuerpo_, headers=api.h("logistica"))
+    assert r.status_code == 200, r.text
+    rutas = r.json()["routes"]
+    assert rutas and "VEH-DEMO-1" not in {x["vehicle_code"] for x in rutas}
+
+
 def test_planificar_y_confirmar_la_ruta_crea_el_envio_con_guia_y_qr(api):
     """Lo que hará la pantalla de Bruno: confirma tal cual la propuesta de /routes/plan."""
     oid = api.ords["PED-DEMO-007"]
