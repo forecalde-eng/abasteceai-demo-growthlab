@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/ui";
-import { useLocations, useOrders } from "@/app/dev/apiDemo";
+import { useLocations, useOrders } from "@/data";
 
 /**
  * J-1.2 · Mis pedidos (auxiliar / supervisor).

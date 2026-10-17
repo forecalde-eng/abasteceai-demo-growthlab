@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { LayoutDashboardIcon } from "lucide-react";
 
-import { useLocations, useProducts, useReplenishment } from "@/app/dev/apiDemo";
+import { useLocations, useProducts, useReplenishment } from "@/data";
 import {
   Card,
   CardContent,

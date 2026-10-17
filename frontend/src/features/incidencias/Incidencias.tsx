@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TriangleAlertIcon } from "lucide-react";
 
-import { useIncidents, useLocations, useOrders, useShipments } from "@/app/dev/apiDemo";
+import { useIncidents, useLocations, useOrders, useShipments } from "@/data";
 import type { Incident } from "@/mocks";
 import {
   Button,
