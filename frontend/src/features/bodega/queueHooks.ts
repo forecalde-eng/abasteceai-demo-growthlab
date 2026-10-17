@@ -1,17 +1,9 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 
-import { useMocks, useSession } from "@/data";
-import {
-  useOrders as useDemoOrders,
-  useIncidents as useDemoIncidents,
-  useLocations as useDemoLocations,
-  type FiltroPedidos,
-  type FiltroIncidencias,
-} from "@/app/dev/apiDemo";
+import { useSession, useOrders as useDataOrders, useIncidents as useDataIncidents, useLocations as useDataLocations, type FiltroPedidos, type FiltroIncidencias } from "@/data";
 
-// temporal: reemplazar por @/data
-// Reutiliza el estado compartido de la demo para ver las decisiones del administrador.
-// No duplica pedidos ni inventa cambios sobre los CSV.
+// Lecturas de la cola de bodega desde la capa de datos (mocks o Supabase según VITE_USE_MOCKS).
+// Solo se controla el rol aquí; la visibilidad real la aplica RLS en la base.
 function useQueueQuery<T>(query: UseQueryResult<T, Error>) {
   const session = useSession();
   const allowed = session.data?.role === "bodega";
@@ -19,29 +11,24 @@ function useQueueQuery<T>(query: UseQueryResult<T, Error>) {
     ? new Error("No se pudo cargar tu perfil operativo.")
     : !session.isLoading && !allowed
       ? new Error("No tienes acceso a la cola de bodega.")
-      : !useMocks
-        ? new Error("La lectura real de la cola de bodega todavía no está disponible.")
-        : null;
+      : null;
   return {
     ...query,
-    data: allowed && useMocks && !gateError ? query.data : undefined,
+    data: allowed && !gateError ? query.data : undefined,
     isLoading: session.isLoading || (!gateError && query.isLoading),
     isError: !!gateError || query.isError,
     error: gateError ?? query.error,
   };
 }
 
-// temporal: reemplazar por @/data
 export function useOrders(filter?: FiltroPedidos) {
-  return useQueueQuery(useDemoOrders(filter));
+  return useQueueQuery(useDataOrders(filter));
 }
 
-// temporal: reemplazar por @/data
 export function useIncidents(filter?: FiltroIncidencias) {
-  return useQueueQuery(useDemoIncidents(filter));
+  return useQueueQuery(useDataIncidents(filter));
 }
 
-// temporal: reemplazar por @/data
 export function useLocations(scope: "asignados" | "todos") {
-  return useQueueQuery(useDemoLocations(scope));
+  return useQueueQuery(useDataLocations(scope));
 }

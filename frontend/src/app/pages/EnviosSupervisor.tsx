@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { InfoIcon, PackageCheckIcon, TruckIcon } from "lucide-react";
 
-import { ErrorApi, markDelivered, useShipments, type EnvioDetalle } from "@/app/dev/apiDemo";
+import { refreshOperationalData, ErrorApi, markDelivered, useShipments, type EnvioDetalle } from "@/data";
 import {
   Alert,
   AlertDescription,
@@ -71,8 +71,7 @@ export function EnviosSupervisor() {
     onSuccess: (resultado) => {
       toast.success(`Envío ${resultado.code}: marcado como entregado sin conteo.`);
       setPorEntregar(null);
-      void queryClient.invalidateQueries({ queryKey: ["demo", "envios"] });
-      void queryClient.invalidateQueries({ queryKey: ["demo", "pedidos"] });
+      void refreshOperationalData(queryClient);
     },
     onError: (error) => {
       toast.error(error instanceof ErrorApi ? error.message : "No se pudo marcar el envío.");

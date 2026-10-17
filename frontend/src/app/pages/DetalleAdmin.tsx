@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import {
   ErrorApi,
+  refreshOperationalData,
   analyzeOrder,
   decideOrder,
   useAnalysis,
@@ -21,7 +22,7 @@ import {
   useOrder,
   useOrders,
   type DecisionInput,
-} from "@/app/dev/apiDemo";
+} from "@/data";
 import {
   AiSourceBadge,
   Badge,
@@ -56,8 +57,8 @@ import {
  * comparación lado a lado del duplicado), la **propuesta de Jev** en violeta y los botones de
  * decisión, **fuera** del bloque de la IA (la IA propone, la persona decide; I2).
  *
- * // temporal: los datos vienen de `@/app/dev/apiDemo` (la capa temporal única, que envuelve
- * // temporal: `@/mocks`). Al llegar `@/data` (J-0.4), solo cambia el import de los hooks.
+ * Lecturas mediante C2 (`@/data`): Supabase/RLS o mocks según configuración.
+ * Análisis y decisiones reales pasan por FastAPI con el JWT de la sesión.
  */
 
 /** `15 oct 2026, 14:30` — docs/07_GUIA_DISENO.md §9.10 (es-EC, 24 h, America/Guayaquil). */
@@ -130,10 +131,19 @@ export function DetalleAdmin() {
   const pedido = detalle?.order;
   const items = detalle?.items ?? [];
 
-  const { data: analisis } = useAnalysis(pedido?.id);
+  const {
+    data: analisis, isSuccess: analisisLeido, isError: errorAnalisis,
+    isFetching: consultandoAnalisis, refetch: recargarAnalisis,
+  } = useAnalysis(pedido?.id);
   const duplicado = analisis?.duplicates[0];
   const { data: detalleDuplicado } = useOrder(duplicado?.order_id);
-  const { data: incidencias = [] } = useIncidents({ orderId: pedido?.id, status: "open" });
+  const {
+    data: incidencias = [], isSuccess: incidenciasLeidas, isError: errorIncidencias,
+    isFetching: consultandoIncidencias, refetch: recargarIncidencias,
+  } = useIncidents({ orderId: pedido?.id, status: "open" });
+  const errorRevision = errorAnalisis || errorIncidencias;
+  const cargandoRevision = !errorRevision && (!analisisLeido || !incidenciasLeidas || consultandoAnalisis || consultandoIncidencias);
+  const revisionLista = !errorRevision && !cargandoRevision && analisis != null;
 
   // Cantidades aprobadas editadas a mano (por `product_id`); el resto va con la solicitada.
   const [aprobadas, setAprobadas] = useState<Record<string, number>>({});
@@ -142,23 +152,25 @@ export function DetalleAdmin() {
 
   const analizar = useMutation({
     mutationFn: (orderId: string) => analyzeOrder(orderId),
-    onSuccess: (_resultado, orderId) => {
-      void queryClient.invalidateQueries({ queryKey: ["demo", "analisis", orderId] });
-      void queryClient.invalidateQueries({ queryKey: ["demo", "incidencias"] });
+    onSuccess: () => {
+      void refreshOperationalData(queryClient);
     },
     onError: (error) => {
+      // HTTP 502 puede tener el log human_review ya persistido: releer sin reintentar POST.
+      void refreshOperationalData(queryClient);
       toast.error(error instanceof ErrorApi ? error.message : "No se pudo analizar el pedido.");
     },
   });
 
-  // Analiza el pedido enviado una sola vez al abrirlo (idempotente en la capa temporal).
+  // Solo solicitar el análisis si la lectura terminó y confirmó que no existe.
+  // Una consulta pendiente o fallida nunca debe provocar una escritura automática.
   const analisisLanzado = useRef<string | null>(null);
   useEffect(() => {
-    if (!pedido || pedido.status !== "submitted" || analisis) return;
+    if (!pedido || pedido.status !== "submitted" || !analisisLeido || analisis !== null || !incidenciasLeidas || errorIncidencias || consultandoIncidencias) return;
     if (analisisLanzado.current === pedido.id) return;
     analisisLanzado.current = pedido.id;
     analizar.mutate(pedido.id);
-  }, [pedido, analisis, analizar]);
+  }, [pedido, analisis, analisisLeido, incidenciasLeidas, errorIncidencias, consultandoIncidencias, analizar]);
 
   const decidir = useMutation({
     mutationFn: (datos: DecisionInput) => decideOrder(pedido?.id as string, datos),
@@ -166,9 +178,7 @@ export function DetalleAdmin() {
       toast.success(`Pedido ${resultado.code}: decisión registrada.`);
       setDecision(null);
       setMotivo("");
-      void queryClient.invalidateQueries({ queryKey: ["demo", "pedidos"] });
-      void queryClient.invalidateQueries({ queryKey: ["demo", "pedido", resultado.id] });
-      void queryClient.invalidateQueries({ queryKey: ["demo", "incidencias"] });
+      void refreshOperationalData(queryClient);
     },
     onError: (error) => {
       toast.error(error instanceof ErrorApi ? error.message : "No se pudo registrar la decisión.");
@@ -212,11 +222,12 @@ export function DetalleAdmin() {
   }, [items, detalleDuplicado]);
 
   const coincidencias = comparacion.filter((fila) => fila.a === fila.b).length;
-  const respuestas = (analisis?.proposal.answers ?? {}) as Record<string, RespuestaIA>;
+  const respuestas = (analisis?.proposal?.answers ?? {}) as Record<string, RespuestaIA>;
   const confianza = respuestas.urgency?.confidence;
   const tieneRespuestas = Object.keys(respuestas).length > 0;
 
   function abrirDecision(tipo: Decision) {
+    if (!revisionLista || analizar.isPending || decidir.isPending) return;
     // Aprobar sin cambios no necesita motivo: se registra directo.
     if (tipo === "approve" && !hayCambios) {
       decidir.mutate({ decision: "approve", items: cantidades });
@@ -227,7 +238,7 @@ export function DetalleAdmin() {
   }
 
   function confirmarDecision() {
-    if (!decision) return;
+    if (!decision || !revisionLista || analizar.isPending || decidir.isPending) return;
     decidir.mutate({
       decision,
       reason: motivo.trim(),
@@ -376,8 +387,16 @@ export function DetalleAdmin() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {analizar.isPending && !analisis ? (
+              {errorRevision ? (
+                <ErrorState title="No se pudieron cargar las alertas"
+                  description="No puedes decidir hasta comprobar el análisis y las incidencias."
+                  onRetry={() => { void recargarAnalisis(); void recargarIncidencias(); }} />
+              ) : cargandoRevision ? (
+                <LoadingState label="Comprobando análisis e incidencias…" />
+              ) : analizar.isPending && !analisis ? (
                 <p className="text-sm text-muted-foreground">Analizando el pedido…</p>
+              ) : !analisis ? (
+                <p className="text-sm text-muted-foreground">El análisis todavía está pendiente.</p>
               ) : incidencias.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sin alertas abiertas.</p>
               ) : (
@@ -392,7 +411,7 @@ export function DetalleAdmin() {
                 ))
               )}
 
-              {esDuplicado && duplicado ? (
+              {revisionLista && esDuplicado && duplicado ? (
                 <div className="space-y-2 rounded-md border bg-muted/30 p-3">
                   <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                     Comparación {pedido.code} vs {duplicado.order_code}
@@ -439,7 +458,7 @@ export function DetalleAdmin() {
                 </div>
               ) : null}
 
-              {esOmision ? (
+              {revisionLista && esOmision ? (
                 <p className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
                   El insumo marcado figura en el kit ficticio del punto y no aparece en el pedido.
                 </p>
@@ -449,7 +468,7 @@ export function DetalleAdmin() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={analizar.isPending}
+                  disabled={analizar.isPending || cargandoRevision || !!errorRevision}
                   onClick={() => analizar.mutate(pedido.id)}
                 >
                   <SparklesIcon /> Analizar pedido
@@ -464,7 +483,7 @@ export function DetalleAdmin() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <SparklesIcon className="size-4 text-violet-600" />
                 Propuesta de Jev
-                {analisis?.proposal && tieneRespuestas ? (
+                {analisis?.proposal ? (
                   <AiSourceBadge source={analisis.proposal.source} className="ml-auto" />
                 ) : null}
               </CardTitle>
@@ -479,12 +498,12 @@ export function DetalleAdmin() {
                       Confianza: <span className="font-medium">{formatearConfianza(confianza)}</span>
                     </p>
                   ) : (
-                    <p className="text-muted-foreground">Jev todavía no clasificó este pedido.</p>
+                    <p className="text-muted-foreground">No hay respuestas estructuradas disponibles.</p>
                   )}
                   <p className="text-muted-foreground">
                     Evidencia: {pedido.observations || "sin nota del auxiliar."}
                   </p>
-                  {tieneRespuestas && analisis.proposal.status === "human_review" ? (
+                  {analisis.proposal.status === "human_review" ? (
                     <Badge variant="outline" className={`border font-medium ${TONO.atencion}`}>
                       Revisión humana
                     </Badge>
@@ -513,7 +532,7 @@ export function DetalleAdmin() {
                 <>
                   <Button
                     className="w-full"
-                    disabled={decidir.isPending}
+                    disabled={decidir.isPending || analizar.isPending || !revisionLista}
                     onClick={() => abrirDecision("approve")}
                   >
                     <CheckIcon /> Aprobar
@@ -521,7 +540,7 @@ export function DetalleAdmin() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    disabled={decidir.isPending}
+                    disabled={decidir.isPending || analizar.isPending || !revisionLista}
                     onClick={() => abrirDecision("return")}
                   >
                     <RotateCcwIcon /> Devolver
@@ -529,7 +548,7 @@ export function DetalleAdmin() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    disabled={decidir.isPending}
+                    disabled={decidir.isPending || analizar.isPending || !revisionLista}
                     onClick={() => abrirDecision("cancel")}
                   >
                     <XIcon /> Cancelar
@@ -562,7 +581,7 @@ export function DetalleAdmin() {
             </Button>
             <Button
               onClick={confirmarDecision}
-              disabled={decidir.isPending || motivo.trim() === ""}
+              disabled={decidir.isPending || analizar.isPending || !revisionLista || motivo.trim() === ""}
             >
               {decidir.isPending ? "Guardando…" : "Confirmar"}
             </Button>

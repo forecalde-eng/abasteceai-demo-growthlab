@@ -1,3 +1,4 @@
+import { refreshOperationalData } from "@/data";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Order, OrderItem, Product } from "@/mocks";
@@ -46,8 +47,7 @@ export function PreparacionEditor({ order, lines, service = prepareOrder }: {
         setConfirmed(result);
         setPreview(null);
         // Solo refrescar lecturas; nunca escribir stock/cantidades desde la UI.
-        void client.invalidateQueries({ queryKey: ["demo"] });
-        void client.invalidateQueries({ queryKey: ["bruno"] });
+        void refreshOperationalData(client);
         toast.success("Preparación confirmada por el servicio.");
       }
     } catch (cause) {

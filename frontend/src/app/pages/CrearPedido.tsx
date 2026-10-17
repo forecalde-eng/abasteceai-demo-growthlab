@@ -6,12 +6,14 @@ import { useNavigate } from "react-router-dom";
 
 import {
   ErrorApi,
+  refreshOperationalData,
+  useDemoMetadata,
+  cycleMonth,
   createOrder,
   useOrders,
   useProducts,
   type NuevoPedido,
-} from "@/app/dev/apiDemo";
-import { MES_DEMO } from "@/app/dev/datosDemo";
+} from "@/data";
 import { useSession } from "@/data";
 import type { Product } from "@/mocks";
 import {
@@ -84,6 +86,8 @@ export function CrearPedido() {
   const queryClient = useQueryClient();
   const sesion = useSession();
   const productosQ = useProducts();
+  const metadataQ = useDemoMetadata();
+  const mesDemo = metadataQ.data ? cycleMonth(metadataQ.data.reference_at) : "";
 
   const [puntoId, setPuntoId] = useState<string>("");
   const [tipo, setTipo] = useState<"regular" | "additional">("regular");
@@ -112,7 +116,7 @@ export function CrearPedido() {
   const punto = puntos.find((p) => p.id === puntoId) ?? puntos[0];
   const puntoElegido = punto?.id ?? "";
 
-  const pedidosQ = useOrders({ locationId: puntoElegido, cycleMonth: MES_DEMO });
+  const pedidosQ = useOrders({ locationId: puntoElegido, cycleMonth: mesDemo });
   const pedidosDelPunto = pedidosQ.data ?? [];
 
   const idOriginalValido = pedidosDelPunto.some((p) => p.id === pedidoOriginalId)
@@ -142,7 +146,7 @@ export function CrearPedido() {
     onSuccess: (pedido) => {
       toast.success(`Pedido ${pedido.code} enviado`);
       // `POST /orders` devuelve { id, code, status }: el detalle se relee con `useOrders`.
-      void queryClient.invalidateQueries({ queryKey: ["demo", "pedidos"] });
+      void refreshOperationalData(queryClient);
       navegar("/pedidos");
     },
     onError: (error) => {
@@ -153,7 +157,7 @@ export function CrearPedido() {
 
   function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    if (!punto) return;
+    if (!punto || !mesDemo) return;
     if (items.length === 0) {
       toast.error("Agrega al menos un insumo con cantidad.");
       return;
@@ -168,7 +172,7 @@ export function CrearPedido() {
     }
     guardar.mutate({
       location_id: punto.id,
-      cycle_month: MES_DEMO,
+      cycle_month: mesDemo,
       order_type: tipo,
       related_order_id: tipo === "additional" ? idOriginalValido : null,
       reason: tipo === "additional" ? motivo.trim() : null,
@@ -178,7 +182,7 @@ export function CrearPedido() {
     });
   }
 
-  if (sesion.isLoading || productosQ.isLoading) {
+  if (sesion.isLoading || productosQ.isLoading || metadataQ.isLoading) {
     return (
       <div className="mx-auto max-w-7xl p-6">
         <LoadingState label="Cargando catálogo…" />
@@ -186,13 +190,13 @@ export function CrearPedido() {
     );
   }
 
-  if (productosQ.isError) {
+  if (productosQ.isError || metadataQ.isError) {
     return (
       <div className="mx-auto max-w-7xl space-y-6 p-6">
         <PageHeader icon={<ClipboardListIcon />} title="Crear pedido" />
         <ErrorState
-          description="No se pudo cargar el catálogo de insumos."
-          onRetry={() => productosQ.refetch()}
+          description="No se pudo cargar el catálogo o el reloj de la demo."
+          onRetry={() => { void productosQ.refetch(); void metadataQ.refetch(); }}
         />
       </div>
     );
@@ -216,7 +220,7 @@ export function CrearPedido() {
         icon={<ClipboardListIcon />}
         title="Crear pedido"
         description="Pedido del mes para uno de tus puntos: insumos, cantidades y observaciones."
-        actions={<Badge variant="secondary">{etiquetaMes(MES_DEMO)}</Badge>}
+        actions={<Badge variant="secondary">{mesDemo ? etiquetaMes(mesDemo) : "…"}</Badge>}
       />
 
       <form onSubmit={enviar} className="space-y-6">
@@ -243,7 +247,7 @@ export function CrearPedido() {
 
             <div className="space-y-1.5">
               <Label htmlFor="mes">Mes del pedido</Label>
-              <Input id="mes" value={etiquetaMes(MES_DEMO)} readOnly />
+              <Input id="mes" value={mesDemo ? etiquetaMes(mesDemo) : "…"} readOnly />
               <p className="text-xs text-muted-foreground">
                 El mes de la demo es fijo (no se usa la fecha de hoy).
               </p>
@@ -389,7 +393,7 @@ export function CrearPedido() {
               ? "Aún no has puesto cantidades."
               : `${items.length} insumo(s) · ${totalUnidades} unidad(es)`}
           </p>
-          <Button type="submit" disabled={guardar.isPending}>
+          <Button type="submit" disabled={guardar.isPending || !mesDemo}>
             {guardar.isPending ? "Guardando…" : "Guardar pedido"}
           </Button>
         </div>

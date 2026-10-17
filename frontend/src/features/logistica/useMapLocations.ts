@@ -1,34 +1,32 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMocks, useSession } from '@/data'
-import type { Location } from '@/mocks'
+import { useMocks, useSession, useLocations as useDataLocations } from '@/data'
 
-// temporal: reemplazar por @/data
-// El useLocations temporal de Jorge contiene solo 27 filas; el mapa necesita el catálogo.
-export function useLocations(scope: 'todos' = 'todos') {
+// Lectura de ubicaciones para el mapa y el planificador desde la capa de datos.
+// En modo real devuelve todo lo visible bajo RLS (703 para logística). En mocks, el catálogo
+// completo de mapLocations: el fixture compacto de @/data solo trae 27 filas.
+export function useLocations(scope: 'asignados' | 'todos' = 'todos') {
   const session = useSession()
   const profile = session.data
   const allowed = profile?.role === 'logistica'
-  const query = useQuery<Location[]>({
-    queryKey: ['bruno', 'map-locations', scope, profile?.staff_id, profile?.role],
-    enabled: !!profile && allowed && useMocks,
+  const real = useDataLocations(scope)
+  const mock = useQuery({
+    queryKey: ['bruno', 'map-locations', scope],
+    enabled: useMocks && allowed,
     retry: false,
-    queryFn: async () => {
-      const { mapLocations } = await import('@/mocks/mapLocations')
-      return mapLocations
-    },
+    queryFn: async () => (await import('@/mocks/mapLocations')).mapLocations,
   })
+  const locations = useMocks ? mock : real
   const error = session.isError || (!session.isLoading && !profile)
     ? new Error('No se pudo cargar tu perfil operativo.')
     : !session.isLoading && !allowed
       ? new Error('Necesitas una sesión de logística para consultar el mapa.')
-      : !useMocks
-        ? new Error('La lectura real de ubicaciones aún no está conectada en este mapa.')
-        : query.error
+      : locations.error
   return {
-    ...query,
-    data: !error && allowed && useMocks ? query.data : undefined,
-    isLoading: session.isLoading || (!error && allowed && useMocks && query.isLoading),
+    data: !error && allowed ? locations.data : undefined,
+    isLoading: session.isLoading || (!error && allowed && locations.isLoading),
+    isFetching: locations.isFetching,
     isError: !!error,
     error,
+    refetch: locations.refetch,
   }
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TriangleAlertIcon } from "lucide-react";
 
-import { useIncidents, useLocations, useOrders, useShipments } from "@/app/dev/apiDemo";
+import { useIncidents, useLocations, useOrders, useShipments } from "@/data";
 import type { Incident } from "@/mocks";
 import {
   Button,
@@ -62,9 +62,9 @@ const fechaHora = new Intl.DateTimeFormat("es-EC", {
 
 export function Incidencias() {
   const { data: incidencias = [], isLoading, isError, refetch } = useIncidents();
-  const { data: ordenes = [], isLoading: cargandoOrdenes } = useOrders();
-  const { data: envios = [], isLoading: cargandoEnvios } = useShipments();
-  const { data: puntos = [], isLoading: cargandoPuntos } = useLocations("todos");
+  const { data: ordenes = [], isLoading: cargandoOrdenes, isError: errorOrdenes, refetch: recargarOrdenes } = useOrders();
+  const { data: envios = [], isLoading: cargandoEnvios, isError: errorEnvios, refetch: recargarEnvios } = useShipments();
+  const { data: puntos = [], isLoading: cargandoPuntos, isError: errorPuntos, refetch: recargarPuntos } = useLocations("todos");
   const [detalle, setDetalle] = useState<Incident | null>(null);
 
   const ordenPorId = new Map(ordenes.map((orden) => [orden.id, orden]));
@@ -72,6 +72,10 @@ export function Incidencias() {
   const puntoPorId = new Map(puntos.map((punto) => [punto.id, punto]));
 
   const cargando = isLoading || cargandoOrdenes || cargandoEnvios || cargandoPuntos;
+  const errorLecturas = isError || errorOrdenes || errorEnvios || errorPuntos;
+  function recargarTodo() {
+    void refetch(); void recargarOrdenes(); void recargarEnvios(); void recargarPuntos();
+  }
 
   /** Pedido o envío al que pertenece la incidencia; `null` si es a nivel de punto. */
   function relacionada(incidencia: Incident) {
@@ -103,7 +107,7 @@ export function Incidencias() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {cargando || isError
+            {cargando || errorLecturas
               ? "Incidencias"
               : `${incidencias.length} ${incidencias.length === 1 ? "incidencia" : "incidencias"}`}
           </CardTitle>
@@ -113,14 +117,14 @@ export function Incidencias() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {cargando ? (
-            <LoadingState label="Cargando las incidencias…" />
-          ) : isError ? (
+          {errorLecturas ? (
             <ErrorState
               title="No se pudieron cargar las incidencias"
               description="Intenta de nuevo en unos segundos."
-              onRetry={() => void refetch()}
+              onRetry={recargarTodo}
             />
+          ) : cargando ? (
+            <LoadingState label="Cargando las incidencias…" />
           ) : incidencias.length === 0 ? (
             <EmptyState
               icon={<TriangleAlertIcon />}
@@ -208,7 +212,7 @@ export function Incidencias() {
       </Card>
 
       <Modal
-        open={detalle !== null}
+        open={detalle !== null && !errorLecturas && !cargando}
         onOpenChange={(abierto) => {
           if (!abierto) setDetalle(null);
         }}
