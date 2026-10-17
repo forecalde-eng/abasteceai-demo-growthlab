@@ -47,9 +47,10 @@ def _identidad(url: str) -> str:
 
 def _marca_actual() -> tuple[str, str] | None:
     """(sub que inició el reset, identidad de su base) si hay un reset a medias."""
-    if not MARCA.exists():
+    try:
+        sub, _, ident = MARCA.read_text(encoding="utf-8").partition("\n")
+    except FileNotFoundError:  # no hay marca, o un reset exitoso la borró mientras leíamos
         return None
-    sub, _, ident = MARCA.read_text(encoding="utf-8").partition("\n")
     return sub, ident
 
 
