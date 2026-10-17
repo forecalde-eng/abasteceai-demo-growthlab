@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Annotated
 
 import psycopg
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from psycopg import sql
 
-from app.auth import Me, require_roles
+from app import auth
 from app.config import get_settings
 from app.errors import ApiError
 
@@ -23,6 +23,7 @@ PASOS = ["12_reset_demo.sql", "03_datos_ficticios.sql", "12_revincular_cuentas.s
 # shortcut: el candado es por proceso; con un solo uvicorn basta. Con varios, usar un advisory lock.
 _en_curso = threading.Lock()
 _fallido = False  # un reset a medias deja la base sin semilla: las escrituras siguen cerradas
+_admin_sub: str | None = None  # quien inició el reset; puede reintentar aunque staff esté vacío
 
 
 def reset_en_curso() -> bool:
@@ -62,13 +63,26 @@ def ejecutar_reset(url: str) -> str:
     return ref.isoformat()
 
 
+def autorizar_reset(authorization: Annotated[str | None, Header()] = None) -> str:
+    """Administrador por la base; tras un reset fallido, el mismo `sub` verificado que lo inició."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise ApiError(401, "UNAUTHORIZED", "Falta la sesión (Authorization: Bearer).")
+    sub = auth.verificar_jwt(authorization[7:].strip())
+    if _fallido and sub == _admin_sub:
+        return sub
+    me = auth.cargar_me(sub)
+    if me is None or me.role != "administrador":
+        raise ApiError(403, "FORBIDDEN", "Tu rol no puede hacer esta acción.")
+    return sub
+
+
 @router.post("/admin/reset-demo", operation_id="resetDemo")
-def reset_demo(_: Annotated[Me, Depends(require_roles("administrador"))]) -> dict:
+def reset_demo(sub: Annotated[str, Depends(autorizar_reset)]) -> dict:
+    global _fallido, _admin_sub
     if not _en_curso.acquire(blocking=False):
         raise ApiError(409, "CONFLICT", "Ya hay un reinicio en curso.")
-    global _fallido
     try:
-        _fallido = True
+        _fallido, _admin_sub = True, sub
         ref = ejecutar_reset(get_settings().database_url)
         _fallido = False  # solo un reset verificado reabre las escrituras
         return {"ok": True, "reference_at": ref}

@@ -63,3 +63,20 @@ def test_un_reset_fallido_deja_las_escrituras_cerradas_hasta_uno_exitoso(monkeyp
     monkeypatch.setattr(admin, "ejecutar_reset", lambda _: "2026-10-10T22:00:00+00:00")
     assert c.post("/admin/reset-demo", headers=H).status_code == 200
     assert c.post("/orders", json={}, headers=H).status_code != 409
+
+
+def test_tras_un_fallo_el_mismo_admin_puede_reintentar_sin_perfil(monkeypatch):
+    from app.errors import ApiError
+
+    c = cliente(monkeypatch, "administrador")
+
+    def falla(_):
+        raise ApiError(409, "INVALID_STATE", "Falló 12_revincular_cuentas.sql")
+
+    monkeypatch.setattr(admin, "ejecutar_reset", falla)
+    assert c.post("/admin/reset-demo", headers=H).status_code == 409
+    monkeypatch.setattr(auth, "cargar_me", lambda _: None)  # staff vacío tras el fallo
+    monkeypatch.setattr(admin, "ejecutar_reset", lambda _: "2026-10-10T22:00:00+00:00")
+    assert c.post("/admin/reset-demo", headers=H).status_code == 200
+    monkeypatch.setattr(auth, "verificar_jwt", lambda _: "otro")  # otro token: necesita perfil
+    assert c.post("/admin/reset-demo", headers=H).status_code == 403
