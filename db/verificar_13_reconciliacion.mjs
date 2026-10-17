@@ -153,6 +153,23 @@ test('D-2.2: conciliación puntual de PED-DEMO-003 y 006', async t => {
   } finally { await db.close(); }
  });
 
+ for (const code of ['PED-DEMO-003', 'PED-DEMO-006']) {
+  await t.test(`repetición rechaza fecha de auditoría alterada de ${code}`, async () => {
+   const db = await fixture();
+   try {
+    await db.exec(reconcileSql);
+    // Corrupción simulada de una copia restaurada. Nunca se deshabilita el
+    // trigger de inmutabilidad fuera de esta base PGlite desechable.
+    await db.exec(`ALTER TABLE abastece.audit_events DISABLE TRIGGER USER;
+     UPDATE abastece.audit_events SET occurred_at=occurred_at-interval '1 second'
+     WHERE action='seed_reconciliation' AND entity_id=(
+      SELECT id FROM abastece.orders WHERE code='${code}');
+     ALTER TABLE abastece.audit_events ENABLE TRIGGER USER;`);
+    await expectErrorWithoutEffects(db);
+   } finally { await db.close(); }
+  });
+ }
+
  await t.test('stock insuficiente impide cualquier corrección', async () => {
   const db = await fixture();
   try {

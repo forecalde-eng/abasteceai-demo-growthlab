@@ -44,3 +44,11 @@ La repetición verifica la ubicación, producto y lote de **todas** las reservas
 Integrar este archivo en main no autoriza su ejecución ni confirma el estado remoto. Se mantienen las condiciones de respaldo restaurable, inspección y autorización separada antes de aplicar la conciliación.
 
 Verificación local sobre main `f4cb2cd`: conciliación **10/10**, funciones **160/160**, integridad **29/29** y base **61/61**; diff --check limpio. Solo bases PGlite desechables; ninguna llamada a Supabase.
+
+### Bloqueo de integración con reset-demo
+
+Codex señaló que el reinicio actual ejecuta 12 → 03 → re-vincular, valida 9.377 filas y desharía esta conciliación. Conservarla en cada reinicio requeriría acordar la inclusión de 13 y verificar el estado final de 9.395 filas (16 reservas y 2 auditorías adicionales), además de mantener 703 ubicaciones y las vinculaciones Auth. Este PR no modifica el backend ni autoriza ejecutar 13. El usuario autorizó corregir ese reinicio a 9.395 filas sin ejecutarlo en Supabase. La implementación y sus pruebas se preparan en un PR separado del backend; deben integrarse junto a esta corrección antes de activar el procedimiento.
+
+La validación idempotente de ambas auditorías exige ahora occurred_at exactamente igual a reference_at, no cualquier fecha anterior. Dos pruebas simulan corrupción de una copia local para rechazar fechas alteradas sin escrituras.
+
+Última validación específica: **12/12**, incluidas las dos fechas de auditoría alteradas. El ensayo combinado con el reinicio nuevo pasa **161/161** pruebas de funciones en PGlite, sin llamadas remotas.

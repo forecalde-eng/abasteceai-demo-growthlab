@@ -230,7 +230,7 @@ BEGIN
        AND before_state = '{"status":"preparing","prepared_total":47,"active_reserved_total":0}'::jsonb
        AND after_state = pg_catalog.jsonb_build_object('reconciliation_id', v_marker,
         'status', 'preparing', 'prepared_total', 46, 'active_reserved_total', 46)
-       AND occurred_at <= v_reference_at) <> 1 OR
+       AND occurred_at = v_reference_at) <> 1 OR
      (SELECT pg_catalog.count(*) FROM abastece.audit_events
       WHERE action = 'seed_reconciliation' AND entity_type = 'order'
        AND entity_id = v_six.id AND actor_id = v_actor
@@ -238,7 +238,7 @@ BEGIN
        AND before_state = '{"status":"approved","prepared_total":0,"active_reserved_total":63}'::jsonb
        AND after_state = pg_catalog.jsonb_build_object('reconciliation_id', v_marker,
         'status', 'ready', 'prepared_total', 63, 'active_reserved_total', 63)
-       AND occurred_at <= v_reference_at) <> 1 THEN
+       AND occurred_at = v_reference_at) <> 1 THEN
    RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Auditoría de conciliación incompleta';
   END IF;
   RETURN; -- segunda ejecución validada: ningún efecto nuevo
