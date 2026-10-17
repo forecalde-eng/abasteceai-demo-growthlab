@@ -125,3 +125,16 @@ def test_el_reset_espera_las_escrituras_admitidas(monkeypatch):
 
 def test_los_archivos_del_reset_existen():
     assert all((admin.DB / p).is_file() for p in [*admin.PASOS, "conteos_datos.json"])
+
+
+def test_si_cambia_la_base_la_recuperacion_vuelve_a_verificar_el_destino(monkeypatch):
+    c = cliente(monkeypatch, "administrador")
+    monkeypatch.setattr(admin, "ejecutar_reset", falla)
+    assert c.post("/admin/reset-demo", headers=H).status_code == 409
+    monkeypatch.setenv("DATABASE_URL", "postgresql://otra-base")
+    get_settings.cache_clear()
+    destino = []
+    monkeypatch.setattr(admin, "verificar_destino", destino.append)
+    monkeypatch.setattr(admin, "ejecutar_reset", lambda *_: OK)
+    assert c.post("/admin/reset-demo", headers=H).status_code == 200
+    assert destino == ["postgresql://otra-base"]

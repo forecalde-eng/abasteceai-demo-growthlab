@@ -4,6 +4,7 @@ Orden de `db/12_RESET_DEMO.md`: 12_reset_demo → 03_datos_ficticios → 12_revi
 Cada archivo trae su BEGIN/COMMIT: son tres transacciones, no una (no se anidan).
 """
 
+import hashlib
 import json
 import threading
 import time
@@ -34,6 +35,11 @@ MARCA = Path(__file__).resolve().parents[1] / ".reset_en_curso"
 _admision = threading.Lock()
 _activas = 0
 ESPERA_ESCRITURAS_S = 30
+
+
+def _marca(sub: str, url: str) -> str:
+    # Quién inició el reset y contra qué base (hash: la URL lleva la contraseña).
+    return f"{sub}\n{hashlib.sha256(url.encode()).hexdigest()}"
 
 
 def reset_en_curso() -> bool:
@@ -121,7 +127,7 @@ def autorizar_reset(authorization: Annotated[str | None, Header()] = None) -> st
     if not authorization or not authorization.lower().startswith("bearer "):
         raise ApiError(401, "UNAUTHORIZED", "Falta la sesión (Authorization: Bearer).")
     sub = auth.verificar_jwt(authorization[7:].strip())
-    if MARCA.exists() and MARCA.read_text(encoding="utf-8") == sub:
+    if MARCA.exists() and MARCA.read_text(encoding="utf-8").split("\n")[0] == sub:
         return sub
     me = auth.cargar_me(sub)
     if me is None or me.role != "administrador":
@@ -137,9 +143,10 @@ def reset_demo(sub: Annotated[str, Depends(autorizar_reset)]) -> dict:
     try:
         esperar_escrituras()
         url = get_settings().database_url
-        if not MARCA.exists():  # al recuperar, la base puede estar vacía: no hay destino que leer
+        # Solo se omite al recuperar un reset a medias sobre la MISMA base (puede estar vacía).
+        if not (MARCA.exists() and MARCA.read_text(encoding="utf-8").endswith(_marca("", url))):
             verificar_destino(url)
-        MARCA.write_text(sub, encoding="utf-8")  # desde aquí empieza lo destructivo
+        MARCA.write_text(_marca(sub, url), encoding="utf-8")  # desde aquí empieza lo destructivo
         ref = ejecutar_reset(url)
         MARCA.unlink()  # solo un reset verificado reabre las escrituras
         return {"ok": True, "reference_at": ref}
