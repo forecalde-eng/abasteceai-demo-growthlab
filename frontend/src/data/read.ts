@@ -16,6 +16,7 @@ import type {
   AnalysisResult,
   AiProposal,
 } from "./models";
+import type { Inventory, Purchase, PurchaseItem } from "@/mocks";
 import { ErrorApi } from "./backend";
 
 /** Paginación explícita: no truncar los resultados al máximo de PostgREST. */
@@ -105,6 +106,93 @@ export function useProducts() {
             .range(from, to),
         )) as Product[]),
   );
+}
+/** Compras de bodega sin costos: la vista oficial solo entrega cantidades. */
+export type PurchaseItemWithoutCosts = Pick<
+  PurchaseItem,
+  "id" | "purchase_id" | "product_id" | "ordered_qty"
+>;
+export type PurchaseWithoutCosts = Purchase & {
+  items: PurchaseItemWithoutCosts[];
+};
+export async function fetchInventory(locationCode: string): Promise<Inventory[]> {
+  const db = getSupabaseClient();
+  const { data: location, error } = await db
+    .from("locations")
+    .select("id")
+    .eq("code", locationCode)
+    .maybeSingle();
+  if (error) throw error;
+  if (!location) return [];
+  return (await readPages((from, to) =>
+    db
+      .from("v_inventory")
+      .select("*")
+      .eq("location_id", location.id)
+      .order("product_id")
+      .range(from, to),
+  )) as Inventory[];
+}
+export function useInventory(locationCode: string) {
+  return useRead("inventory", locationCode, async () => {
+    if (useMocks) {
+      const [{ inventory }, { locations }] = await Promise.all([
+        import("@/mocks/inventory"),
+        import("@/mocks"),
+      ]);
+      const location = locations.find((row) => row.code === locationCode);
+      return location
+        ? inventory.filter((row) => row.location_id === location.id)
+        : [];
+    }
+    return fetchInventory(locationCode);
+  });
+}
+export function usePurchases() {
+  return useRead("purchases", null, async (s) => {
+    if (useMocks) {
+      const [{ purchases }, { purchaseItems }] = await Promise.all([
+        import("@/mocks/purchases"),
+        import("@/mocks/purchaseItems"),
+      ]);
+      return purchases.map((purchase) => ({
+        ...purchase,
+        items: purchaseItems
+          .filter((item) => item.purchase_id === purchase.id)
+          .map(({ id, purchase_id, product_id, ordered_qty }) => ({
+            id,
+            purchase_id,
+            product_id,
+            ordered_qty,
+          })),
+      }));
+    }
+    const db = getSupabaseClient();
+    // La vista de bodega oculta los costos; el resto de roles lee su tabla por RLS.
+    const items =
+      s.role === "bodega"
+        ? ((await readPages((from, to) =>
+            db
+              .from("v_warehouse_purchase_items")
+              .select("id,purchase_id,product_id,ordered_qty")
+              .order("id")
+              .range(from, to),
+          )) as unknown as PurchaseItemWithoutCosts[])
+        : ((await readPages((from, to) =>
+            db
+              .from("purchase_order_items")
+              .select("id,purchase_id,product_id,ordered_qty")
+              .order("id")
+              .range(from, to),
+          )) as unknown as PurchaseItemWithoutCosts[]);
+    const purchases = (await readPages((from, to) =>
+      db.from("purchase_orders").select("*").order("code").range(from, to),
+    )) as unknown as Purchase[];
+    return purchases.map((purchase) => ({
+      ...purchase,
+      items: items.filter((item) => item.purchase_id === purchase.id),
+    }));
+  });
 }
 export function useLocations(scope: "asignados" | "todos" = "asignados") {
   return useRead("locations", scope, async (s) => {

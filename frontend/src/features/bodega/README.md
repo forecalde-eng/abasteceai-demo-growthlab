@@ -4,17 +4,15 @@ Ruta: `/bodega/inventario`. Permitida por la navegación existente para bodega, 
 
 La pantalla usa `@/ui` y los tonos de `docs/07_GUIA_DISENO.md`. Muestra por producto físico, reservado, disponible y vencido; al lado, compras ordenadas o con recepción parcial. El filtro por código/nombre se aplica a ambos bloques. Las fechas esperadas se formatean en `es-EC`, zona `America/Guayaquil`.
 
-## Datos y reemplazos temporales
+## Datos y lecturas
 
-`hooks.ts` contiene `useInventory(locationCode)`, `useProducts()` y `usePurchases()`, marcados `// temporal: reemplazar por @/data`. La sesión ya procede de `@/data`; los hooks reales de lectura de bodega aún no están exportados allí.
+`InventarioBodega.tsx` lee `useInventory(locationCode)`, `useProducts()` y `usePurchases()` desde `@/data` (C2, David). Ya no hay capa temporal en esta feature.
 
-- `inventory` viene de `v_inventory`, generado por SQL con `demo_metadata.reference_at` y filtrado por ubicación; no recalcula saldos ni suma compras.
-- `products`, `purchases` y `purchaseItems` vienen de los fixtures oficiales de CSV.
-- `usePurchases()` entrega compras con `items`, con una lista explícita de campos que excluye `unit_cost_usd`. No hay costos en esta pantalla, tampoco para los otros roles.
-- La cantidad de compra se etiqueta **Ordenado**, no como saldo pendiente de recibir: el fixture no aporta esa resta para recepciones parciales.
-- Solo opera con `VITE_USE_MOCKS=true`, sesión operativa y rol autorizado. En modo real informa que la lectura aún no está disponible; no inventa una respuesta. Cache separada por ubicación y sesión. Esto no sustituye los permisos reales de RLS.
-
-Cuando David entregue las lecturas, cambiar el import de hooks y retirar los temporales conservando el filtrado de costos. No se toca `src/data/` en este ticket.
+- `useInventory` resuelve el código del punto y lee `v_inventory` (SQL, con `demo_metadata.reference_at`) filtrado por `location_id`; RLS aplica el alcance real.
+- `useProducts` viene del catálogo de `@/data`.
+- `usePurchases` entrega compras con `items`. Para bodega lee la vista `v_warehouse_purchase_items` (sin costos); administración, compras y gerencia leen `purchase_order_items` por RLS. La tabla no incluye `unit_cost_usd` en esta pantalla.
+- La cantidad de compra se etiqueta **Ordenado**, no como saldo pendiente de recibir: no se resta lo ya recibido en recepciones parciales.
+- Con `VITE_USE_MOCKS=true` los hooks devuelven los fixtures oficiales; sin mocks leen Supabase. Una compra pendiente nunca suma al disponible. Esto no sustituye los permisos reales de RLS.
 
 ## Comprobaciones
 

@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { InfoIcon, ShoppingCartIcon, WarehouseIcon } from "lucide-react";
 
+import { useInventory, useProducts, usePurchases } from "@/data";
 import {
   Alert, AlertDescription, AlertTitle, Badge, Card, CardContent, CardDescription,
   CardHeader, CardTitle, EmptyState, ErrorState, Input, Label, LoadingState,
   PageHeader, Table, TableBody, TableCaption, TableCell, TableHead, TableHeader,
   TableRow, TONO,
 } from "@/ui";
-// temporal: reemplazar por @/data
-import { useInventory, useProducts, usePurchases } from "./hooks";
 
 const quantity = new Intl.NumberFormat("es-EC", { maximumFractionDigits: 3 });
 const dateTime = new Intl.DateTimeFormat("es-EC", {
