@@ -49,10 +49,11 @@ export async function readLiveSnapshot(
   if (productError || !products)
     throw new Error("No se pudo leer el catálogo con la sesión actual.");
   const rows: Snapshot["rows"] = [];
-  for (let offset = 0; ; offset += 500) {
+  for (let offset = 0; products.length > 0; offset += 500) {
     const { data, error } = await client
       .from("v_replenishment")
       .select(columns)
+      .in("product_id", products.map((product) => product.id))
       .order("location_id")
       .order("product_id")
       .range(offset, offset + 499);

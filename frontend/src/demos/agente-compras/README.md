@@ -60,6 +60,8 @@ Rama `back/david/demo-agente-compras`, basada en main. Actualizada con main `f4c
 - La etiqueta SIMULADO usa la familia neutra, conforme a la guía de diseño.
 - Se conserva la identidad verificada de la captura solo en memoria. Un SIGNED_IN repetido de la misma cuenta no borra datos ni avance; cerrar sesión, cambiar identidad o actualizar el usuario sigue invalidando la captura.
 - Once pruebas de interacción React con happy-dom cubren esos casos, incluida recuperación de selección, carga y pausa. La dependencia está fijada como desarrollo y no se incluye en la aplicación publicada.
-- TypeScript OK; suite completa **277/277**; build con ambas entradas OK; diff --check limpio. Sin verificación remota de login ni cambios en Supabase.
+- TypeScript OK; suite completa **279/279**; build con ambas entradas OK; diff --check limpio. Sin verificación remota de login ni cambios en Supabase.
 
 La revisión adicional elimina todos los estilos violeta de la demo simulada y los keyframes propios. El encabezado de recomendación es neutro, el origen SIMULADO aparece en una etiqueta neutra monoespaciada separada de la elegibilidad verde, y el indicador de ejecución es estático. Tres regresiones adicionales comprueban el color aplicado, ambas etiquetas al terminar y la ausencia de animación durante la ejecución.
+
+La consulta opcional filtra v_replenishment por los ID del catálogo activo. Las políticas históricas de productos inactivos no invalidan la captura; si no hay productos activos se omite la consulta de la vista. Dos regresiones verifican el filtro con el SDK real interceptado y el catálogo vacío.
