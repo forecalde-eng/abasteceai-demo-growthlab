@@ -36,16 +36,17 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def mantenimiento(request: Request, call_next):
         # Durante el reset ninguna otra escritura (todas son POST) puede colarse entre sus pasos.
-        if (
-            request.method == "POST"
-            and admin.reset_en_curso()
-            and request.url.path != "/admin/reset-demo"
-        ):
+        if request.method != "POST" or request.url.path == "/admin/reset-demo":
+            return await call_next(request)
+        if not admin.admitir_escritura():
             error = ApiError(
                 409, "CONFLICT", "Reinicio de la demo en curso; intenta en unos segundos."
             )
             return JSONResponse(error.body(), status_code=409)
-        return await call_next(request)
+        try:
+            return await call_next(request)
+        finally:
+            admin.terminar_escritura()
 
     @app.exception_handler(ApiError)
     async def api_error(_: Request, exc: ApiError) -> JSONResponse:

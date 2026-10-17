@@ -6,6 +6,7 @@ Cada archivo trae su BEGIN/COMMIT: son tres transacciones, no una (no se anidan)
 
 import json
 import threading
+import time
 from pathlib import Path
 from typing import Annotated
 
@@ -28,23 +29,60 @@ _en_curso = threading.Lock()
 MARCA = Path(__file__).resolve().parents[1] / ".reset_en_curso"
 
 
+# Admitir una escritura y arrancar un reset se deciden bajo el mismo candado; el reset espera a
+# que terminen las escrituras ya admitidas antes de borrar.
+_admision = threading.Lock()
+_activas = 0
+ESPERA_ESCRITURAS_S = 30
+
+
 def reset_en_curso() -> bool:
     return _en_curso.locked() or MARCA.exists()
 
 
-def ejecutar_reset(url: str, recuperando: bool = False) -> str:
-    """Corre los tres archivos y verifica la semilla. Devuelve `reference_at` en ISO."""
-    conteos: dict[str, int] = json.loads((DB / "conteos_datos.json").read_text(encoding="utf-8"))
-    with psycopg.connect(url, autocommit=True, prepare_threshold=None) as conn:
-        # Antes de borrar: el destino debe ser la DEMO FICTICIA (salvo al recuperar un reset).
+def admitir_escritura() -> bool:
+    global _activas
+    with _admision:
+        if reset_en_curso():
+            return False
+        _activas += 1
+        return True
+
+
+def terminar_escritura() -> None:
+    global _activas
+    with _admision:
+        _activas -= 1
+
+
+def esperar_escrituras() -> None:
+    fin = time.monotonic() + ESPERA_ESCRITURAS_S
+    while True:
+        with _admision:
+            if _activas == 0:
+                return
+        if time.monotonic() > fin:
+            raise ApiError(409, "CONFLICT", "Hay escrituras en curso; reintenta el reinicio.")
+        time.sleep(0.05)
+
+
+def verificar_destino(url: str) -> None:
+    """Antes de borrar: la base debe ser la DEMO FICTICIA sintética."""
+    with psycopg.connect(url, prepare_threshold=None) as conn:
         demo = conn.execute(
             "SELECT count(*) FROM abastece.demo_metadata"
             " WHERE provenance = 'synthetic' AND title LIKE '%DEMO FICTICIA%'"
         ).fetchone()[0]
-        if demo != 1 and not recuperando:
-            raise ApiError(
-                403, "FORBIDDEN", "La base destino no es la DEMO FICTICIA; no se borra nada."
-            )
+    if demo != 1:
+        raise ApiError(
+            403, "FORBIDDEN", "La base destino no es la DEMO FICTICIA; no se borra nada."
+        )
+
+
+def ejecutar_reset(url: str) -> str:
+    """Corre los tres archivos y verifica la semilla. Devuelve `reference_at` en ISO."""
+    conteos: dict[str, int] = json.loads((DB / "conteos_datos.json").read_text(encoding="utf-8"))
+    with psycopg.connect(url, autocommit=True, prepare_threshold=None) as conn:
         for paso in PASOS:
             try:
                 conn.execute((DB / paso).read_text(encoding="utf-8"))
@@ -93,12 +131,16 @@ def autorizar_reset(authorization: Annotated[str | None, Header()] = None) -> st
 
 @router.post("/admin/reset-demo", operation_id="resetDemo")
 def reset_demo(sub: Annotated[str, Depends(autorizar_reset)]) -> dict:
-    if not _en_curso.acquire(blocking=False):
-        raise ApiError(409, "CONFLICT", "Ya hay un reinicio en curso.")
+    with _admision:
+        if not _en_curso.acquire(blocking=False):
+            raise ApiError(409, "CONFLICT", "Ya hay un reinicio en curso.")
     try:
-        recuperando = MARCA.exists()
-        MARCA.write_text(sub, encoding="utf-8")
-        ref = ejecutar_reset(get_settings().database_url, recuperando)
+        esperar_escrituras()
+        url = get_settings().database_url
+        if not MARCA.exists():  # al recuperar, la base puede estar vacía: no hay destino que leer
+            verificar_destino(url)
+        MARCA.write_text(sub, encoding="utf-8")  # desde aquí empieza lo destructivo
+        ref = ejecutar_reset(url)
         MARCA.unlink()  # solo un reset verificado reabre las escrituras
         return {"ok": True, "reference_at": ref}
     finally:

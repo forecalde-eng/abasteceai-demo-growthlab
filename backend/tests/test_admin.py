@@ -23,6 +23,7 @@ def cliente(monkeypatch, rol):
     monkeypatch.setattr(auth, "verificar_jwt", lambda _: "u")
     monkeypatch.setattr(auth, "cargar_me", lambda _: auth.Me("s-1", "X", "x@x", rol, []))
     monkeypatch.setattr(admin, "ejecutar_reset", lambda *_: OK)
+    monkeypatch.setattr(admin, "verificar_destino", lambda _: None)
     return TestClient(create_app())
 
 
@@ -89,10 +90,37 @@ def test_tras_un_fallo_el_mismo_admin_puede_reintentar_sin_perfil(monkeypatch):
     monkeypatch.setattr(auth, "verificar_jwt", lambda _: "otro")  # otro token: necesita perfil
     assert c.post("/admin/reset-demo", headers=H).status_code == 403
     monkeypatch.setattr(auth, "verificar_jwt", lambda _: "u")
-    llamadas = []
-    monkeypatch.setattr(admin, "ejecutar_reset", lambda _, rec: llamadas.append(rec) or OK)
+    destino = []
+    monkeypatch.setattr(admin, "verificar_destino", destino.append)
+    monkeypatch.setattr(admin, "ejecutar_reset", lambda *_: OK)
     assert c.post("/admin/reset-demo", headers=H).status_code == 200
-    assert llamadas == [True]  # reintento en modo recuperación
+    assert destino == []  # en recuperación la base puede estar vacía: no se lee el destino
+
+
+def test_destino_rechazado_no_deja_marca_y_se_vuelve_a_verificar(monkeypatch):
+    c = cliente(monkeypatch, "administrador")
+    borrados = []
+    monkeypatch.setattr(admin, "ejecutar_reset", lambda *_: borrados.append(1) or OK)
+
+    def ajena(_):
+        raise ApiError(403, "FORBIDDEN", "La base destino no es la DEMO FICTICIA")
+
+    monkeypatch.setattr(admin, "verificar_destino", ajena)
+    for _ in range(2):
+        assert c.post("/admin/reset-demo", headers=H).status_code == 403
+    assert borrados == [] and not admin.MARCA.exists()
+
+
+def test_el_reset_espera_las_escrituras_admitidas(monkeypatch):
+    c = cliente(monkeypatch, "administrador")
+    monkeypatch.setattr(admin, "ESPERA_ESCRITURAS_S", 0.1)
+    assert admin.admitir_escritura()  # una escritura ya admitida y aún sin terminar
+    try:
+        r = c.post("/admin/reset-demo", headers=H)
+    finally:
+        admin.terminar_escritura()
+    assert r.status_code == 409 and not admin.MARCA.exists()
+    assert c.post("/admin/reset-demo", headers=H).status_code == 200
 
 
 def test_los_archivos_del_reset_existen():
