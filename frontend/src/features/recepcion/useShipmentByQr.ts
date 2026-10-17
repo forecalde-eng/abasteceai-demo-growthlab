@@ -13,11 +13,17 @@ export type RecepcionEnvio = Shipment & {
 };
 
 async function readData() {
-  const [{ shipments }, { shipmentItems }, { products }, { locations }, { orders }] = await Promise.all([
+  const [{ shipments }, { shipmentItems }, { products }, { locations }, { orders }, { envioTemporal, itemsEnvioTemporal }] = await Promise.all([
     import("@/mocks/shipments"), import("@/mocks/shipmentItems"),
     import("@/mocks/products"), import("@/mocks/locations"), import("@/mocks/orders"),
+    import("./envioTemporal"),
   ]);
-  return { shipments, shipmentItems, products, locations, orders };
+  // temporal: reemplazar por @/data (el envío temporal solo existe en mocks)
+  return {
+    shipments: [...shipments, envioTemporal],
+    shipmentItems: [...shipmentItems, ...itemsEnvioTemporal],
+    products, locations, orders,
+  };
 }
 
 function resolve(identifier: string, byQr: boolean) {
