@@ -31,6 +31,49 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe("C2 escrituras FastAPI", () => {
+  it.each([
+    "http://10.attacker.example",
+    "http://192.168.evil.test",
+    "http://172.16.example.com",
+    "http://localhost.evil.test",
+    "http://172.15.10.2",
+    "http://172.32.10.2",
+    "http://192.169.1.2",
+    "http://8.8.8.8",
+    "http://10.0.0.256",
+    "http://172.20.10.999",
+    "http://[::ffff:8.8.8.8]",
+  ])("rechaza %s antes de obtener o enviar el JWT", async (base) => {
+    vi.stubEnv("VITE_BACKEND_URL", base);
+    await expect(
+      api.decideOrder("order-test", { decision: "approve" }),
+    ).rejects.toMatchObject({ code: "CONFIGURATION" });
+    expect(sdk.getSupabaseClient().auth.getSession).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it.each([
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://[::1]:8000",
+    "http://10.1.2.3:8000",
+    "http://192.168.1.2:8000",
+    "http://172.16.0.1:8000",
+    "http://172.31.255.255:8000",
+    "http://172.20.10.2:8000",
+  ])("permite el backend de ensayo %s", async (base) => {
+    vi.stubEnv("VITE_BACKEND_URL", base);
+    expect(
+      await api.decideOrder("order-test", { decision: "approve" }),
+    ).toEqual(result);
+    expect(vi.mocked(fetch).mock.calls[0][0]).toBe(
+      `${base}/orders/order-test/decision`,
+    );
+    expect(
+      new Headers(vi.mocked(fetch).mock.calls[0][1]?.headers).get(
+        "Authorization",
+      ),
+    ).toBe("Bearer jwt-solo-prueba");
+  });
   it("aprueba PED-DEMO-001 con INS-005=1 y motivo, usando JWT sin claves administrativas", async () => {
     const body = {
       decision: "approve" as const,

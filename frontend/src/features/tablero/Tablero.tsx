@@ -47,8 +47,8 @@ const dias = new Intl.NumberFormat("es-EC", { maximumFractionDigits: 1 });
 export function Tablero() {
   const [ciudad, setCiudad] = useState("");
   const { data: filas = [], isLoading, isError, refetch } = useReplenishment(ciudad || undefined);
-  const { data: puntos = [], isLoading: cargandoPuntos } = useLocations("todos");
-  const { data: productos = [], isLoading: cargandoProductos } = useProducts();
+  const { data: puntos = [], isLoading: cargandoPuntos, isError: errorPuntos, refetch: recargarPuntos } = useLocations("todos");
+  const { data: productos = [], isLoading: cargandoProductos, isError: errorProductos, refetch: recargarProductos } = useProducts();
 
   const puntoPorId = new Map(puntos.map((punto) => [punto.id, punto]));
   const productoPorSku = new Map(productos.map((producto) => [producto.sku, producto]));
@@ -65,6 +65,10 @@ export function Tablero() {
 
   // Hasta tener los puntos y el catálogo, no se puede resolver el nombre de cada fila.
   const cargando = isLoading || cargandoPuntos || cargandoProductos;
+  const errorLecturas = isError || errorPuntos || errorProductos;
+  function recargarTodo() {
+    void refetch(); void recargarPuntos(); void recargarProductos();
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
@@ -79,7 +83,7 @@ export function Tablero() {
           <Card key={estado}>
             <CardHeader>
               <CardTitle className="text-3xl tabular-nums">
-                {isLoading ? "—" : numero.format(cuantos(estado))}
+                {cargando || errorLecturas ? "—" : numero.format(cuantos(estado))}
               </CardTitle>
               <CardDescription>
                 <StatusBadge kind="cobertura" value={estado} />
@@ -92,7 +96,7 @@ export function Tablero() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {cargando || isError
+            {cargando || errorLecturas
               ? "Cobertura por insumo"
               : `${filas.length} insumo-punto en ${puntosEnVista} ${
                   puntosEnVista === 1 ? "punto" : "puntos"
@@ -120,14 +124,14 @@ export function Tablero() {
             </Select>
           </div>
 
-          {cargando ? (
-            <LoadingState label="Cargando la cobertura…" />
-          ) : isError ? (
+          {errorLecturas ? (
             <ErrorState
               title="No se pudo cargar la cobertura"
               description="Intenta de nuevo en unos segundos."
-              onRetry={() => void refetch()}
+              onRetry={recargarTodo}
             />
+          ) : cargando ? (
+            <LoadingState label="Cargando la cobertura…" />
           ) : filas.length === 0 ? (
             <EmptyState
               icon={<LayoutDashboardIcon />}

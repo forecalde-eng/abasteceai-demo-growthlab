@@ -46,12 +46,24 @@ it.each(["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"])(
       ["abastece", "orders", "real", "perfil-anterior"],
       [{ code: "PED-DEMO-001" }],
     );
+    state.client!.setQueryData(
+      ["bruno", "orderTrace", "real", "perfil-anterior"],
+      [{ code: "PED-DEMO-001" }],
+    );
     useSession();
     state.callback!(event);
     expect(
       state.client!.getQueryData([
         "abastece",
         "orders",
+        "real",
+        "perfil-anterior",
+      ]),
+    ).toBeUndefined();
+    expect(
+      state.client!.getQueryData([
+        "bruno",
+        "orderTrace",
         "real",
         "perfil-anterior",
       ]),

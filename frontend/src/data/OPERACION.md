@@ -22,3 +22,9 @@ revisadas distintas: si aparecen cambios posteriores, revisar la integración.
 Pruebas locales: npm ci --ignore-scripts; npx tsc --noEmit; npm test; npm run build.
 No usan credenciales ni escriben en la base remota. El ensayo real requiere
 variables públicas locales, FastAPI disponible y exposición de abastece en Data API.
+
+## Correcciones de revisión Codex
+
+HTTP solo para localhost, loopback y literales IPv4 privados válidos; se rechazan DNS con prefijos 10/192.168/172.16 antes de obtener el JWT. El hotspot 172.20.10.2:8000 continúa permitido. Pruebas positivas/negativas en api.test.ts.
+
+Incidencias y tablero incluyen carga/error de las relaciones y catálogos. Un fallo no se muestra como relación a nivel de punto, nombre genérico o KPI válido; reintentar relee todas las fuentes. Pruebas de presentación y callbacks en support-queries.test.tsx.
