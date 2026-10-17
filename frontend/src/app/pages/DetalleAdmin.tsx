@@ -57,8 +57,8 @@ import {
  * comparación lado a lado del duplicado), la **propuesta de Jev** en violeta y los botones de
  * decisión, **fuera** del bloque de la IA (la IA propone, la persona decide; I2).
  *
- * // temporal: los datos vienen de `@/app/dev/apiDemo` (la capa temporal única, que envuelve
- * // temporal: `@/mocks`). Al llegar `@/data` (J-0.4), solo cambia el import de los hooks.
+ * Lecturas mediante C2 (`@/data`): Supabase/RLS o mocks según configuración.
+ * Análisis y decisiones reales pasan por FastAPI con el JWT de la sesión.
  */
 
 /** `15 oct 2026, 14:30` — docs/07_GUIA_DISENO.md §9.10 (es-EC, 24 h, America/Guayaquil). */
@@ -131,7 +131,7 @@ export function DetalleAdmin() {
   const pedido = detalle?.order;
   const items = detalle?.items ?? [];
 
-  const { data: analisis } = useAnalysis(pedido?.id);
+  const { data: analisis, isSuccess: analisisLeido } = useAnalysis(pedido?.id);
   const duplicado = analisis?.duplicates[0];
   const { data: detalleDuplicado } = useOrder(duplicado?.order_id);
   const { data: incidencias = [] } = useIncidents({ orderId: pedido?.id, status: "open" });
@@ -153,14 +153,15 @@ export function DetalleAdmin() {
     },
   });
 
-  // Analiza el pedido enviado una sola vez al abrirlo (idempotente en la capa temporal).
+  // Solo solicitar el análisis si la lectura terminó y confirmó que no existe.
+  // Una consulta pendiente o fallida nunca debe provocar una escritura automática.
   const analisisLanzado = useRef<string | null>(null);
   useEffect(() => {
-    if (!pedido || pedido.status !== "submitted" || analisis) return;
+    if (!pedido || pedido.status !== "submitted" || !analisisLeido || analisis !== null) return;
     if (analisisLanzado.current === pedido.id) return;
     analisisLanzado.current = pedido.id;
     analizar.mutate(pedido.id);
-  }, [pedido, analisis, analizar]);
+  }, [pedido, analisis, analisisLeido, analizar]);
 
   const decidir = useMutation({
     mutationFn: (datos: DecisionInput) => decideOrder(pedido?.id as string, datos),
@@ -464,7 +465,7 @@ export function DetalleAdmin() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <SparklesIcon className="size-4 text-violet-600" />
                 Propuesta de Jev
-                {analisis?.proposal && tieneRespuestas ? (
+                {analisis?.proposal ? (
                   <AiSourceBadge source={analisis.proposal.source} className="ml-auto" />
                 ) : null}
               </CardTitle>
@@ -479,12 +480,12 @@ export function DetalleAdmin() {
                       Confianza: <span className="font-medium">{formatearConfianza(confianza)}</span>
                     </p>
                   ) : (
-                    <p className="text-muted-foreground">Jev todavía no clasificó este pedido.</p>
+                    <p className="text-muted-foreground">No hay respuestas estructuradas disponibles.</p>
                   )}
                   <p className="text-muted-foreground">
                     Evidencia: {pedido.observations || "sin nota del auxiliar."}
                   </p>
-                  {tieneRespuestas && analisis.proposal.status === "human_review" ? (
+                  {analisis.proposal.status === "human_review" ? (
                     <Badge variant="outline" className={`border font-medium ${TONO.atencion}`}>
                       Revisión humana
                     </Badge>
