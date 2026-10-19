@@ -1,0 +1,29 @@
+{
+  "main": {
+    "commit": "7f2e6f8ee767da0bcbdd61ddb09670ec645fe9d9",
+    "files": {
+      "01_esquema.sql": "55ac7b24dae5e5b777f5797ea58806bd6fbd9b957892c27d3dd94ab93858f30f",
+      "02_reglas_y_accesos.sql": "42423cd98cd22ecd11e64e2c4cbf57c664b80088a8e767d2028a72367066d99e",
+      "07_integridad_preseed.sql": "28b315d040fd7a5d55490e65568cdce0ce50c91412dc84f7ffd0f1d983c5f1d4",
+      "03_datos_ficticios.sql": "27db313743900a0a8008f13cddf743460372bed6d361906d2d1c2f061410f735",
+      "08_proveedor_openai.sql": "62a0337ebd96e8ca7882b491ee7e2f1ce3036cb4a95916e3d9f9d2b23a9a5e57",
+      "09_fn_pedidos.sql": "7563472b886164f79c5f63df8641fefeed0148e637155ace1054e22afff37c94",
+      "10_fn_bodega.sql": "984d2eadb570b3015e2faddb703c81f7652cf50e4747ef170e9e2f07fffb7ddf",
+      "11_fn_envios.sql": "703b3a11ab5f557cd90912df4238984c8a9c3a1d065e9b139fda405510d27678"
+    }
+  },
+  "pending": {
+    "courier-sql": {
+      "pr": "https://github.com/forecalde-eng/abasteceai-demo-growthlab/pull/158",
+      "commit": "5366e0d73e8c63071211bcbaf17f23f9bf052393",
+      "path": "db/11_fn_envios.sql",
+      "sha256": "5d61425fbca74161a509b970b3fb4aadc56010f2d65baa2ab0a9604e319232a2"
+    },
+    "reconcile-sql": {
+      "pr": "https://github.com/forecalde-eng/abasteceai-demo-growthlab/pull/134",
+      "commit": "1ba31f78f745ed18be09b9dffafb2f8491d0b681",
+      "path": "db/13_reconciliar_preparacion_demo.sql",
+      "sha256": "0cd5db0d70da0d6012b2fd887f50ab3eae544c1c4995d6d653e7340cff984731"
+    }
+  }
+}
