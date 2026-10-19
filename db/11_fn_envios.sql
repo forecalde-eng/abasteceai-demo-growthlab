@@ -217,6 +217,77 @@ $$;
 GRANT EXECUTE ON FUNCTION abastece.fn_confirmar_ruta(uuid,uuid,date,jsonb,numeric,numeric,text) TO service_role;
 REVOKE EXECUTE ON FUNCTION abastece.fn_confirmar_ruta(uuid,uuid,date,jsonb,numeric,numeric,text) FROM PUBLIC, anon, authenticated;
 
+-- D-2.6 (#38), HU-3.3: registrar no es despachar. El backend entrega la guía
+-- del courier; inventario, reservas y líneas se conservan hasta fn_despachar.
+CREATE OR REPLACE FUNCTION abastece.fn_envio_courier(
+ p_staff uuid, p_order uuid, p_carrier text, p_guide text, p_promised_at timestamptz
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+ v_role text;
+ v_order abastece.orders%ROWTYPE;
+ v_reference_at timestamptz;
+ v_number text;
+ v_code text;
+ v_shipment uuid;
+BEGIN
+ SELECT role INTO v_role FROM abastece.staff_members WHERE id = p_staff AND active;
+ IF v_role IS DISTINCT FROM 'logistica' THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0403', MESSAGE = 'Solo logística activa puede registrar courier';
+ END IF;
+ IF p_order IS NULL OR p_carrier IS NULL OR pg_catalog.btrim(p_carrier) = '' OR
+    p_guide IS NULL OR pg_catalog.btrim(p_guide) = '' OR
+    (p_promised_at IS NOT NULL AND NOT pg_catalog.isfinite(p_promised_at)) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Datos de courier inválidos';
+ END IF;
+ -- Igual que fn_confirmar_ruta: advisory de altas → pedido FOR UPDATE.
+ -- Comparte el espacio ENV-DEMO/GUIA-DEMO y evita asignar el pedido dos veces.
+ PERFORM pg_catalog.pg_advisory_xact_lock(17391011, 4);
+ SELECT * INTO v_order FROM abastece.orders WHERE id = p_order FOR UPDATE;
+ -- El endpoint no anuncia 404; al igual que rutas, un pedido no elegible es 409.
+ IF NOT FOUND OR v_order.status <> 'ready' THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Pedido no elegible para courier';
+ END IF;
+ IF EXISTS (SELECT 1 FROM abastece.shipments WHERE order_id = p_order) OR
+    EXISTS (SELECT 1 FROM abastece.shipments WHERE guide_code = p_guide) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Pedido o guía ya tiene envío';
+ END IF;
+ IF NOT EXISTS (SELECT 1 FROM abastece.order_items WHERE order_id = p_order) OR
+    EXISTS (SELECT 1 FROM abastece.order_items WHERE order_id = p_order AND
+     (approved_qty IS NULL OR approved_qty::text = 'NaN' OR prepared_qty::text = 'NaN' OR
+      prepared_qty <> approved_qty)) THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0409', MESSAGE = 'Pedido sin preparación completa';
+ END IF;
+ SELECT reference_at INTO STRICT v_reference_at FROM abastece.demo_metadata WHERE id;
+ IF p_promised_at < v_reference_at THEN
+  RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Fecha prometida anterior al reloj de demo';
+ END IF;
+ -- Solo los códigos internos de envío asignan correlativos. Una guía externa
+ -- es texto opaco, aunque coincida con GUIA-DEMO-NNN: nunca convertirla a numeric.
+ SELECT (coalesce(pg_catalog.max(pg_catalog.split_part(code, '-', 3)::numeric), 0) + 1)::text
+ INTO v_number FROM abastece.shipments WHERE code ~ '^ENV-DEMO-[0-9]+$';
+ v_code := 'ENV-DEMO-' || pg_catalog.lpad(v_number, greatest(3, pg_catalog.length(v_number)), '0');
+ INSERT INTO abastece.shipments
+  (code, order_id, location_id, mode, carrier_name, guide_code, qr_token, status, promised_delivery_at)
+ VALUES (v_code, p_order, v_order.location_id, 'courier', p_carrier, p_guide,
+  pg_catalog.gen_random_uuid(), 'created', p_promised_at)
+ RETURNING id INTO v_shipment;
+ INSERT INTO abastece.audit_events
+  (actor_id, location_id, entity_type, entity_id, action, before_state, after_state, occurred_at)
+ VALUES (p_staff, v_order.location_id, 'shipment', v_shipment, 'shipment_courier_created', NULL,
+  pg_catalog.jsonb_build_object('status', 'created', 'order_id', p_order, 'mode', 'courier',
+   'carrier_name', p_carrier, 'guide_code', p_guide, 'promised_delivery_at', p_promised_at), v_reference_at);
+ RETURN pg_catalog.jsonb_build_object('id', v_shipment, 'code', v_code, 'status', 'created',
+  'order_id', p_order, 'order_status', v_order.status, 'guide_code', p_guide);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION abastece.fn_envio_courier(uuid,uuid,text,text,timestamptz) TO service_role;
+REVOKE EXECUTE ON FUNCTION abastece.fn_envio_courier(uuid,uuid,text,text,timestamptz) FROM PUBLIC, anon, authenticated;
+
 -- D-2.5 (#37), HU-2.4. FastAPI resuelve JWT; el QR no autoriza la recepción.
 -- Una línea por shipment_item, incluidas las cantidades cero. No reserva stock.
 CREATE OR REPLACE FUNCTION abastece.fn_recibir(
