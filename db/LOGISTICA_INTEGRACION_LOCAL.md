@@ -11,9 +11,9 @@ funciones, migraciones ni contratos; no ejecuta SQL remoto ni mezcla ramas.
 | `fn_preparar` | En main, #131 fusionado | `db/10_fn_bodega.sql`; parciales y total acumulado; advisory `(17391011,5)` |
 | `fn_confirmar_ruta` | En main, #127 + #130 fusionados | `db/11_fn_envios.sql`; vehículo/fecha y sequence; advisory `(17391011,4)` |
 | `fn_despachar` | En main, #139 fusionado | Archivo 11; agrupación por ítem/lote, auditoría de reservas y parejas BOD/TRA |
-| `fn_envio_courier` | #158 abierto, listo para revisión | Commit `6db5620d43a534a40dcc530491231d101112e04b`; solo se añade a la base efímera |
+| `fn_envio_courier` | #158 abierto, listo para revisión | Commit `5366e0d73e8c63071211bcbaf17f23f9bf052393`; solo se añade a la base efímera |
 | `reservation_id` | **No existe migración integrada** | #135, Draft, commit `10a3d4c3d4b249fece67e553e416f00ef6d7c71c`; prototipo B no cargado |
-| Conciliación 003/006 | #134 abierto, listo para revisión; con hallazgos | Commit `764cebafd5df927d01ac1f8a6a01df1e437e4904`; script 13 opcional, solo local |
+| Conciliación 003/006 | #134 abierto, listo para revisión; saldo no finito corregido | Commit `1ba31f78f745ed18be09b9dffafb2f8491d0b681`; script 13 opcional, solo local |
 | Reset que conserva conciliación | #153 abierto, Draft | Commit `df65ff8648208c7bdcd6de73ae7cb27256fb50e8`; integrar coordinado con #134, no es requisito del runner |
 
 Los estados anteriores son una fotografía de GitHub al preparar este informe;
@@ -56,7 +56,7 @@ Exportar con Node, conservando exactamente los bytes también en Windows (evitar
 redirecciones PowerShell que cambien la codificación):
 
 ```bash
-node -e "const f=require('node:fs'),p=require('node:path'),o=require('node:os'),c=require('node:child_process'); const d=p.join(o.tmpdir(),'abastece-logistica-fuentes');f.mkdirSync(d,{recursive:true});for(const [n,s] of [['courier.sql','6db5620d43a534a40dcc530491231d101112e04b:db/11_fn_envios.sql'],['reconcile.sql','764cebafd5df927d01ac1f8a6a01df1e437e4904:db/13_reconciliar_preparacion_demo.sql']]){const file=p.join(d,n);f.writeFileSync(file,c.execFileSync('git',['show',s]));console.log(file)}"
+node -e "const f=require('node:fs'),p=require('node:path'),o=require('node:os'),c=require('node:child_process'); const d=p.join(o.tmpdir(),'abastece-logistica-fuentes');f.mkdirSync(d,{recursive:true});for(const [n,s] of [['courier.sql','5366e0d73e8c63071211bcbaf17f23f9bf052393:db/11_fn_envios.sql'],['reconcile.sql','1ba31f78f745ed18be09b9dffafb2f8491d0b681:db/13_reconciliar_preparacion_demo.sql']]){const file=p.join(d,n);f.writeFileSync(file,c.execFileSync('git',['show',s]));console.log(file)}"
 ```
 
 Usar las dos rutas impresas en los siguientes comandos; no son secretos:
@@ -102,34 +102,37 @@ originales de PED-DEMO-001. Ningún fixture modifica `03_datos_ficticios.sql`.
 - Rechazo del lote reservado que vence antes de despachar; comprobación de 003/006
   antes y después de conciliación y segunda conciliación sin efectos.
 
-## Hallazgos y correcciones recomendadas
+## Regresiones corregidas y límites independientes
 
-### Bloqueante para courier general: #158 convierte guías arbitrarias a numeric
+### #158: guía externa tratada como texto opaco
 
-Una guía válida de OpenAPI, **`G-1`**, provoca `22P02` en el UNION del correlativo.
-El cast de `split_part(p_guide, '-', 3)::numeric` puede evaluarse como constante
-antes de su WHERE. La prueba end-to-end lo encontró también con una guía UUID.
-La transacción revierte y no deja envío parcial, pero el alta válida falla.
+Se reprodujo `22P02` con **`G-1`** y con una guía UUID en la versión anterior
+`6db5620`: PostgreSQL podía evaluar el cast de un parámetro antes del WHERE.
+El commit **5366e0d** calcula el correlativo solo desde `shipments.code`
+(`ENV-DEMO-NNN`), sin convertir guías recibidas ni guardadas a numeric. Conserva
+unicidad, permisos y bloqueo compartido con rutas. Las pruebas específicas
+incluyen guías alfanuméricas, sin guiones, UUID, apariencia de código interno,
+una guía ya guardada y códigos internos superiores a 999.
 
-La cadena courier sí puede probarse con `GUIA-DEMO-1001`, entrada válida cuyo
-segmento es numérico. **Ese éxito no implica que #158 esté libre de errores.**
-Corregir en su rama mediante una conversión protegida dentro de CASE/IF, junto
-con casos de guía sin prefijo, con guiones y con texto alfanumérico. Este PR
-no cambia la implementación ni el contrato de guide_code.
+La cadena courier de este runner ahora usa una guía externa `GUIA-TEST-<uuid>`,
+y la regresión activa prueba `G-1`. No se limita el recorrido a una guía numérica.
 
-### Bloqueante para conciliar saldos corruptos: NaN en #134
+### #134: rechazar saldos no finitos antes de escribir
 
-La regresión inserta un saldo local `NaN` en INS-001 y exige P0409 sin efectos.
-La versión fijada de #134 acepta ese saldo y crea reservas: reproduce el
-[hallazgo abierto](https://github.com/forecalde-eng/abasteceai-demo-growthlab/pull/134#discussion_r4304923889).
-El CHECK original admite NaN; comparaciones normales no lo excluyen.
-Añadir una comprobación explícita de finitud antes de cualquier escritura en
-el PR de conciliación, sin editar aquí migraciones originales.
+Se reprodujo la aceptación de NaN de la versión `764ceba`. El commit **1ba31f7**
+rechaza saldos físicos o reservados con representación numeric `NaN`, `Infinity`
+o `-Infinity` antes de iniciar escrituras. PostgreSQL no tiene isfinite(numeric);
+la comprobación no convierte cantidades a float. El CHECK original sigue intacto.
 
-Las dos regresiones anteriores están marcadas **TODO**, no aprobadas ni
-silenciadas como éxitos. El resumen distingue passed, skipped y todo; un exit
-code 0 con TODO **no certifica** la corrección de esos PR. Mantener Draft y
-repetir con versiones corregidas y sus hashes revisados antes de retirar TODO.
+El verificador específico pasa **17/17**: incluye NaN físico en el primer y último
+producto, NaN reservado de otro pedido que comparte lote y repetición tras
+conciliar. Triggers locales impiden cualquier escritura antes de recibir P0409;
+los fingerprints de las 27 tablas permanecen iguales. Se conservan los casos
+normales y el rollback completo por fallo de auditoría.
+
+**Ambas regresiones de este runner están activas y aprobadas, sin TODO.** Las
+fuentes corregidas se verifican con los hashes nuevos del manifiesto. No se ha
+modificado la implementación de ninguna función en este PR de pruebas.
 
 ### Efecto funcional de #134 sobre el pitch
 
@@ -140,7 +143,11 @@ con INS-005=1, fn_preparar obtiene **0**, devuelve preparing y la ruta no puede
 confirmarse. No es un error de FEFO. Jorge/Omar deben acordar suministro real
 registrado o ajustar el guion; no inventar stock ni alterar cantidades para
 ocultarlo. #134 y #153 deben integrarse coordinados para que reset no deshaga
-la corrección. Este runner no ejecuta reset ni valida el backend de #153.
+la corrección. Este runner no ejecuta reset. En un ensayo separado se exportó #153 a una
+copia temporal y se incorporó únicamente el 13 corregido: **161/161** pruebas
+SQL, incluidos dos resets con 9.395 filas, 703 ubicaciones y Auth local intacto,
+y **24/24** pruebas de backend del reset con mocks. La simulación de integración
+Git de #134/#153 no presenta conflictos; no se modificó ni fusionó #153.
 
 ### Límite del diseño A
 
@@ -190,20 +197,31 @@ sin DATABASE_URL de Supabase; no ejecutadas en este trabajo.
 Ejecutado con Node.js v24.19.0 y PGlite 0.5.10. Cada fila se ejecutó tanto en
 orden normal como inverso, obteniendo el mismo resumen:
 
-| Perfil | Aprobadas | Omitidas por fuente ausente | Regresiones TODO reproducidas |
+| Perfil | Aprobadas | Omitidas por fuente ausente | TODO |
 |---|---:|---:|---:|
 | Main, sin PR pendientes | 10 | 4 | 0 |
-| Main + courier #158 | 12 | 1 | 1: guía alfanumérica |
-| Main + courier #158 + conciliación #134 | 12 | 0 | 2: guía y NaN |
+| Main + courier #158 corregido | 13 | 1 | 0 |
+| Main + courier #158 + conciliación #134 corregidos | 14 | 0 | 0 |
 
-Son **14 escenarios por perfil**, no 14 éxitos en los perfiles con TODO. No hay
-fallos adicionales. Las regresiones TODO son errores reales, deliberadamente
-pendientes de corrección en sus ramas; no se deben retirar al aprobar este PR.
+Son **14 escenarios por perfil**, sin fallos ni regresiones abiertas en esta
+batería. Los omitidos requieren fuentes opcionales que no se han cargado. No hay
+funciones simuladas ni estados compartidos entre escenarios.
 
 El control negativo de fuente alterada devuelve error SHA-256 **antes de crear
 la base**, sin iniciar escenarios. No se usó el SQL alterado en ninguna prueba.
 
 Suites existentes sobre main sin overlays: funciones **160/160**, integridad
-**29/29** y base **61/61**. `git diff --check` limpio. No se prueba ni se modifica
-el backend de #153. Ningún PR de implementación se modifica ni fusiona y las
+**29/29** y base **61/61**. `git diff --check` limpio. La compatibilidad de #153 se prueba solo en una copia temporal con mocks y
+PGlite, sin modificar su rama. Ningún PR de implementación se modifica ni fusiona y las
 llamadas remotas a la base de datos son **0**.
+
+### Suites de las ramas corregidas
+
+- #158 / 5366e0d: funciones **182/182**, integridad **29/29**, base **61/61**.
+- #134 / 1ba31f7: conciliación **17/17**, integridad **29/29**, base **61/61**.
+- #153 / df65ff8 con 13 corregido, solo temporal: SQL **161/161**, backend reset **24/24**.
+
+Siguen pendientes la revisión humana, integrar #134 coordinado con #153, acordar
+el suministro/guion por INS-005 y las pruebas reales con dos conexiones PostgreSQL.
+Cero regresiones abiertas en esta batería no demuestra ausencia de cualquier
+posible error fuera de los escenarios cubiertos.

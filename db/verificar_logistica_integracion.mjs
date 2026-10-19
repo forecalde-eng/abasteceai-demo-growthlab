@@ -30,7 +30,7 @@ for (const [flag, source] of Object.entries(manifest.pending)) {
  external[flag] = content;
 }
 const courier = external['courier-sql']?.match(/CREATE OR REPLACE FUNCTION abastece\.fn_envio_courier\([\s\S]*?\nREVOKE EXECUTE ON FUNCTION abastece\.fn_envio_courier[^\n]*;/)?.[0];
-assert.ok(!external['courier-sql'] || courier, 'No se encontró la función courier aprobada para probar');
+assert.ok(!external['courier-sql'] || courier, 'No se encontró la función courier verificada para probar');
 console.log(JSON.stringify({demo: 'FICTICIA', base: manifest.main.commit,
  courier: courier ? manifest.pending['courier-sql'].commit : 'BLOQUEADO: falta #158',
  reconciliation: external['reconcile-sql'] ? manifest.pending['reconcile-sql'].commit : 'NO CARGADA',
@@ -75,7 +75,7 @@ async function context({reconcile = true} = {}) {
   };
   const ship = async (order, mode = 'own') => mode === 'own' ? (await route([order])).shipments[0] :
    invoke('SELECT abastece.fn_envio_courier($1,$2,$3,$4,NULL) r',
-    [actor.logistica, order, 'Courier DEMO FICTICIA', `GUIA-DEMO-${1000 + serial}`]);
+    [actor.logistica, order, 'Courier DEMO FICTICIA', `GUIA-TEST-${order}`]);
   let serial = 0; // Solo nombres de fixtures locales, nunca códigos de negocio del sistema.
   const fixture = async ({qty = 3, early = 2, later = 1} = {}) => {
    serial++;
@@ -295,7 +295,7 @@ scenario('Límite relacional documentado: no existe reservation_id ni FK de lote
   JOIN abastece.shipment_items i ON i.id=m.shipment_item_id
   WHERE i.shipment_id=$1 AND m.lot_id<>i.lot_id`, [sh.id])).n, 1);
 });
-scenario('Regresión pendiente #134: conciliación debe rechazar saldo NaN', async c => {
+scenario('Regresión #134: conciliación rechaza saldo NaN', async c => {
  const data = await c.one(`SELECT l.id,p.id product_id FROM abastece.product_lots l
   JOIN abastece.products p ON p.id=l.product_id WHERE p.sku='INS-001' AND l.batch_code='DEMO-001-A'`);
  await c.db.query(`INSERT INTO abastece.stock_movements(location_id,product_id,lot_id,delta_qty,occurred_at,reason,recorded_by)
@@ -304,9 +304,9 @@ scenario('Regresión pendiente #134: conciliación debe rechazar saldo NaN', asy
  const before = await c.snapshot();
  await assert.rejects(() => c.db.exec(external['reconcile-sql']), {code: 'P0409'});
  assert.deepEqual(await c.snapshot(), before);
-}, {needsReconcile: true, unreconciled: true, todo: 'Hallazgo abierto de #134, no corregir implementación en este PR de pruebas'});
+}, {needsReconcile: true, unreconciled: true});
 
-scenario('Regresión pendiente #158: una guía alfanumérica válida no debe producir 22P02', async c => {
+scenario('Regresión #158: guía alfanumérica válida sin 22P02', async c => {
  const f = await c.fixture(); await c.prepare(f.order, f.items);
  const before = await c.snapshot();
  try {
@@ -317,13 +317,12 @@ scenario('Regresión pendiente #158: una guía alfanumérica válida no debe pro
   assert.deepEqual(await c.snapshot(), before); // El error no deja un envío parcial.
   throw error;
  }
-}, {needsCourier: true, todo: 'Conversión constante antes de WHERE en #158; requiere corrección separada'});
+}, {needsCourier: true});
 
 if (options.reverse) cases.reverse();
 for (const s of cases) test(s.name, {
  skip: s.needsCourier && !courier ? 'Falta SQL verificado de #158; no se simula courier' :
   s.needsReconcile && !external['reconcile-sql'] ? 'Falta SQL verificado de #134' : false,
- todo: s.todo,
 }, async () => {
  // Base NUEVA por caso, cerrada incluso ante error. Sin estados compartidos entre pruebas.
  const c = await context({reconcile: !s.unreconciled});

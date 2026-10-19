@@ -15,15 +15,15 @@
   "pending": {
     "courier-sql": {
       "pr": "https://github.com/forecalde-eng/abasteceai-demo-growthlab/pull/158",
-      "commit": "6db5620d43a534a40dcc530491231d101112e04b",
+      "commit": "5366e0d73e8c63071211bcbaf17f23f9bf052393",
       "path": "db/11_fn_envios.sql",
-      "sha256": "401d2138bff82f38402d0fbef68b4bbd0344c51171ad7d38576de05657e0f4d9"
+      "sha256": "5d61425fbca74161a509b970b3fb4aadc56010f2d65baa2ab0a9604e319232a2"
     },
     "reconcile-sql": {
       "pr": "https://github.com/forecalde-eng/abasteceai-demo-growthlab/pull/134",
-      "commit": "764cebafd5df927d01ac1f8a6a01df1e437e4904",
+      "commit": "1ba31f78f745ed18be09b9dffafb2f8491d0b681",
       "path": "db/13_reconciliar_preparacion_demo.sql",
-      "sha256": "c410001770c9b45982c77822dad5a9551147b5663bdb615560725e554a922354"
+      "sha256": "0cd5db0d70da0d6012b2fd887f50ab3eae544c1c4995d6d653e7340cff984731"
     }
   }
 }
