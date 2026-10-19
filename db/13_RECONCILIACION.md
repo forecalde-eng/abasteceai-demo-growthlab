@@ -52,3 +52,22 @@ Codex señaló que el reinicio actual ejecuta 12 → 03 → re-vincular, valida 
 La validación idempotente de ambas auditorías exige ahora occurred_at exactamente igual a reference_at, no cualquier fecha anterior. Dos pruebas simulan corrupción de una copia local para rechazar fechas alteradas sin escrituras.
 
 Última validación específica: **12/12**, incluidas las dos fechas de auditoría alteradas. El ensayo combinado con el reinicio nuevo pasa **161/161** pruebas de funciones en PGlite, sin llamadas remotas.
+
+### Finitud de saldos (regresión de #159)
+
+Antes de comparar disponibilidad o iniciar escrituras, se rechazan explícitamente
+los saldos físicos o reservados `NaN`, `Infinity` y `-Infinity`, con `P0409` y el
+SKU en el detalle. PostgreSQL no ofrece `isfinite(numeric)`; se compara su
+representación textual canónica, sin convertir cantidades a float. Los typmod
+`numeric(12,3)` impiden almacenar infinitos, pero no NaN; el agregado `SUM` es
+numeric sin typmod y la comprobación cubre los tres valores especiales.
+
+Las regresiones comprueban NaN físico en el primer y último producto, NaN en
+reservas de otro pedido que comparte el lote, y repetición tras conciliar. Triggers
+locales de prueba impiden cualquier escritura: el resultado debe ser P0409 por
+finitud antes de intentarlas. Los fingerprints de las 27 tablas deben permanecer
+idénticos; los ensayos normales, repetición y rollback de auditoría se conservan.
+
+Validación de esta corrección: conciliación **17/17**, integridad **29/29** y
+base **61/61**; sin llamadas remotas. El stock disponible de INS-005 permanece
+en 0 después de conciliar: el guion de PED-DEMO-001 requiere un acuerdo aparte.

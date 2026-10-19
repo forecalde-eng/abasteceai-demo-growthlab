@@ -185,6 +185,57 @@ test('D-2.2: conciliación puntual de PED-DEMO-003 y 006', async t => {
   } finally { await db.close(); }
  });
 
+ for (const [source, sku, repeat] of [
+  ['physical', 'INS-001', false], ['physical', 'INS-016', false],
+  ['physical', 'INS-001', true], ['reserved', 'INS-001', false],
+  ['reserved', 'INS-001', true],
+ ]) await t.test(`saldo ${source} NaN de ${sku}, ${repeat ? 'repetición' : 'primera ejecución'}: P0409 antes de escribir`, async () => {
+  const db = await fixture();
+  try {
+   if (repeat) await db.exec(reconcileSql);
+   const row = (await db.query(`SELECT l.id lot_id,p.id product_id,
+    (SELECT id FROM abastece.locations WHERE code='BOD-DEMO') bodega,
+    (SELECT id FROM abastece.staff_members WHERE role='bodega') actor
+    FROM abastece.product_lots l JOIN abastece.products p ON p.id=l.product_id
+    WHERE p.sku=$1 AND l.batch_code='DEMO-'||substring(p.sku FROM 5)||'-A'`, [sku])).rows[0];
+   if (source === 'physical') {
+    await db.query(`INSERT INTO abastece.stock_movements
+     (location_id,product_id,lot_id,delta_qty,occurred_at,reason,recorded_by)
+     SELECT $1,$2,$3,'NaN',reference_at,'adjustment',$4 FROM abastece.demo_metadata WHERE id`,
+    [row.bodega,row.product_id,row.lot_id,row.actor]);
+   } else {
+    // Simular una copia corrupta, exclusivamente en esta base desechable.
+    // Una reserva de otro pedido afecta al saldo del lote que se va a usar.
+    const other = (await db.query(`SELECT r.id FROM abastece.inventory_reservations r
+     JOIN abastece.order_items i ON i.id=r.order_item_id JOIN abastece.orders o ON o.id=i.order_id
+     WHERE r.product_id=$1 AND r.lot_id=$2 AND r.status='active'
+      AND o.code NOT IN ('PED-DEMO-003','PED-DEMO-006') LIMIT 1`, [row.product_id,row.lot_id])).rows[0];
+    assert.ok(other, 'La semilla tiene una reserva externa al alcance de la conciliación');
+    await db.exec('ALTER TABLE abastece.inventory_reservations DISABLE TRIGGER USER');
+    await db.query("UPDATE abastece.inventory_reservations SET quantity='NaN' WHERE id=$1", [other.id]);
+    await db.exec('ALTER TABLE abastece.inventory_reservations ENABLE TRIGGER USER');
+   }
+   // El guard debe ejecutarse antes de INSERT, no solo deshacer una escritura tardía.
+   await db.exec(`CREATE FUNCTION public.reject_reconciliation_write() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'La conciliación intentó escribir antes de validar finitud'; END $$;`);
+   for (const table of ['orders','order_items','inventory_reservations','audit_events']) {
+    await db.exec(`CREATE TRIGGER reject_reconciliation_write BEFORE INSERT OR UPDATE OR DELETE
+     ON abastece.${table} FOR EACH ROW EXECUTE FUNCTION public.reject_reconciliation_write()`);
+   }
+   const fingerprint = async () => {
+    const result = {};
+    for (const table of tableNames) result[table] = (await db.query(`SELECT md5(coalesce(string_agg(
+     to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) hash FROM abastece.${table} t`)).rows[0].hash;
+    return result;
+   };
+   const before = await fingerprint();
+   await assert.rejects(() => db.exec(reconcileSql), {
+    code: 'P0409', message: 'Saldo físico o reservado no finito', detail: sku,
+   });
+   assert.deepEqual(await fingerprint(), before);
+  } finally { await db.close(); }
+ });
+
  await t.test('cambio concurrente simulado de estado o reserva aborta', async () => {
   const db = await fixture();
   try {

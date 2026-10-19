@@ -210,6 +210,14 @@ BEGIN
   SELECT coalesce(pg_catalog.sum(quantity),0) INTO v_reserved
    FROM abastece.inventory_reservations
    WHERE location_id = v_bodega AND lot_id = v_lot.lot_id AND status = 'active';
+  -- isfinite(numeric) no existe en PostgreSQL. SUM devuelve numeric sin typmod;
+  -- excluir sus tres valores especiales antes de comparar disponibilidad.
+  -- Este bucle termina para TODOS los lotes antes de la primera escritura.
+  IF v_physical::text IN ('NaN', 'Infinity', '-Infinity') OR
+     v_reserved::text IN ('NaN', 'Infinity', '-Infinity') THEN
+   RAISE EXCEPTION USING ERRCODE = 'P0409',
+    MESSAGE = 'Saldo físico o reservado no finito', DETAIL = v_lot.sku;
+  END IF;
   IF v_physical < v_reserved OR
      (v_mode = 'before' AND v_physical - v_reserved <
       CASE WHEN v_lot.sku = 'INS-005' THEN 1
