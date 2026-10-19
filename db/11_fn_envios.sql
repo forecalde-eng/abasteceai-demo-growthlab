@@ -265,16 +265,10 @@ BEGIN
  IF p_promised_at < v_reference_at THEN
   RAISE EXCEPTION USING ERRCODE = 'P0422', MESSAGE = 'Fecha prometida anterior al reloj de demo';
  END IF;
- -- Contemplar también la guía recibida: puede ocupar el próximo GUIA-DEMO-NNN.
- SELECT (coalesce(pg_catalog.max(n), 0) + 1)::text INTO v_number FROM (
-  SELECT pg_catalog.split_part(code, '-', 3)::numeric AS n FROM abastece.shipments
-   WHERE code ~ '^ENV-DEMO-[0-9]+$'
-  UNION ALL
-  SELECT pg_catalog.split_part(guide_code, '-', 3)::numeric FROM abastece.shipments
-   WHERE guide_code ~ '^GUIA-DEMO-[0-9]+$'
-  UNION ALL
-  SELECT pg_catalog.split_part(p_guide, '-', 3)::numeric WHERE p_guide ~ '^GUIA-DEMO-[0-9]+$'
- ) used_codes;
+ -- Solo los códigos internos de envío asignan correlativos. Una guía externa
+ -- es texto opaco, aunque coincida con GUIA-DEMO-NNN: nunca convertirla a numeric.
+ SELECT (coalesce(pg_catalog.max(pg_catalog.split_part(code, '-', 3)::numeric), 0) + 1)::text
+ INTO v_number FROM abastece.shipments WHERE code ~ '^ENV-DEMO-[0-9]+$';
  v_code := 'ENV-DEMO-' || pg_catalog.lpad(v_number, greatest(3, pg_catalog.length(v_number)), '0');
  INSERT INTO abastece.shipments
   (code, order_id, location_id, mode, carrier_name, guide_code, qr_token, status, promised_delivery_at)

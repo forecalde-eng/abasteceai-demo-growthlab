@@ -160,9 +160,41 @@ test('D-2.6: fn_envio_courier (POST /shipments/courier)', async t => {
    assert.equal(after.audit_events.length, before.audit_events.length + 1);
   });
   await t.test('Repetir alta devuelve P0409 y no duplica envíos ni auditoría', () => reject({}, 'P0409'));
-  await t.test('Fecha prometida opcional y códigos >999 sin truncar ni colisionar con guía', async () => {
+  await t.test('Guías externas alfanuméricas son texto y no cambian el correlativo', async () => {
+   for (const guide of ['G-1', 'ABC', 'Courier-EC-Q-42', 'GUIA-TEST-9bac0ba1-24f8-4a0c-b9e6-bae9ae6d3706',
+    'GUIA-DEMO-999999999999999999999999999999']) {
+    const before = await snapshotSafe();
+    await db.exec('BEGIN');
+    try {
+     const other = await one("SELECT id FROM abastece.orders WHERE code='PED-DEMO-006'");
+     await db.query('UPDATE abastece.order_items SET prepared_qty=approved_qty WHERE order_id=$1', [other.id]);
+     await db.query("UPDATE abastece.orders SET status='ready' WHERE id=$1", [other.id]);
+     const result = await create({order: other.id, guide});
+     assert.equal(result.code, 'ENV-DEMO-011');
+     assert.equal(result.guide_code, guide);
+     assert.equal((await one('SELECT guide_code FROM abastece.shipments WHERE id=$1', [result.id])).guide_code, guide);
+     await db.exec('SAVEPOINT duplicate_guide');
+     await assert.rejects(() => create({guide}), {code: 'P0409'});
+     await db.exec('ROLLBACK TO SAVEPOINT duplicate_guide');
+    } finally { await db.exec('ROLLBACK'); }
+    assert.deepEqual(await snapshotSafe(), before);
+   }
+  });
+  await t.test('Una guía externa ya guardada tampoco asigna números de envío', async () => {
    await db.exec('BEGIN');
    try {
+    await db.query("UPDATE abastece.shipments SET guide_code='GUIA-DEMO-9000' WHERE order_id=$1", [order.id]);
+    const other = await one("SELECT id FROM abastece.orders WHERE code='PED-DEMO-006'");
+    await db.query('UPDATE abastece.order_items SET prepared_qty=approved_qty WHERE order_id=$1', [other.id]);
+    await db.query("UPDATE abastece.orders SET status='ready' WHERE id=$1", [other.id]);
+    const result = await create({order: other.id, guide: 'G-1'});
+    assert.equal(result.code, 'ENV-DEMO-011');
+   } finally { await db.exec('ROLLBACK'); }
+  });
+  await t.test('Fecha prometida opcional y códigos internos >999 sin truncar', async () => {
+   await db.exec('BEGIN');
+   try {
+    await db.query("UPDATE abastece.shipments SET code='ENV-DEMO-1000' WHERE order_id=$1", [order.id]);
     const other = await one("SELECT id FROM abastece.orders WHERE code='PED-DEMO-006'");
     await db.query('UPDATE abastece.order_items SET prepared_qty=approved_qty WHERE order_id=$1', [other.id]);
     await db.query("UPDATE abastece.orders SET status='ready' WHERE id=$1", [other.id]);
